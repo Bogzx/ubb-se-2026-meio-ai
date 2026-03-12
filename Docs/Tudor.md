@@ -55,124 +55,55 @@
 
 **Database & Models**
 
-*   **Task:** Define `UserReelInteraction` Table Schema
-    *   **Description:** Design and create the database migration for the `UserReelInteraction` table with columns: `InteractionId` (PK), `UserId` (FK → User), `ReelId` (FK → Reel), `IsLiked` (BOOLEAN, default false), `WatchDurationSec` (INT, nullable), `WatchPercentage` (FLOAT, nullable), `ViewedAt` (DATETIME). Define all constraints and foreign keys. Max 30 mins effort.
+*   **Task 1:** Define Database Schemas (`UserReelInteraction` + `UserProfile`)
+    *   **Description:** Design and create the database migrations for both Tudor-owned tables. `UserReelInteraction`: `InteractionId` (PK), `UserId` (FK → User), `ReelId` (FK → Reel), `IsLiked` (BOOLEAN, default false), `WatchDurationSec` (INT, nullable), `WatchPercentage` (FLOAT, nullable), `ViewedAt` (DATETIME), with a UNIQUE constraint on (`UserId`, `ReelId`). `UserProfile`: `UserProfileId` (PK), `UserId` (FK → User, UNIQUE), `TotalLikes` (INT), `TotalWatchTimeSec` (BIGINT), `AvgWatchTimeSec` (FLOAT), `TotalClipsViewed` (INT), `LikeToViewRatio` (FLOAT), `LastUpdated` (DATETIME). Define all constraints and foreign keys for both tables. Max 30 mins effort.
 
-*   **Task:** Define `UserProfile` Table Schema
-    *   **Description:** Design and create the database migration for the `UserProfile` table with columns: `UserProfileId` (PK), `UserId` (FK → User, UNIQUE), `TotalLikes` (INT), `TotalWatchTimeSec` (BIGINT), `AvgWatchTimeSec` (FLOAT), `TotalClipsViewed` (INT), `LikeToViewRatio` (FLOAT), `LastUpdated` (DATETIME). Max 30 mins effort.
+*   **Task 2:** Create Data Model Classes (`UserReelInteractionModel` + `UserProfileModel`)
+    *   **Description:** Define the `UserReelInteractionModel` (properties: `InteractionId`, `UserId`, `ReelId`, `IsLiked`, `WatchDurationSec`, `WatchPercentage`, `ViewedAt`) and `UserProfileModel` (properties: `UserProfileId`, `UserId`, `TotalLikes`, `TotalWatchTimeSec`, `AvgWatchTimeSec`, `TotalClipsViewed`, `LikeToViewRatio`, `LastUpdated`). Also integrate the shared `ReelModel` (from **Alex**) and `UserMoviePreferenceModel` (from **Bogdan**) into the project references. Max 30 mins effort.
 
-*   **Task:** Use Shared `ReelModel` Data Class
-    *   **Description:** Use the `ReelModel` class created by **Alex**. It mirrors the shared `Reel` table. Max 0 mins effort.
-
-*   **Task:** Create `UserReelInteractionModel` Data Class
-    *   **Description:** Define the Model class `UserReelInteractionModel` with properties: `InteractionId`, `UserId`, `ReelId`, `IsLiked`, `WatchDurationSec`, `WatchPercentage`, `ViewedAt`. Max 30 mins effort.
-
-*   **Task:** Create `UserProfileModel` Data Class
-    *   **Description:** Define the Model class `UserProfileModel` with properties: `UserProfileId`, `UserId`, `TotalLikes`, `TotalWatchTimeSec`, `AvgWatchTimeSec`, `TotalClipsViewed`, `LikeToViewRatio`, `LastUpdated`. Max 30 mins effort.
-
-*   **Task:** Use Shared `UserMoviePreferenceModel` Data Class
-    *   **Description:** Use the `UserMoviePreferenceModel` class created by **Bogdan**. It mirrors the shared `UserMoviePreference` table. Max 0 mins effort.
-
-*   **Task:** Design Interaction Insertion Query
-    *   **Description:** Plan the query/ORM mapping for inserting a new `UserReelInteraction` record. Handle upsert for repeat views of the same reel. Max 30 mins effort.
-
-*   **Task:** Design Engagement Profile Aggregation Query
-    *   **Description:** Plan the aggregation query on `UserReelInteraction` for a given `UserId`: `COUNT(*)`, `SUM(WatchDurationSec)`, `AVG(WatchDurationSec)`, count of `IsLiked = true`, and `LikeToViewRatio`. Max 30 mins effort.
-
-*   **Task:** Implement Preference Score Boost on Reel Like
-    *   **Description:** Write a repository method that upserts a `UserMoviePreference` row when a reel linked to a movie is liked — boosting the associated movie's Score. Max 30 mins effort.
+*   **Task 3:** Implement Data Access Queries & Preference Boost
+    *   **Description:** Write the repository methods for: (a) inserting/upserting a `UserReelInteraction` record on repeat views, (b) aggregating engagement stats from `UserReelInteraction` for a given user (`COUNT(*)`, `SUM(WatchDurationSec)`, `AVG(WatchDurationSec)`, `IsLiked` count, `LikeToViewRatio`), and (c) upserting a `UserMoviePreference` row to boost the associated movie's Score when a reel linked to a movie is liked. Max 30 mins effort.
 
 ---
 
 **Backend Services & ViewModels**
 
-*   **Task:** Define `IReelInteractionService` Interface
-    *   **Description:** Create the service interface with methods: `RecordViewAsync(userId, reelId, watchDuration, watchPercentage)`, `ToggleLikeAsync(userId, reelId)`, `GetInteractionAsync(userId, reelId)`. Max 30 mins effort.
+*   **Task 4:** Define & Implement `ReelInteractionService`
+    *   **Description:** Create the `IReelInteractionService` interface (`RecordViewAsync`, `ToggleLikeAsync`, `GetInteractionAsync`) and its concrete implementation. `RecordViewAsync` creates a new `UserReelInteraction` DB record with watch duration and percentage. `ToggleLikeAsync` flips `IsLiked` on an existing interaction (or creates a new one with `IsLiked = true`) and calls the preference boost method to update `UserMoviePreference`. Max 30 mins effort.
 
-*   **Task:** Implement `ReelInteractionService` — `RecordViewAsync`
-    *   **Description:** Implement the concrete method to create a new `UserReelInteraction` DB record with watch duration and percentage. Max 30 mins effort.
+*   **Task 5:** Define & Implement `EngagementProfileService`
+    *   **Description:** Create the `IEngagementProfileService` interface (`RecalculateProfileAsync`, `GetProfileAsync`) and its concrete implementation. `RecalculateProfileAsync` fetches all `UserReelInteraction` rows for a user, computes aggregate stats (total likes, total/avg watch time, clips viewed, like-to-view ratio), and persists the result to the `UserProfile` table. Max 30 mins effort.
 
-*   **Task:** Implement `ReelInteractionService` — `ToggleLikeAsync`
-    *   **Description:** Implement like toggling. Flip `IsLiked` on existing interaction, or create a new one with `IsLiked = true`. Also call the preference service to boost the associated movie's score in `UserMoviePreference`. Max 30 mins effort.
+*   **Task 6:** Define & Implement `RecommendationService` (Algorithm + Cold Start)
+    *   **Description:** Create the `IRecommendationService` interface (`GetRecommendedReelsAsync(userId, count)`) and its concrete implementation. The basic algorithm fetches the user's `UserProfile` and top `UserMoviePreference` scores, queries the `Reel` table excluding already-viewed reels, scores remaining reels by genre/movie match, and returns top N. Includes a cold-start fallback for new users with no engagement data — serve globally popular/trending reels (most-liked from the last 7 days). Max 30 mins effort.
 
-*   **Task:** Define `IEngagementProfileService` Interface
-    *   **Description:** Create the service interface with methods: `RecalculateProfileAsync(userId)` and `GetProfileAsync(userId)` returning `UserProfileModel`. Max 30 mins effort.
+*   **Task 7:** Define & Implement `ClipPlaybackService`
+    *   **Description:** Create the `IClipPlaybackService` interface (`PlayClip(videoUrl)`, `PauseClip()`, `ResumeClip()`, `GetElapsedSeconds()`, `PrefetchClip(videoUrl)`) and its concrete implementation wrapping the platform's native video player API. Wire play, pause, and prefetch operations. Max 30 mins effort.
 
-*   **Task:** Implement `EngagementProfileService` — Profile Computation
-    *   **Description:** Implement `RecalculateProfileAsync`. Fetch all `UserReelInteraction` rows for the user, compute aggregate stats, persist to `UserProfile`. Max 30 mins effort.
+*   **Task 8:** Scaffold `ReelsFeedViewModel` & Load Initial Feed
+    *   **Description:** Create the `ReelsFeedViewModel` class with observable properties: `CurrentReel` (ReelModel), `ReelQueue` (ObservableCollection), `IsLoading` (bool), `IsCurrentReelLiked` (bool), `ErrorMessage` (string). Implement `LoadFeedCommand` that calls `IRecommendationService`, populates `ReelQueue`, and sets `CurrentReel` to the first item. Max 30 mins effort.
 
-*   **Task:** Define `IRecommendationService` Interface
-    *   **Description:** Create the service interface with method: `GetRecommendedReelsAsync(userId, count)` returning a list of `ReelModel`. Max 30 mins effort.
+*   **Task 9:** Implement `ReelsFeedViewModel` — Navigation & Interaction Commands
+    *   **Description:** Implement `ScrollNextCommand` (advance `CurrentReel` to next in queue, trigger background fetch when ≤ 2 remaining), `ScrollPreviousCommand` (maintain a history stack of last 5 clips for backward navigation), and `ToggleLikeCommand` (call `IReelInteractionService.ToggleLikeAsync()`, flip `IsCurrentReelLiked`, trigger heart animation flag). Max 30 mins effort.
 
-*   **Task:** Implement `RecommendationService` — Basic Algorithm
-    *   **Description:** Fetch the user's `UserProfile` and `UserMoviePreference` top scores, query the `Reel` table excluding already-viewed reels, score remaining reels by genre/movie match. Return top N by score. Max 30 mins effort.
-
-*   **Task:** Implement `RecommendationService` — Cold Start Fallback
-    *   **Description:** Handle new users with no engagement data. Serve a default list of popular/trending reels (globally most-liked from the last 7 days). Max 30 mins effort.
-
-*   **Task:** Scaffold `ReelsFeedViewModel`
-    *   **Description:** Create the ViewModel class. Define observable properties: `CurrentReel` (ReelModel), `ReelQueue` (ObservableCollection), `IsLoading` (bool), `IsCurrentReelLiked` (bool). Max 30 mins effort.
-
-*   **Task:** Implement `ReelsFeedViewModel` — Load Initial Feed
-    *   **Description:** Create `LoadFeedCommand` that calls `IRecommendationService`, populates `ReelQueue`, sets `CurrentReel` to the first item. Max 30 mins effort.
-
-*   **Task:** Implement `ReelsFeedViewModel` — Scroll Next Logic
-    *   **Description:** Implement `ScrollNextCommand`. Advance `CurrentReel` to next in queue. When queue has ≤ 2 remaining, trigger background fetch for more. Max 30 mins effort.
-
-*   **Task:** Implement `ReelsFeedViewModel` — Scroll Previous Logic
-    *   **Description:** Implement `ScrollPreviousCommand`. Maintain a small history stack (last 5 clips) for backward navigation. Max 30 mins effort.
-
-*   **Task:** Implement `ReelsFeedViewModel` — Like Toggle Command
-    *   **Description:** Create `ToggleLikeCommand`. Call `IReelInteractionService.ToggleLikeAsync()`, flip `IsCurrentReelLiked`, trigger heart animation flag. Max 30 mins effort.
-
-*   **Task:** Implement `ReelsFeedViewModel` — Watch Time Tracking
-    *   **Description:** Add a timer that starts when a reel becomes `CurrentReel` and stops on scroll-away. Call `RecordViewAsync()` with elapsed seconds and watch percentage. Max 30 mins effort.
-
-*   **Task:** Implement `ReelsFeedViewModel` — Prefetch Buffer
-    *   **Description:** When user watches reel N, signal `ClipPlaybackService` to buffer reel N+1 and N+2. Expose `PrefetchStatus` property. Max 30 mins effort.
-
-*   **Task:** Define `IClipPlaybackService` Interface
-    *   **Description:** Define interface with methods: `PlayClip(videoUrl)`, `PauseClip()`, `ResumeClip()`, `GetElapsedSeconds()`, `PrefetchClip(videoUrl)`. Max 30 mins effort.
-
-*   **Task:** Implement `ClipPlaybackService` Concrete Class
-    *   **Description:** Implement wrapping the platform's native video player API. Wire play, pause, and prefetch operations. Max 30 mins effort.
-
-*   **Task:** Implement ViewModel Error Handling
-    *   **Description:** Add try-catch wrappers around all service calls. On failure, set `ErrorMessage` property and log. Ensure feed stays navigable. Max 30 mins effort.
+*   **Task 10:** Implement `ReelsFeedViewModel` — Watch Tracking, Prefetch & Error Handling
+    *   **Description:** Add a timer that starts when a reel becomes `CurrentReel` and stops on scroll-away, calling `RecordViewAsync()` with elapsed seconds and watch percentage. Implement prefetching: when user watches reel N, signal `ClipPlaybackService` to buffer reels N+1 and N+2 (expose `PrefetchStatus`). Add try-catch wrappers around all service calls — on failure, set `ErrorMessage` and log; ensure feed stays navigable. Max 30 mins effort.
 
 ---
 
 **GUI (Views)**
 
-*   **Task:** Create `ReelsFeedView` Skeleton Layout
-    *   **Description:** Create the base UI layout. Full-screen container (immersive mode), single vertical snap-scroll container, black background. Max 30 mins effort.
+*   **Task 11:** Create `ReelsFeedView` Layout & `ReelItemView` Video Container
+    *   **Description:** Create the `ReelsFeedView` base UI layout: full-screen container (immersive mode), single vertical snap-scroll container, black background. Design the `ReelItemView` single clip layout filling 100% viewport with a video player that stretches edge-to-edge and scales to "cover". Max 30 mins effort.
 
-*   **Task:** Design `ReelItemView` — Video Player Container
-    *   **Description:** Design a single clip layout filling 100% viewport. Video player stretches edge-to-edge, scales to "cover". Max 30 mins effort.
+*   **Task 12:** Design `ReelItemView` — Overlays, Like Button & Gestures
+    *   **Description:** Add a semi-transparent gradient overlay at bottom with movie title (bold, white) and genre tag (pill badge) bottom-left. Place a heart icon button on the right side (outline when unliked, filled red when liked, scale-bounce animation on tap). Add a double-tap gesture recognizer that triggers `ToggleLikeCommand` and plays a heart burst animation at the tap point. Add a thin horizontal progress bar at bottom bound to playback position. Max 30 mins effort.
 
-*   **Task:** Design `ReelItemView` — Metadata Overlay
-    *   **Description:** Add semi-transparent gradient overlay at bottom. Place movie title (bold, white) and genre tag (pill badge) bottom-left. Max 30 mins effort.
+*   **Task 13:** Implement Snap-Scroll Behavior & Data Binding
+    *   **Description:** Configure snap-to-page vertical scrolling — when a new clip snaps into view, fire `ScrollNextCommand` or `ScrollPreviousCommand`. Wire all data bindings: scroll container item source to `ReelQueue`, visible clip to `CurrentReel`, like button to `IsCurrentReelLiked`. Max 30 mins effort.
 
-*   **Task:** Design `ReelItemView` — Like Button & Animation
-    *   **Description:** Place heart icon button on right side. Outline when unliked, filled red when liked. Scale-bounce animation on tap. Max 30 mins effort.
+*   **Task 14:** Design Loading & Error State UI
+    *   **Description:** Add a centered circular loading spinner displayed when `IsLoading` is true (hidden when clips are ready). Create an error layout (icon + message + "Retry" button) displayed when `ErrorMessage` is non-empty, with Retry bound to `LoadFeedCommand`. Max 30 mins effort.
 
-*   **Task:** Implement Double-Tap-to-Like Gesture
-    *   **Description:** Add double-tap gesture recognizer. On double-tap, trigger `ToggleLikeCommand` and play a heart burst animation at tap point. Max 30 mins effort.
-
-*   **Task:** Design `ReelItemView` — Progress Bar
-    *   **Description:** Add thin horizontal progress bar at bottom showing playback progress. Bind to playback position. Max 30 mins effort.
-
-*   **Task:** Implement Vertical Snap-Scroll Behavior
-    *   **Description:** Configure snap-to-page scrolling. When a new clip snaps into view, fire `ScrollNextCommand` or `ScrollPreviousCommand`. Max 30 mins effort.
-
-*   **Task:** Wire Data Binding — Feed View to ViewModel
-    *   **Description:** Bind scroll container item source to `ReelQueue`, visible clip to `CurrentReel`, like button to `IsCurrentReelLiked`. Max 30 mins effort.
-
-*   **Task:** Implement Loading Spinner
-    *   **Description:** Add centered circular loader displayed when `IsLoading` is true. Hide when clips are ready. Max 30 mins effort.
-
-*   **Task:** Design Error State UI
-    *   **Description:** Create error layout (icon + message + "Retry" button) displayed when `ErrorMessage` is non-empty. Bind Retry to `LoadFeedCommand`. Max 30 mins effort.
-
-*   **Task:** Design Empty State UI
-    *   **Description:** Create empty/cold-start layout ("No clips yet" illustration + message) shown when feed returns zero clips. Max 30 mins effort.
+*   **Task 15:** Design Empty State UI & `UserProfileViewModel`
+    *   **Description:** Create an empty/cold-start layout ("No clips yet" illustration + message) shown when the feed returns zero clips. Scaffold the `UserProfileViewModel` that exposes the user's engagement metrics via `IEngagementProfileService` (read by **Madi** for matched user details). Max 30 mins effort.
