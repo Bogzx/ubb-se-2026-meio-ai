@@ -8,6 +8,8 @@
 *   **Requirement 7:** The system must utilize a recommendation algorithm that consumes the user's engagement profile to serve the most relevant clips in the feed.
 *   **Requirement 8:** The system must pre-fetch upcoming clips (buffering the next N clips) to ensure a seamless, lag-free scrolling experience.
 *   **Requirement 9:** The system must display contextual metadata overlaid on each clip (movie title, genre tag, clip duration) without obstructing the primary video content.
+*   **Requirement 10:** User flow: The authenticated user opens the Reels Feed screen, and the first clip immediately begins auto-playing. The user can watch the clip, tap the heart icon to "like" it, or scroll vertically to seamlessly transition to the next/previous clip.
+*   **Requirement 11:** If the user closes the application, the exact watch progress (the seconds watched on the currently playing clip if it hasn't been synchronized yet) is discarded. Any previously completed view aggregations and likes are already persisted to the database and will not be lost.
 *   **Owner:** Tudor
 *   **Cross-Team Dependencies:**
     *   **Alex:** Alex owns the `Reel` table schema — Tudor reads from it to populate the feed. Uploaded reels are the primary feed content.
