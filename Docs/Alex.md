@@ -2,7 +2,9 @@
 *   **Requirement 1:** The system must allow an authenticated user to select and upload a short-format video file (reel) from their device.
 *   **Requirement 2:** The system must validate the uploaded video to ensure it meets format (e.g., MP4) and duration (e.g., under 60 seconds) constraints.
 *   **Requirement 3:** The system must persistently store the video file (e.g., in blob storage) and record its metadata as a new row in the shared `Reel` table with `Source = 'upload'`.
-*   **Requirement 4:** The system must associate each uploaded reel with the uploader's user ID and, optionally, with a movie from the external Movie table.
+*   **Requirement 4:** The system must associate each uploaded reel with the uploader's user ID and, optionally, with a movie from the external Movie table (does not influence user preferences).
+*   **Requirement 5:** User flow: logged-in user goes to the 'Upload reel' view, selects the file they want to upload, writes some details regarding the reel (eg: title, movie etc) and clicks the upload button. The user will be shown a confirmation text or an error if the validation fails
+*   **Requirement 6:** If the user closes the application while it is uploading the reel the progress and unsaved data will be lost
 *   **Owner:** Alex
 *   **Cross-Team Dependencies:**
     *   **External Group:** Depends on the other group's `Movie` table for optional reel-to-movie association.
