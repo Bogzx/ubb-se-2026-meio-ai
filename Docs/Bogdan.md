@@ -1,4 +1,4 @@
-### 1. Formal Requirements
+### 1. Formal Requirements (Movie tinder)
 
 *   **Requirement 1:** The system must show the authenticated user a stack of movie cards (poster + title), sourced from the external `Movie` table, filtering out movies the user has already swiped on.
     *   **Verified by:** Unit test confirming the card queue only contains unswiped movies with correct poster/title.
@@ -8,6 +8,10 @@
     *   **Verified by:** Unit test asserting exact delta values; integration test confirming upsert for first-time swipes.
 *   **Requirement 4:** All score changes are persisted immediately after each swipe.
     *   **Verified by:** Integration test confirming the DB write completes within the same request cycle.
+*   **Requirement 5 (User Flow):** The logged-in user navigates to the "Discover Movies" screen, where a stack of movie cards is loaded automatically. The top card shows the movie's poster and title. The user drags the card right to like or left to skip — a green "LIKE" or red "NOPE" overlay fades in proportionally to the drag distance. Once the drag passes 30 % of the card width and the user releases, the swipe is confirmed: the card animates off-screen, the preference score is updated in the background, and the next card rises to the top. When the queue runs low, more unswiped movies are fetched automatically. The user can continue swiping until no unswiped movies remain, at which point an "All caught up!" message is displayed.
+    *   **Verified by:** End-to-end UI walkthrough test covering: card load → drag → overlay opacity → release → card animation → score persistence → queue refill → empty-state message.
+*   **Requirement 6:** If the user closes the application mid-swipe (before releasing the card), the in-progress swipe is discarded — only fully completed swipes are persisted. No data is lost for previously completed swipes.
+    *   **Verified by:** Test confirming that killing the app during a drag does not create a partial `UserMoviePreference` row.
 *   **Owner:** Bogdan
 *   **Cross-Team Dependencies:**
     *   **External Group:** Reads from the other group's `Movie` table for card data.
