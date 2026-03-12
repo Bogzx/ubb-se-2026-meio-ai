@@ -61,8 +61,8 @@
 *   **Task:** Define `UserProfile` Table Schema
     *   **Description:** Design and create the database migration for the `UserProfile` table with columns: `UserProfileId` (PK), `UserId` (FK → User, UNIQUE), `TotalLikes` (INT), `TotalWatchTimeSec` (BIGINT), `AvgWatchTimeSec` (FLOAT), `TotalClipsViewed` (INT), `LikeToViewRatio` (FLOAT), `LastUpdated` (DATETIME). Max 30 mins effort.
 
-*   **Task:** Create `ReelModel` Data Class
-    *   **Description:** Define the Model class `ReelModel` mirroring the shared `Reel` table. Properties: `ReelId`, `MovieId`, `CreatorUserId`, `VideoUrl`, `ThumbnailUrl`, `Title`, `Caption`, `DurationSeconds`, `Source`, `CreatedAt`. Max 30 mins effort.
+*   **Task:** Use Shared `ReelModel` Data Class
+    *   **Description:** Use the `ReelModel` class created by **Alex**. It mirrors the shared `Reel` table. Max 0 mins effort.
 
 *   **Task:** Create `UserReelInteractionModel` Data Class
     *   **Description:** Define the Model class `UserReelInteractionModel` with properties: `InteractionId`, `UserId`, `ReelId`, `IsLiked`, `WatchDurationSec`, `WatchPercentage`, `ViewedAt`. Max 30 mins effort.
@@ -70,8 +70,8 @@
 *   **Task:** Create `UserProfileModel` Data Class
     *   **Description:** Define the Model class `UserProfileModel` with properties: `UserProfileId`, `UserId`, `TotalLikes`, `TotalWatchTimeSec`, `AvgWatchTimeSec`, `TotalClipsViewed`, `LikeToViewRatio`, `LastUpdated`. Max 30 mins effort.
 
-*   **Task:** Create `UserMoviePreferenceModel` Data Class
-    *   **Description:** Define the Model class mirroring the shared `UserMoviePreference` table: `UserMoviePreferenceId`, `UserId`, `MovieId`, `Score`, `LastModified`. Needed for cross-updating preference scores on reel likes. Max 30 mins effort.
+*   **Task:** Use Shared `UserMoviePreferenceModel` Data Class
+    *   **Description:** Use the `UserMoviePreferenceModel` class created by **Bogdan**. It mirrors the shared `UserMoviePreference` table. Max 0 mins effort.
 
 *   **Task:** Design Interaction Insertion Query
     *   **Description:** Plan the query/ORM mapping for inserting a new `UserReelInteraction` record. Handle upsert for repeat views of the same reel. Max 30 mins effort.

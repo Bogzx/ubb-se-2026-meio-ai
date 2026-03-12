@@ -31,8 +31,8 @@
 **Database & Models**
 *   **Task:** Create `MovieModel` Data Class
     *   **Description:** Define the Model class representing a movie card: `MovieId`, `Title`, `PosterUrl`. This is a read-only projection from the external Movie table. Max 30 mins effort.
-*   **Task:** Create `UserMoviePreferenceModel` Data Class
-    *   **Description:** Define the Model class mirroring the shared `UserMoviePreference` table: `UserMoviePreferenceId`, `UserId`, `MovieId`, `Score`, `LastModified`. This is the same shared model used by swipe, matching, and reel-like features. Max 30 mins effort.
+*   **Task:** Use Shared `UserMoviePreferenceModel` Data Class
+    *   **Description:** Use the `UserMoviePreferenceModel` class created by **Bogdan**. It mirrors the shared `UserMoviePreference` table. Max 0 mins effort.
 *   **Task:** Create `TournamentState` In-Memory Model
     *   **Description:** Create a model class representing the current state of a tournament: list of pending matches, completed matches, current round number. Not persisted. Max 30 mins effort.
 *   **Task:** Create `Matchup` In-Memory Model

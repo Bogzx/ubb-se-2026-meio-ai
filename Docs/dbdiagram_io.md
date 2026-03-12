@@ -11,6 +11,8 @@ Table User {
   UserId int [pk, increment]
   Username varchar [not null]
   Email varchar [not null]
+  PasswordHash varchar [not null]
+  CreatedAt datetime [not null]
 }
 
 Table Movie {
@@ -18,6 +20,9 @@ Table Movie {
   Title varchar [not null]
   PosterUrl varchar
   PrimaryGenre varchar
+  Description varchar
+  ReleaseYear int
+  AverageRating float
 
   Note: 'External table — owned by the partner group. Read-only for this team.'
 }
@@ -72,7 +77,11 @@ Table UserReelInteraction {
   WatchPercentage float [note: 'nullable']
   ViewedAt datetime [not null]
 
-  Note: 'One row per view/like event — owned by Tudor.'
+  indexes {
+    (UserId, ReelId) [unique]
+  }
+
+  Note: 'One row per user per reel. Upserted on repeat views/likes — owned by Tudor.'
 }
 
 Table UserProfile {

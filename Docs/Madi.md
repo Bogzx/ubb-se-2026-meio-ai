@@ -28,8 +28,8 @@
 ### 3. Project Management Tasks (Max 30-Minutes Each)
 
 **Database & Models**
-*   **Task:** Create `UserMoviePreferenceModel` Data Class
-    *   **Description:** Define the Model class mirroring the shared `UserMoviePreference` table: `UserMoviePreferenceId`, `UserId`, `MovieId`, `Score`, `LastModified`. This is the same shared model used by swipe, tournament, and reel-like features. Max 30 mins effort.
+*   **Task:** Use Shared `UserMoviePreferenceModel` Data Class
+    *   **Description:** Use the `UserMoviePreferenceModel` class created by **Bogdan**. It mirrors the shared `UserMoviePreference` table. Max 0 mins effort.
 *   **Task:** Create `UserProfileModel` Data Class
     *   **Description:** Define the Model class mirroring the shared `UserProfile` table: `UserProfileId`, `UserId`, `TotalLikes`, `TotalWatchTimeSec`, `AvgWatchTimeSec`, `TotalClipsViewed`, `LikeToViewRatio`, `LastUpdated`. Max 30 mins effort.
 *   **Task:** Define `MatchResult` DTO

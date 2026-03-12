@@ -32,8 +32,10 @@ classDiagram
         +GetUnswipedMoviesAsync(int userId, int count) List~MovieCardModel~
     }
 
-    class MovieCardFeedService {
-        +FetchUnswipedMoviesAsync(int userId, int count) List~MovieCardModel~
+    class IPreferenceRepository {
+        <<interface>>
+        +UpsertPreferenceAsync(UserMoviePreferenceModel) void
+        +GetUnswipedMovieIdsAsync(int userId) List~int~
     }
 
     class PreferenceRepository {
@@ -61,12 +63,10 @@ classDiagram
 
     %% ── Relationships ──
     SwipeService ..|> ISwipeService
+    PreferenceRepository ..|> IPreferenceRepository
     MovieSwipeView --> MovieSwipeViewModel : DataContext
     SwipeResultSummaryView --> MovieSwipeViewModel : DataContext
 
     MovieSwipeViewModel --> ISwipeService : uses
-    SwipeService --> PreferenceRepository : upserts scores
-    SwipeService --> MovieCardFeedService : fetches cards
-    MovieCardFeedService --> MovieCardModel : returns
-    PreferenceRepository --> UserMoviePreferenceModel : persists
+    SwipeService --> IPreferenceRepository : data access
 ```

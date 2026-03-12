@@ -32,16 +32,18 @@ graph LR
     %% REEL EDITING (Beatrice)
     %% ═══════════════════════════════════
     subgraph ReelEditing["✂️ Reel Editing — Beatrice"]
+        UC_EditReel["Edit Uploaded Reel"]
         UC_SelectReel["Select Uploaded Reel"]
         UC_Crop["Crop Reel Video"]
         UC_AddMusic["Add Background Music"]
         UC_SaveEdits["Save Reel Edits"]
     end
 
-    User --- UC_SelectReel
-    User --- UC_Crop
-    User --- UC_AddMusic
-    User --- UC_SaveEdits
+    User --- UC_EditReel
+    UC_EditReel -.->|"«include»"| UC_SelectReel
+    UC_EditReel -.->|"«extend»"| UC_Crop
+    UC_EditReel -.->|"«extend»"| UC_AddMusic
+    UC_EditReel -.->|"«include»"| UC_SaveEdits
 
     %% ═══════════════════════════════════
     %% TRAILER SCRAPING (Andrei)
@@ -86,7 +88,7 @@ graph LR
 
     User --- UC_Swipe
     UC_Swipe -.->|"«include»"| UC_UpdatePref
-    UC_Swipe -.->|"«include»"| UC_LoadCards
+    UC_Swipe -.->|"«extend»"| UC_LoadCards
 
     %% ═══════════════════════════════════
     %% MOVIE TOURNAMENT (Gabi)
@@ -101,20 +103,18 @@ graph LR
     User --- UC_StartTourney
     User --- UC_SelectWinner
     User --- UC_ViewResult
-    UC_ViewResult -.->|"«include»"| UC_BoostWinner
+    UC_SelectWinner -.->|"«extend»"| UC_BoostWinner
 
     %% ═══════════════════════════════════
     %% PERSONALITY MATCHING (Madi)
     %% ═══════════════════════════════════
     subgraph PersonalityMatching["💜 Personality Matching — Madi"]
-        UC_RequestMatch["Request Personality Matches"]
-        UC_ViewTop10["View Top 10 Matches"]
+        UC_FindMatches["Find Personality Matches"]
         UC_ViewDetail["View Matched User Details"]
     end
 
-    User --- UC_RequestMatch
-    UC_RequestMatch -.->|"«include»"| UC_ViewTop10
-    UC_ViewTop10 -.->|"«extend»"| UC_ViewDetail
+    User --- UC_FindMatches
+    UC_FindMatches -.->|"«extend»"| UC_ViewDetail
 
     %% ─── Styles ───
     classDef actor fill:#4a90d9,stroke:#2c5282,color:#fff,font-weight:bold
@@ -128,12 +128,12 @@ graph LR
 
     class User,Scraper actor
     class UC_Upload,UC_Validate,UC_Associate upload
-    class UC_SelectReel,UC_Crop,UC_AddMusic,UC_SaveEdits editing
+    class UC_EditReel,UC_SelectReel,UC_Crop,UC_AddMusic,UC_SaveEdits editing
     class UC_Scrape,UC_StoreScraped scraping
     class UC_Browse,UC_Scroll,UC_Like,UC_RecordView,UC_UpdateProfile,UC_BoostPref,UC_PersonalFeed feed
     class UC_Swipe,UC_UpdatePref,UC_LoadCards swipe
     class UC_StartTourney,UC_SelectWinner,UC_ViewResult,UC_BoostWinner tournament
-    class UC_RequestMatch,UC_ViewTop10,UC_ViewDetail matching
+    class UC_FindMatches,UC_ViewDetail matching
 ```
 
 ## Use Case Summary by Feature
@@ -148,9 +148,10 @@ graph LR
 ### ✂️ Reel Editing (Beatrice)
 | Use Case | Description |
 |---|---|
-| Select Uploaded Reel | User picks a previously uploaded reel to edit |
-| Crop Reel Video | User defines crop dimensions (x, y, width, height) |
-| Add Background Music | User selects a music track from the library |
+| Edit Uploaded Reel | User initiates the editing workflow for a reel |
+| Select Uploaded Reel | System prompts user to pick a previously uploaded reel |
+| Crop Reel Video | User optionally defines crop dimensions (x, y, width, height) |
+| Add Background Music | User optionally selects a music track from the library |
 | Save Reel Edits | System persists crop metadata and music selection |
 
 ### 🔍 Trailer Scraping (Andrei)
@@ -175,7 +176,7 @@ graph LR
 |---|---|
 | Swipe on Movie Card | User swipes right (like) or left (dislike) on movie cards |
 | Update Movie Preference Score | System boosts/lowers score in UserMoviePreference |
-| Load Next Movie Cards | System auto-refills the card queue with unswiped movies |
+| Load Next Movie Cards | System auto-refills the card queue with unswiped movies conditionally when low |
 
 ### 🏆 Movie Tournament (Gabi)
 | Use Case | Description |
@@ -183,11 +184,10 @@ graph LR
 | Start Movie Tournament | User inputs pool size and begins a bracket tournament |
 | Select Movie Pair Winner | User picks a winner in each head-to-head matchup |
 | View Tournament Result | System displays the final winning movie |
-| Boost Winner Preference Score | System boosts the winner's score in UserMoviePreference |
+| Boost Winner Preference Score | System boosts the winner's score in UserMoviePreference upon final match completion |
 
 ### 💜 Personality Matching (Madi)
 | Use Case | Description |
 |---|---|
-| Request Personality Matches | User initiates matching based on movie preferences |
-| View Top 10 Matches | System computes and displays top 10 compatible users |
+| Find Personality Matches | User initiates matching based on movie preferences and system displays top 10 compatible users |
 | View Matched User Details | User views a matched user's engagement stats and top preferences |

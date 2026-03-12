@@ -29,8 +29,8 @@
     *   **Description:** Design and create the database migration for the `MusicTrack` table with columns: `MusicTrackId` (PK), `TrackName` (VARCHAR), `AudioUrl` (VARCHAR), `DurationSeconds` (INT). Define constraints (NOT NULL on TrackName, AudioUrl). Max 30 mins effort.
 *   **Task:** Create `MusicTrackModel` Data Class
     *   **Description:** Define the Model class for the `MusicTrack` table: `MusicTrackId`, `TrackName`, `AudioUrl`, `DurationSeconds`. Max 30 mins effort.
-*   **Task:** Create `ReelModel` Data Class
-    *   **Description:** Define the Model class mirroring the shared `Reel` table: `ReelId`, `MovieId`, `CreatorUserId`, `VideoUrl`, `Title`, `CropDataJson`, `BackgroundMusicId`, `CreatedAt`, `LastEditedAt`. This is the same shared model used by all reel features. Max 30 mins effort.
+*   **Task:** Use Shared `ReelModel` Data Class
+    *   **Description:** Use the `ReelModel` class created by **Alex**. It mirrors the shared `Reel` table. Max 0 mins effort.
 *   **Task:** Create `VideoEditMetadata` Wrapper Model
     *   **Description:** Create a local data model `VideoEditMetadata` to temporarily hold the user's ongoing edits (current crop coordinates, tentative music selection) before saving. Max 30 mins effort.
 *   **Task:** Implement Reel Update Repository Method (Crop + Music)

@@ -118,6 +118,57 @@ classDiagram
     %%  SERVICES & REPOSITORIES
     %% ══════════════════════════════════════
 
+    class INavigationService {
+        <<interface>>
+        +NavigateToAsync(string route) void
+        +GoBackAsync() void
+    }
+
+    class IUserSession {
+        <<interface>>
+        +int CurrentUserId
+        +bool IsAuthenticated
+    }
+
+    class IReelRepository {
+        <<interface>>
+        +InsertReelAsync(ReelModel) void
+        +BulkInsertScrapedReelsAsync(List~ReelModel~) void
+        +UpdateReelCropAndMusicAsync(int reelId, string cropJson, int musicId) void
+        +GetReelsByUserIdAsync(int userId) List~ReelModel~
+        +GetReelsByMovieIdAsync(int movieId, string source) List~ReelModel~
+    }
+
+    class IMusicTrackRepository {
+        <<interface>>
+        +GetAllTracksAsync() List~MusicTrackModel~
+    }
+
+    class IPreferenceRepository {
+        <<interface>>
+        +UpsertPreferenceAsync(UserMoviePreferenceModel) void
+        +GetAllPreferencesExceptUserAsync(int excludeUserId) Dictionary~int, List~UserMoviePreferenceModel~~
+        +GetUnswipedMovieIdsAsync(int userId) List~int~
+    }
+
+    class IUserProfileRepository {
+        <<interface>>
+        +GetProfileAsync(int userId) UserProfileModel
+        +UpsertProfileAsync(UserProfileModel) void
+    }
+
+    class IUserReelInteractionRepository {
+        <<interface>>
+        +InsertInteractionAsync(UserReelInteractionModel) void
+        +UpdateLikeStatusAsync(int interactionId, bool isLiked) void
+    }
+
+    class IMovieRepository {
+        <<interface>>
+        +GetRandomMoviesAsync(int count) List~MovieModel~
+    }
+
+
     class IVideoStorageService {
         <<interface>>
         +UploadVideoAsync(ReelUploadRequest) ReelModel
@@ -148,13 +199,13 @@ classDiagram
         +GetAvailableTracksAsync() List~MusicTrackModel~
     }
 
-    class SwipeService {
+    class ISwipeService {
+        <<interface>>
         +UpdatePreferenceScoreAsync(int userId, int movieId, bool isLiked) void
         +GetUnswipedMoviesAsync(int userId, int count) List~MovieCardModel~
     }
 
-    class ISwipeService {
-        <<interface>>
+    class SwipeService {
         +UpdatePreferenceScoreAsync(int userId, int movieId, bool isLiked) void
         +GetUnswipedMoviesAsync(int userId, int count) List~MovieCardModel~
     }
@@ -162,10 +213,6 @@ classDiagram
     class TournamentLogicService {
         +GenerateBracket(List~MovieModel~) TournamentState
         +AdvanceWinner(TournamentState, int winnerId) TournamentState
-    }
-
-    class MovieRepository {
-        +GetRandomMoviesAsync(int count) List~MovieModel~
     }
 
     class IPersonalityMatchingService {
@@ -207,6 +254,12 @@ classDiagram
     %% ══════════════════════════════════════
     %%  VIEWMODELS
     %% ══════════════════════════════════════
+
+    class ViewModelBase {
+        <<abstract>>
+        +event PropertyChanged
+        #OnPropertyChanged() void
+    }
 
     class ReelUploadViewModel {
         +string SelectedFilePath
@@ -292,23 +345,51 @@ classDiagram
         +UserProfileModel Profile
     }
 
+    ReelUploadViewModel --|> ViewModelBase
+    MovieTrailerPlayerViewModel --|> ViewModelBase
+    ReelGalleryViewModel --|> ViewModelBase
+    ReelEditorViewModel --|> ViewModelBase
+    MusicSelectionDialogViewModel --|> ViewModelBase
+    MovieSwipeViewModel --|> ViewModelBase
+    TournamentSetupViewModel --|> ViewModelBase
+    TournamentMatchViewModel --|> ViewModelBase
+    TournamentResultViewModel --|> ViewModelBase
+    MatchListViewModel --|> ViewModelBase
+    MatchedUserDetailViewModel --|> ViewModelBase
+    ReelsFeedViewModel --|> ViewModelBase
+    UserProfileViewModel --|> ViewModelBase
+
     %% ── ViewModel → Service dependencies ──
     ReelUploadViewModel --> IVideoStorageService
-    MovieTrailerPlayerViewModel --> ReelModel
-    ReelGalleryViewModel --> ReelModel
+    ReelUploadViewModel --> IUserSession
+    MovieTrailerPlayerViewModel --> IReelRepository
+    ReelGalleryViewModel --> IReelRepository
+    ReelGalleryViewModel --> IUserSession
     ReelEditorViewModel --> IVideoProcessingService
+    ReelEditorViewModel --> IReelRepository
     MusicSelectionDialogViewModel --> IAudioLibraryService
     MovieSwipeViewModel --> ISwipeService
-    TournamentSetupViewModel --> MovieRepository
+    MovieSwipeViewModel --> IUserSession
+    TournamentSetupViewModel --> IMovieRepository
     TournamentMatchViewModel --> TournamentLogicService
-    TournamentResultViewModel --> UserMoviePreferenceModel
+    TournamentMatchViewModel --> INavigationService
+    TournamentResultViewModel --> ISwipeService
     MatchListViewModel --> IPersonalityMatchingService
-    MatchedUserDetailViewModel --> UserProfileModel
-    MatchedUserDetailViewModel --> UserMoviePreferenceModel
+    MatchedUserDetailViewModel --> IEngagementProfileService
     ReelsFeedViewModel --> IReelInteractionService
     ReelsFeedViewModel --> IRecommendationService
     ReelsFeedViewModel --> IClipPlaybackService
     UserProfileViewModel --> IEngagementProfileService
+
+    %% ── Service → Repository dependencies ──
+    SwipeService --> IPreferenceRepository
+    SwipeService --> IMovieRepository
+    VideoIngestionService --> IReelRepository
+    PersonalityMatchingService --> IPreferenceRepository
+    PersonalityMatchingService --> IUserProfileRepository
+    ReelInteractionService --> IUserReelInteractionRepository
+    EngagementProfileService --> IUserProfileRepository
+    IAudioLibraryService --> IMusicTrackRepository
 
     %% ══════════════════════════════════════
     %%  VIEWS
@@ -391,7 +472,7 @@ classDiagram
 
 | Layer | Count | Components |
 |---|---|---|
-| **Models** | 11 | `ReelModel`, `UserMoviePreferenceModel`, `UserProfileModel`, `UserReelInteractionModel`, `MusicTrackModel`, `MovieCardModel`, `MovieModel`, `TournamentState`, `Matchup`, `MatchResult`, `ReelUploadRequest`, `VideoEditMetadata` |
+| **Models** | 12 | `ReelModel`, `UserMoviePreferenceModel`, `UserProfileModel`, `UserReelInteractionModel`, `MusicTrackModel`, `MovieCardModel`, `MovieModel`, `TournamentState`, `Matchup`, `MatchResult`, `ReelUploadRequest`, `VideoEditMetadata` |
 | **Views** | 14 | `ReelUploadView`, `MovieTrailerPlayerView`, `ReelGalleryView`, `ReelEditorView`, `MusicSelectionDialogView`, `MovieSwipeView`, `SwipeResultSummaryView`, `TournamentSetupView`, `TournamentMatchView`, `TournamentResultView`, `MatchListView`, `MatchedUserDetailView`, `ReelsFeedView`, `ReelItemView` |
-| **ViewModels** | 13 | `ReelUploadViewModel`, `MovieTrailerPlayerViewModel`, `ReelGalleryViewModel`, `ReelEditorViewModel`, `MusicSelectionDialogViewModel`, `MovieSwipeViewModel`, `TournamentSetupViewModel`, `TournamentMatchViewModel`, `TournamentResultViewModel`, `MatchListViewModel`, `MatchedUserDetailViewModel`, `ReelsFeedViewModel`, `UserProfileViewModel` |
-| **Services** | 10 | `IVideoStorageService`, `IWebScraperService`, `VideoIngestionService`, `WebScraperBackgroundService`, `IVideoProcessingService`, `IAudioLibraryService`, `ISwipeService`/`SwipeService`, `TournamentLogicService`, `MovieRepository`, `IPersonalityMatchingService`, `IReelInteractionService`, `IEngagementProfileService`, `IRecommendationService`, `IClipPlaybackService` |
+| **ViewModels** | 13 | `ReelUploadViewModel`, `MovieTrailerPlayerViewModel`, `ReelGalleryViewModel`, `ReelEditorViewModel`, `MusicSelectionDialogViewModel`, `MovieSwipeViewModel`, `TournamentSetupViewModel`, `TournamentMatchViewModel`, `TournamentResultViewModel`, `MatchListViewModel`, `MatchedUserDetailViewModel`, `ReelsFeedViewModel`, `UserProfileViewModel` (All inherit from `ViewModelBase`) |
+| **Services & Repos** | 20 | `INavigationService`, `IUserSession`, `IVideoStorageService`, `IWebScraperService`, `VideoIngestionService`, `WebScraperBackgroundService`, `IVideoProcessingService`, `IAudioLibraryService`, `ISwipeService`, `SwipeService`, `TournamentLogicService`, `IPersonalityMatchingService`, `IReelInteractionService`, `IEngagementProfileService`, `IRecommendationService`, `IClipPlaybackService`, `IReelRepository`, `IMusicTrackRepository`, `IPreferenceRepository`, `IUserProfileRepository`, `IUserReelInteractionRepository`, `IMovieRepository`|

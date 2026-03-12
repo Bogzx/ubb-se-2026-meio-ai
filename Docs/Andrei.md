@@ -25,8 +25,8 @@
 ### 3. Project Management Tasks (Max 30-Minutes Each)
 
 **Database & Models**
-*   **Task:** Create `ReelModel` Data Class
-    *   **Description:** Define the Model class mirroring the shared `Reel` table: `ReelId`, `MovieId`, `CreatorUserId`, `VideoUrl`, `ThumbnailUrl`, `Title`, `Caption`, `DurationSeconds`, `Source`, `CreatedAt`. This is the same shared model used by all reel features. Max 30 mins effort.
+*   **Task:** Use Shared `ReelModel` Data Class
+    *   **Description:** Use the `ReelModel` class created by **Alex**. It mirrors the shared `Reel` table. Max 0 mins effort.
 *   **Task:** Implement Scraped Reel Bulk Insert Method
     *   **Description:** Create a repository method that accepts a list of `ReelModel` objects (with `Source = 'scraped'`) and bulk inserts them into the shared `Reel` table. Avoid duplicates by checking existing `VideoUrl` values. Max 30 mins effort.
 *   **Task:** Implement Reel-by-Movie Query Method
