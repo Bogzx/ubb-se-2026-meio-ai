@@ -1,14 +1,13 @@
 ### 1. Formal Requirements
 *   **Requirement 1:** The system must present an authenticated user with a vertically-scrollable, full-screen "Reels" feed of short movie clips, similar to Instagram Reels or TikTok.
-*   **Requirement 2:** The system must auto-play the currently visible clip when a user lands on it, and pause it when the user scrolls away.
+*   **Requirement 2:** The system must auto-play the currently visible clip when a user lands on it.
 *   **Requirement 3:** The system must allow the user to "like" the currently displayed clip by tapping a heart icon, toggling the liked state on and off.
 *   **Requirement 4:** The system must allow the user to vertically swipe/scroll to navigate to the next or previous clip, with smooth snap-to-clip scrolling behavior.
-*   **Requirement 5:** The system must persistently record every user interaction (likes, watch durations per clip, scroll-aways) to the shared `UserReelInteraction` table, mapped to the authenticated user's ID and the specific reel.
+*   **Requirement 5:** The system must persistently record every user interaction (likes, watch durations per clip) to the shared `UserReelInteraction` table, mapped to the authenticated user's ID and the specific reel.
 *   **Requirement 6:** The system must build and maintain the user's `UserProfile` engagement metrics (total likes, total watch time, average watch time, clips viewed, like-to-view ratio).
 *   **Requirement 7:** The system must utilize a recommendation algorithm that consumes the user's engagement profile to serve the most relevant clips in the feed.
-*   **Requirement 8:** When a user likes a reel that is linked to a movie, the system must also boost that movie's score in the shared `UserMoviePreference` table.
-*   **Requirement 9:** The system must pre-fetch upcoming clips (buffering the next N clips) to ensure a seamless, lag-free scrolling experience.
-*   **Requirement 10:** The system must display contextual metadata overlaid on each clip (movie title, genre tag, clip duration) without obstructing the primary video content.
+*   **Requirement 8:** The system must pre-fetch upcoming clips (buffering the next N clips) to ensure a seamless, lag-free scrolling experience.
+*   **Requirement 9:** The system must display contextual metadata overlaid on each clip (movie title, genre tag, clip duration) without obstructing the primary video content.
 *   **Owner:** Tudor
 *   **Cross-Team Dependencies:**
     *   **Alex:** Alex owns the `Reel` table schema — Tudor reads from it to populate the feed. Uploaded reels are the primary feed content.
