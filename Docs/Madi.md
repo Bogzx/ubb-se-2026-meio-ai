@@ -4,6 +4,9 @@
 *   **Requirement 3:** The system must calculate a compatibility score between the current user's preference list and each other user's preference list by measuring overlap of top-scored movies.
 *   **Requirement 4:** The system must sort and display a top 10 list of the highest-matching users to the current user.
 *   **Requirement 5:** The system must allow the user to select and view the engagement details of any matched user from the top 10 list (reading from the matched user's `UserProfile`).
+*   **Requirement 6:** User flow = User enters this screen and see a list of 10 users that match his personality based on movies he liked. He can click on any user to see his details.(does not influence user preferences).
+*   **Requirement 7:** If the user closes the application while matches are being calculated or while viewing the match list, the in-memory match results are discarded. No persistent data is lost, and the user will simply need to request matches again upon reopening.
+
 *   **Owner:** Madi
 *   **Cross-Team Dependencies:**
     *   **Bogdan:** Bogdan owns the `UserMoviePreference` table and the shared `UserMoviePreferenceModel`. Madi reads the scores Bogdan (and others) write to compute preference overlap for matching.
