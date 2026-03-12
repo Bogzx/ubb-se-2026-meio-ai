@@ -1,4 +1,4 @@
-### 1. Formal Requirements
+### 1. Formal Requirements (Movie tinder)
 
 *   **Requirement 1:** The system must show the authenticated user a stack of movie cards (poster + title), sourced from the external `Movie` table, filtering out movies the user has already swiped on.
     *   **Verified by:** Unit test confirming the card queue only contains unswiped movies with correct poster/title.
