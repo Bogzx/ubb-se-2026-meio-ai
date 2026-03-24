@@ -1,50 +1,91 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.ApplicationModel;
-using Windows.ApplicationModel.Activation;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-using Microsoft.UI.Xaml.Shapes;
-
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
+using ubb_se_2026_meio_ai.Core.Database;
+using ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels;
+using ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels;
+using ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels;
+using ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels;
+using ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels;
+using ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels;
+using ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels;
 
 namespace ubb_se_2026_meio_ai
 {
     /// <summary>
-    /// Provides application-specific behavior to supplement the default Application class.
+    /// Application entry point. Configures the DI container and initialises the database.
     /// </summary>
     public partial class App : Application
     {
         /// <summary>
-        /// Initializes the singleton application object.  This is the first line of authored code
-        /// executed, and as such is the logical equivalent of main() or WinMain().
+        /// Global service provider — use <c>App.Services.GetRequiredService&lt;T&gt;()</c>
+        /// from Page code-behinds to resolve registered types.
         /// </summary>
+        public static IServiceProvider Services { get; private set; } = null!;
+
+        private Window? m_window;
+
         public App()
         {
             this.InitializeComponent();
+
+            // Build the DI container
+            var services = new ServiceCollection();
+            ConfigureServices(services);
+            Services = services.BuildServiceProvider();
         }
 
-        /// <summary>
-        /// Invoked when the application is launched.
-        /// </summary>
-        /// <param name="args">Details about the launch request and process.</param>
-        protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
+        protected override async void OnLaunched(LaunchActivatedEventArgs args)
         {
+            // Ensure shared tables exist before any feature code runs.
+            var dbInit = Services.GetRequiredService<DatabaseInitializer>();
+            try
+            {
+                await dbInit.CreateTablesIfNotExistAsync();
+            }
+            catch
+            {
+                // Database may not be available during development — continue anyway.
+            }
+
             m_window = new MainWindow();
             m_window.Activate();
         }
 
-        private Window? m_window;
+        /// <summary>
+        /// Register all shared infrastructure and per-feature ViewModels.
+        /// Feature developers: register your concrete service implementations here
+        /// when they are ready.
+        /// </summary>
+        private static void ConfigureServices(IServiceCollection services)
+        {
+            // ── Core / Database ──────────────────────────────────────────
+            services.AddSingleton<ISqlConnectionFactory, SqlConnectionFactory>();
+            services.AddTransient<DatabaseInitializer>();
+
+            // ── ViewModels (one per feature page) ────────────────────────
+            services.AddTransient<ReelsUploadViewModel>();
+            services.AddTransient<TrailerScrapingViewModel>();
+            services.AddTransient<ReelsEditingViewModel>();
+            services.AddTransient<MovieSwipeViewModel>();
+            services.AddTransient<MovieTournamentViewModel>();
+            services.AddTransient<PersonalityMatchViewModel>();
+            services.AddTransient<ReelsFeedViewModel>();
+
+            // ── Feature Services ─────────────────────────────────────────
+            // TODO (Alex):      services.AddTransient<IVideoStorageService, VideoStorageService>();
+            // TODO (Andrei):    services.AddTransient<IWebScraperService, WebScraperService>();
+            //                   services.AddTransient<IVideoIngestionService, VideoIngestionService>();
+            // TODO (Beatrice):  services.AddTransient<IVideoProcessingService, VideoProcessingService>();
+            //                   services.AddTransient<IAudioLibraryService, AudioLibraryService>();
+            // TODO (Bogdan):    services.AddTransient<ISwipeService, SwipeService>();
+            //                   services.AddTransient<IPreferenceRepository, PreferenceRepository>();
+            // TODO (Gabi):      services.AddTransient<ITournamentLogicService, TournamentLogicService>();
+            //                   services.AddTransient<IMovieTournamentRepository, MovieTournamentRepository>();
+            // TODO (Madi):      services.AddTransient<IPersonalityMatchingService, PersonalityMatchingService>();
+            // TODO (Tudor):     services.AddTransient<IReelInteractionService, ReelInteractionService>();
+            //                   services.AddTransient<IEngagementProfileService, EngagementProfileService>();
+            //                   services.AddTransient<IRecommendationService, RecommendationService>();
+            //                   services.AddTransient<IClipPlaybackService, ClipPlaybackService>();
+        }
     }
 }

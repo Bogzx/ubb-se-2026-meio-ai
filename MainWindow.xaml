@@ -7,9 +7,25 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Title="ubb-se-2026-meio-ai">
+    Title="Meio AI — Movie Reels Platform">
 
-    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-        <Button x:Name="myButton" Click="myButton_Click">Click Me</Button>
-    </StackPanel>
+    <NavigationView
+        x:Name="NavView"
+        IsBackButtonVisible="Collapsed"
+        IsSettingsVisible="False"
+        PaneDisplayMode="Left"
+        SelectionChanged="NavView_SelectionChanged">
+
+        <NavigationView.MenuItems>
+            <NavigationViewItem Content="Reels Upload"   Tag="ReelsUpload"       Icon="Upload" />
+            <NavigationViewItem Content="Trailer Scraping" Tag="TrailerScraping"  Icon="Globe" />
+            <NavigationViewItem Content="Reels Editing"  Tag="ReelsEditing"       Icon="Edit" />
+            <NavigationViewItem Content="Movie Swipe"    Tag="MovieSwipe"         Icon="Shuffle" />
+            <NavigationViewItem Content="Movie Tournament" Tag="MovieTournament"  Icon="FourBars" />
+            <NavigationViewItem Content="Personality Match" Tag="PersonalityMatch" Icon="People" />
+            <NavigationViewItem Content="Reels Feed"     Tag="ReelsFeed"          Icon="Video" />
+        </NavigationView.MenuItems>
+
+        <Frame x:Name="ContentFrame" />
+    </NavigationView>
 </Window>
