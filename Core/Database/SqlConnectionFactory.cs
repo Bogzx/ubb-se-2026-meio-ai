@@ -10,7 +10,7 @@ namespace ubb_se_2026_meio_ai.Core.Database
     {
         // TODO: Move to appsettings or a configuration file before release.
         private const string DefaultConnectionString =
-            "Server=localhost;Database=MeioAiDb;Trusted_Connection=True;TrustServerCertificate=True;";
+            "Server=BOGDANPC\\SQLEXPRESS;Database=MeioAiDb;Integrated Security=True;Encrypt=True;TrustServerCertificate=True;Application Name=MeioAi;";
 
         private readonly string _connectionString;
 

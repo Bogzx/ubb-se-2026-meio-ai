@@ -86,3 +86,7 @@ Desktop.ini
 *.swp
 *.bak
 *.tmp
+/.vs
+/.vs/ProjectEvaluation
+.vs/ProjectEvaluation/ubb-se-2026-meio-ai.projects.v9.bin
+/.vs
