@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml;
 using ubb_se_2026_meio_ai.Core.Database;
 using ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels;
 using ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels;
+using ubb_se_2026_meio_ai.Features.TrailerScraping.Services;
 using ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels;
 using ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels;
 using ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels;
@@ -16,6 +17,9 @@ namespace ubb_se_2026_meio_ai
     /// </summary>
     public partial class App : Application
     {
+        // ⚠️ PASTE YOUR YOUTUBE API KEY BELOW — CLEAR BEFORE COMMITTING TO GITHUB ⚠️
+        private const string YouTubeApiKey = "AIzaSyA035aofA1kYjUovkGKoS9qy8kCmTz-Ue4";
+
         /// <summary>
         /// Global service provider — use <c>App.Services.GetRequiredService&lt;T&gt;()</c>
         /// from Page code-behinds to resolve registered types.
@@ -52,6 +56,20 @@ namespace ubb_se_2026_meio_ai
         }
 
         /// <summary>
+        /// Resolves the YouTube API key: prefers the compiled-in constant,
+        /// falls back to the YOUTUBE_API_KEY environment variable.
+        /// </summary>
+        private static string ResolveYouTubeApiKey()
+        {
+            if (!string.IsNullOrWhiteSpace(YouTubeApiKey))
+            {
+                return YouTubeApiKey;
+            }
+
+            return Environment.GetEnvironmentVariable("YOUTUBE_API_KEY") ?? string.Empty;
+        }
+
+        /// <summary>
         /// Register all shared infrastructure and per-feature ViewModels.
         /// Feature developers: register your concrete service implementations here
         /// when they are ready.
@@ -61,6 +79,12 @@ namespace ubb_se_2026_meio_ai
             // ── Core / Database ──────────────────────────────────────────
             services.AddSingleton<ISqlConnectionFactory, SqlConnectionFactory>();
             services.AddTransient<DatabaseInitializer>();
+
+            // ── Andrei — Trailer Scraping Services ───────────────────────
+            string apiKey = ResolveYouTubeApiKey();
+            services.AddSingleton(new YouTubeScraperService(apiKey));
+            services.AddSingleton<IScrapeJobRepository, ScrapeJobRepository>();
+            services.AddTransient<VideoIngestionService>();
 
             // ── ViewModels (one per feature page) ────────────────────────
             services.AddTransient<ReelsUploadViewModel>();
@@ -73,8 +97,6 @@ namespace ubb_se_2026_meio_ai
 
             // ── Feature Services ─────────────────────────────────────────
             // TODO (Alex):      services.AddTransient<IVideoStorageService, VideoStorageService>();
-            // TODO (Andrei):    services.AddTransient<IWebScraperService, WebScraperService>();
-            //                   services.AddTransient<IVideoIngestionService, VideoIngestionService>();
             // TODO (Beatrice):  services.AddTransient<IVideoProcessingService, VideoProcessingService>();
             //                   services.AddTransient<IAudioLibraryService, AudioLibraryService>();
             // TODO (Bogdan):    services.AddTransient<ISwipeService, SwipeService>();

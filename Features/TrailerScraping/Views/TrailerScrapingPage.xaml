@@ -6,18 +6,299 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    Loaded="Page_Loaded">
 
-    <Grid Padding="32">
-        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="12">
-            <TextBlock Text="{x:Bind ViewModel.PageTitle, Mode=OneWay}"
-                       Style="{StaticResource TitleTextBlockStyle}" />
-            <TextBlock Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}"
-                       Style="{StaticResource SubtitleTextBlockStyle}"
-                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-            <TextBlock Text="Owner: Andrei"
-                       Style="{StaticResource CaptionTextBlockStyle}"
-                       Foreground="{ThemeResource SystemControlForegroundBaseMediumLowBrush}" />
-        </StackPanel>
+    <Page.Resources>
+        <!-- Dark card style -->
+        <Style x:Key="DarkCardStyle" TargetType="Border">
+            <Setter Property="Background" Value="#1A1E2E"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="20,16"/>
+        </Style>
+        <!-- Stat card style -->
+        <Style x:Key="StatCardStyle" TargetType="Border">
+            <Setter Property="Background" Value="#111827"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="20,16"/>
+            <Setter Property="BorderBrush" Value="#1E293B"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="MinWidth" Value="140"/>
+        </Style>
+        <!-- Stat number style -->
+        <Style x:Key="StatNumberStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="32"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <!-- Stat label style -->
+        <Style x:Key="StatLabelStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#94A3B8"/>
+            <Setter Property="Margin" Value="0,4,0,0"/>
+        </Style>
+        <!-- Preset button style -->
+        <Style x:Key="PresetButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#1E293B"/>
+            <Setter Property="Foreground" Value="#94A3B8"/>
+            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="Padding" Value="14,6"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+        </Style>
+    </Page.Resources>
+
+    <Grid Background="#0B0F1A" Padding="24">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="20" MaxWidth="1200">
+
+                <!-- ═══ HEADER ═══ -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                        <Border Background="#0EA5E9" CornerRadius="8" Width="40" Height="40">
+                            <FontIcon Glyph="&#xE774;" FontSize="18" Foreground="White"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="Trailer Scraper" FontSize="20" FontWeight="Bold" Foreground="White"/>
+                            <TextBlock Text="Admin Dashboard — Andrei" FontSize="12" Foreground="#64748B"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Status indicator -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <Ellipse x:Name="StatusDot" Width="10" Height="10" Fill="#22C55E"/>
+                        <TextBlock Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" Foreground="#94A3B8" FontSize="14"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- ═══ STATS BAR ═══ -->
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <!-- Movies in DB -->
+                    <Border Style="{StaticResource StatCardStyle}">
+                        <StackPanel>
+                            <FontIcon Glyph="&#xE8A4;" Foreground="#0EA5E9" FontSize="18" Margin="0,0,0,8"/>
+                            <TextBlock Text="{x:Bind ViewModel.TotalMovies, Mode=OneWay}" Style="{StaticResource StatNumberStyle}"/>
+                            <TextBlock Text="Movies in DB" Style="{StaticResource StatLabelStyle}"/>
+                        </StackPanel>
+                    </Border>
+                    <!-- Total Reels -->
+                    <Border Style="{StaticResource StatCardStyle}">
+                        <StackPanel>
+                            <FontIcon Glyph="&#xE714;" Foreground="#A855F7" FontSize="18" Margin="0,0,0,8"/>
+                            <TextBlock Text="{x:Bind ViewModel.TotalReels, Mode=OneWay}" Style="{StaticResource StatNumberStyle}"/>
+                            <TextBlock Text="Total Reels" Style="{StaticResource StatLabelStyle}"/>
+                        </StackPanel>
+                    </Border>
+                    <!-- Total Jobs -->
+                    <Border Style="{StaticResource StatCardStyle}">
+                        <StackPanel>
+                            <FontIcon Glyph="&#xE9D5;" Foreground="#06B6D4" FontSize="18" Margin="0,0,0,8"/>
+                            <TextBlock Text="{x:Bind ViewModel.TotalJobs, Mode=OneWay}" Style="{StaticResource StatNumberStyle}"/>
+                            <TextBlock Text="Total Jobs" Style="{StaticResource StatLabelStyle}"/>
+                        </StackPanel>
+                    </Border>
+                    <!-- Running -->
+                    <Border Style="{StaticResource StatCardStyle}">
+                        <StackPanel>
+                            <FontIcon Glyph="&#xE768;" Foreground="#F59E0B" FontSize="18" Margin="0,0,0,8"/>
+                            <TextBlock Text="{x:Bind ViewModel.RunningJobs, Mode=OneWay}" Style="{StaticResource StatNumberStyle}"/>
+                            <TextBlock Text="Running" Style="{StaticResource StatLabelStyle}"/>
+                        </StackPanel>
+                    </Border>
+                    <!-- Completed -->
+                    <Border Style="{StaticResource StatCardStyle}">
+                        <StackPanel>
+                            <FontIcon Glyph="&#xE73E;" Foreground="#22C55E" FontSize="18" Margin="0,0,0,8"/>
+                            <TextBlock Text="{x:Bind ViewModel.CompletedJobs, Mode=OneWay}" Style="{StaticResource StatNumberStyle}"/>
+                            <TextBlock Text="Completed" Style="{StaticResource StatLabelStyle}"/>
+                        </StackPanel>
+                    </Border>
+                    <!-- Failed -->
+                    <Border Style="{StaticResource StatCardStyle}">
+                        <StackPanel>
+                            <FontIcon Glyph="&#xEA39;" Foreground="#EF4444" FontSize="18" Margin="0,0,0,8"/>
+                            <TextBlock Text="{x:Bind ViewModel.FailedJobs, Mode=OneWay}" Style="{StaticResource StatNumberStyle}"/>
+                            <TextBlock Text="Failed" Style="{StaticResource StatLabelStyle}"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- ═══ SCRAPER CARD ═══ -->
+                <Border Style="{StaticResource DarkCardStyle}" BorderBrush="#1E293B" BorderThickness="1">
+                    <StackPanel Spacing="16">
+
+                        <!-- Title row -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                                <TextBlock Text="Search YouTube for New Movies" FontSize="16" FontWeight="SemiBold" Foreground="White"/>
+                                <Border Background="#065F46" CornerRadius="4" Padding="8,2">
+                                    <TextBlock Text="SCRAPER" Foreground="#34D399" FontSize="10" FontWeight="Bold"/>
+                                </Border>
+                            </StackPanel>
+
+                            <Button Grid.Column="1" Command="{x:Bind ViewModel.RefreshCommand}" Background="Transparent"
+                                    BorderBrush="#334155" CornerRadius="8" Padding="12,8">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE72C;" FontSize="14" Foreground="#94A3B8"/>
+                                    <TextBlock Text="Refresh" Foreground="#94A3B8" FontSize="13"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <TextBlock Foreground="#64748B" FontSize="12" TextWrapping="Wrap"
+                                   Text="Type a genre, keyword, or year — the scraper finds real trailers on YouTube, adds each one as a new movie in the database, and queues a reel for the processing team."/>
+
+                        <!-- Search label -->
+                        <StackPanel Spacing="4">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock Text="YouTube Search Query" Foreground="#94A3B8" FontSize="13" FontWeight="SemiBold"/>
+                                <TextBlock Text="— what to search on YouTube (new movies will be added to the DB)" Foreground="#475569" FontSize="12"/>
+                            </StackPanel>
+
+                            <!-- Search row -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBox Grid.Column="0" Text="{x:Bind ViewModel.SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         PlaceholderText="e.g. horror movie 2024 official trailer"
+                                         Background="#111827" Foreground="White" BorderBrush="#334155"
+                                         CornerRadius="8" Padding="12,10" Margin="0,0,8,0"/>
+
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,0,8,0">
+                                    <TextBlock Text="Max results" Foreground="#94A3B8" VerticalAlignment="Center" FontSize="13"/>
+                                    <ComboBox x:Name="MaxResultsCombo"
+                                              SelectedItem="{x:Bind ViewModel.MaxResults, Mode=TwoWay}"
+                                              Background="#111827" Foreground="White" BorderBrush="#334155"
+                                              CornerRadius="8" MinWidth="70"/>
+                                </StackPanel>
+
+                                <Button Grid.Column="3" Command="{x:Bind ViewModel.StartScrapeCommand}"
+                                        Background="#0EA5E9" Foreground="White" CornerRadius="8" Padding="16,10">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE768;" FontSize="14" Foreground="White"/>
+                                        <TextBlock Text="Start Scrape" FontWeight="SemiBold" FontSize="13"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- Quick presets -->
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Quick presets:" Foreground="#64748B" FontSize="12"/>
+                            <StackPanel Orientation="Horizontal" Spacing="0">
+                                <Button Style="{StaticResource PresetButtonStyle}" Content="action movie 2024 official trailer"
+                                        Click="Preset_Click" Tag="action movie 2024 official trailer"/>
+                                <Button Style="{StaticResource PresetButtonStyle}" Content="horror movie 2024 official trailer"
+                                        Click="Preset_Click" Tag="horror movie 2024 official trailer"/>
+                                <Button Style="{StaticResource PresetButtonStyle}" Content="thriller 2025 official trailer"
+                                        Click="Preset_Click" Tag="thriller 2025 official trailer"/>
+                                <Button Style="{StaticResource PresetButtonStyle}" Content="comedy movie 2024 official trailer"
+                                        Click="Preset_Click" Tag="comedy movie 2024 official trailer"/>
+                                <Button Style="{StaticResource PresetButtonStyle}" Content="sci-fi movie 2025 official trailer"
+                                        Click="Preset_Click" Tag="sci-fi movie 2025 official trailer"/>
+                                <Button Style="{StaticResource PresetButtonStyle}" Content="romance movie 2024 trailer"
+                                        Click="Preset_Click" Tag="romance movie 2024 trailer"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- What this does -->
+                        <Border Background="#0D1117" CornerRadius="8" Padding="16,12" BorderBrush="#1E293B" BorderThickness="1">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="WHAT THIS DOES" Foreground="#475569" FontSize="11" FontWeight="Bold" CharacterSpacing="80"/>
+                                <StackPanel Orientation="Horizontal" Spacing="24" Margin="0,6,0,0">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <Border Background="#164E63" CornerRadius="4" Padding="6,2">
+                                            <TextBlock Text="01" Foreground="#22D3EE" FontSize="11" FontWeight="Bold"/>
+                                        </Border>
+                                        <StackPanel>
+                                            <TextBlock Text="Search YouTube" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
+                                            <TextBlock Text="Finds real trailers matching your query via YouTube Data API v3" Foreground="#64748B" FontSize="11" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <Border Background="#164E63" CornerRadius="4" Padding="6,2">
+                                            <TextBlock Text="02" Foreground="#22D3EE" FontSize="11" FontWeight="Bold"/>
+                                        </Border>
+                                        <StackPanel>
+                                            <TextBlock Text="Create Movies" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
+                                            <TextBlock Text="Each trailer gets a new movie row in the DB (skips duplicates)" Foreground="#64748B" FontSize="11" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <Border Background="#164E63" CornerRadius="4" Padding="6,2">
+                                            <TextBlock Text="03" Foreground="#22D3EE" FontSize="11" FontWeight="Bold"/>
+                                        </Border>
+                                        <StackPanel>
+                                            <TextBlock Text="Queue Reels" Foreground="White" FontSize="12" FontWeight="SemiBold"/>
+                                            <TextBlock Text="Stores reel as scraped with YouTube URL for the processing team" Foreground="#64748B" FontSize="11" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- ═══ LOGS PANEL ═══ -->
+                <Border Style="{StaticResource DarkCardStyle}" BorderBrush="#1E293B" BorderThickness="1">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Scrape Logs" FontSize="16" FontWeight="SemiBold" Foreground="White"/>
+
+                        <ListView ItemsSource="{x:Bind ViewModel.LogEntries, Mode=OneWay}"
+                                  MaxHeight="300" SelectionMode="None"
+                                  Background="Transparent">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Padding="4,6" ColumnSpacing="10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Level badge -->
+                                        <Border Grid.Column="0" CornerRadius="4" Padding="8,2" MinWidth="50" HorizontalAlignment="Center"
+                                                Background="#1E293B">
+                                            <TextBlock Text="{Binding Level}" FontSize="11" FontWeight="Bold"
+                                                       Foreground="#94A3B8" HorizontalAlignment="Center"/>
+                                        </Border>
+
+                                        <!-- Timestamp -->
+                                        <TextBlock Grid.Column="1" Text="{Binding Timestamp}" FontSize="11"
+                                                   Foreground="#475569" VerticalAlignment="Center"/>
+
+                                        <!-- Message -->
+                                        <TextBlock Grid.Column="2" Text="{Binding Message}" FontSize="12"
+                                                   Foreground="#CBD5E1" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+
+                        <!-- Empty state -->
+                        <TextBlock x:Name="EmptyLogsText" Text="No log entries yet. Start a scrape job to see logs here."
+                                   Foreground="#475569" FontSize="12" FontStyle="Italic"/>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </Page>

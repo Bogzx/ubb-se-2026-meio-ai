@@ -18,6 +18,53 @@ namespace ubb_se_2026_meio_ai.Core.Database
         public async Task CreateTablesIfNotExistAsync()
         {
             const string sql = @"
+                -- Movie (external table — created here for standalone dev)
+                IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Movie')
+                BEGIN
+                    CREATE TABLE Movie
+                    (
+                        MovieId         INT             IDENTITY(1,1) PRIMARY KEY,
+                        Title           NVARCHAR(256)   NOT NULL,
+                        PosterUrl       NVARCHAR(1024)  NOT NULL DEFAULT '',
+                        PrimaryGenre    NVARCHAR(128)   NOT NULL DEFAULT '',
+                        Description     NVARCHAR(MAX)   NULL,
+                        ReleaseYear     INT             NOT NULL DEFAULT 0,
+                        AverageRating   FLOAT           NOT NULL DEFAULT 0
+                    );
+                END
+
+                -- ScrapeJob (tracks each scraping job)
+                IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ScrapeJob')
+                BEGIN
+                    CREATE TABLE ScrapeJob
+                    (
+                        ScrapeJobId     INT             IDENTITY(1,1) PRIMARY KEY,
+                        SearchQuery     NVARCHAR(512)   NOT NULL,
+                        MaxResults      INT             NOT NULL DEFAULT 5,
+                        Status          NVARCHAR(64)    NOT NULL DEFAULT 'pending',
+                        MoviesFound     INT             NOT NULL DEFAULT 0,
+                        ReelsCreated    INT             NOT NULL DEFAULT 0,
+                        StartedAt       DATETIME2       NOT NULL DEFAULT SYSUTCDATETIME(),
+                        CompletedAt     DATETIME2       NULL,
+                        ErrorMessage    NVARCHAR(MAX)   NULL
+                    );
+                END
+
+                -- ScrapeJobLog (per-job log entries)
+                IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ScrapeJobLog')
+                BEGIN
+                    CREATE TABLE ScrapeJobLog
+                    (
+                        LogId           BIGINT          IDENTITY(1,1) PRIMARY KEY,
+                        ScrapeJobId     INT             NOT NULL,
+                        Level           NVARCHAR(16)    NOT NULL DEFAULT 'Info',
+                        Message         NVARCHAR(MAX)   NOT NULL,
+                        Timestamp       DATETIME2       NOT NULL DEFAULT SYSUTCDATETIME(),
+                        CONSTRAINT FK_ScrapeJobLog_ScrapeJob
+                            FOREIGN KEY (ScrapeJobId) REFERENCES ScrapeJob(ScrapeJobId)
+                    );
+                END
+
                 -- MusicTrack (no FK dependencies)
                 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'MusicTrack')
                 BEGIN
