@@ -117,19 +117,21 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels
             // Advance immediately for responsive UI
             AdvanceToNextCard();
 
-            // Persist in the background — do NOT block the UI
+            // Start persistence but don't block showing the next card.
+            Task persistTask = _swipeService.UpdatePreferenceScoreAsync(DefaultUserId, swipedCard.MovieId, isLiked);
+
+            // Refill as soon as possible so the next card appears even if DB write is slow.
+            await TryRefillQueueAsync(swipedCard.MovieId);
+
             try
             {
-                await _swipeService.UpdatePreferenceScoreAsync(DefaultUserId, swipedCard.MovieId, isLiked);
+                await persistTask;
             }
             catch (Exception)
             {
                 // Preference update failed — the swipe is still consumed to avoid
                 // showing the same card again. The score will be missing but no crash.
             }
-
-            // Auto-refill when running low
-            await TryRefillQueueAsync();
         }
 
         /// <summary>
@@ -142,6 +144,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels
             {
                 CurrentCard = CardQueue[0];
                 CardQueue.RemoveAt(0);
+                IsAllCaughtUp = false;
             }
             else
             {
@@ -155,7 +158,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels
         /// Fetches more cards when the queue drops to ≤ <see cref="RefillThreshold"/>.
         /// Prevents concurrent refill requests.
         /// </summary>
-        private async Task TryRefillQueueAsync()
+        private async Task TryRefillQueueAsync(int? recentlySwipedMovieId = null)
         {
             // Guard: don't refill if already refilling or above threshold
             if (_isRefilling || CardQueue.Count > RefillThreshold)
@@ -168,9 +171,27 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels
             try
             {
                 var newMovies = await _swipeService.GetUnswipedMoviesAsync(DefaultUserId, BufferSize);
+
+                var existingIds = new HashSet<int>(CardQueue.Select(m => m.MovieId));
+                if (CurrentCard != null)
+                {
+                    existingIds.Add(CurrentCard.MovieId);
+                }
+
                 foreach (var movie in newMovies)
                 {
+                    if (recentlySwipedMovieId.HasValue && movie.MovieId == recentlySwipedMovieId.Value)
+                    {
+                        continue;
+                    }
+
+                    if (existingIds.Contains(movie.MovieId))
+                    {
+                        continue;
+                    }
+
                     CardQueue.Add(movie);
+                    existingIds.Add(movie.MovieId);
                 }
 
                 // If CurrentCard was set to null because queue was empty,

@@ -16,7 +16,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Views
     /// Handles drag gestures, overlay opacity, and card fly-off animations.
     /// Owner: Bogdan
     /// </summary>
-    public sealed partial class MovieSwipePage : Page
+    public sealed partial class MovieSwipeView : Page
     {
         /// <summary>Fraction of card width the drag must exceed to confirm a swipe.</summary>
         private const double SwipeThresholdFraction = 0.30;
@@ -33,7 +33,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Views
 
         public MovieSwipeViewModel ViewModel { get; }
 
-        public MovieSwipePage()
+        public MovieSwipeView()
         {
             ViewModel = App.Services.GetRequiredService<MovieSwipeViewModel>();
             this.InitializeComponent();
@@ -65,7 +65,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Views
             if (card != null)
             {
                 TitleText.Text = card.Title;
-                GenreText.Text = card.Genre;
+                GenreText.Text = card.PrimaryGenre;
 
                 if (!string.IsNullOrEmpty(card.PosterUrl))
                 {
@@ -159,8 +159,10 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Views
                 return;
             }
 
-            MovieCard.ReleasePointerCapture(e.Pointer);
+            // Finalize first; releasing capture can raise PointerCaptureLost.
+            // If we released first, capture-lost could cancel a valid swipe.
             FinalizeSwipe();
+            MovieCard.ReleasePointerCapture(e.Pointer);
             e.Handled = true;
         }
 

@@ -81,6 +81,7 @@ namespace ubb_se_2026_meio_ai
             // ── Bogdan (Movie Swipe) ──
             services.AddTransient<ISwipeService, SwipeService>();
             services.AddTransient<IPreferenceRepository, PreferenceRepository>();
+            services.AddTransient<IMovieCardFeedService, MovieCardFeedService>();
             // TODO (Gabi):      services.AddTransient<ITournamentLogicService, TournamentLogicService>();
             //                   services.AddTransient<IMovieTournamentRepository, MovieTournamentRepository>();
             // TODO (Madi):      services.AddTransient<IPersonalityMatchingService, PersonalityMatchingService>();

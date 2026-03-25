@@ -22,7 +22,7 @@ namespace ubb_se_2026_meio_ai
             ["ReelsUpload"]      = typeof(ReelsUploadPage),
             ["TrailerScraping"]  = typeof(TrailerScrapingPage),
             ["ReelsEditing"]     = typeof(ReelsEditingPage),
-            ["MovieSwipe"]       = typeof(MovieSwipePage),
+            ["MovieSwipe"]       = typeof(MovieSwipeView),
             ["MovieTournament"]  = typeof(MovieTournamentPage),
             ["PersonalityMatch"] = typeof(PersonalityMatchPage),
             ["ReelsFeed"]        = typeof(ReelsFeedPage),

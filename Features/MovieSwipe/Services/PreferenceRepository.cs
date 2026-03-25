@@ -78,7 +78,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
             // Reads from the external Movie table, filtering out movies
             // that already have a UserMoviePreference row for this user.
             const string sql = @"
-                SELECT TOP (@Count) m.MovieId, m.Title, m.PosterUrl
+                SELECT TOP (@Count) m.MovieId, m.Title, m.PosterUrl, m.PrimaryGenre
                 FROM   Movie m
                 LEFT JOIN UserMoviePreference ump
                     ON ump.MovieId = m.MovieId AND ump.UserId = @UserId
@@ -100,10 +100,74 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
                     MovieId = reader.GetInt32(0),
                     Title = reader.GetString(1),
                     PosterUrl = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
+                    PrimaryGenre = reader.IsDBNull(3) ? string.Empty : reader.GetString(3),
                 });
             }
 
             return results;
+        }
+
+        /// <inheritdoc />
+        public async Task<Dictionary<int, List<UserMoviePreferenceModel>>> GetAllPreferencesExceptUserAsync(int excludeUserId)
+        {
+            const string sql = @"
+                SELECT UserMoviePreferenceId, UserId, MovieId, Score, LastModified
+                FROM   UserMoviePreference
+                WHERE  UserId <> @ExcludeUserId;";
+
+            var result = new Dictionary<int, List<UserMoviePreferenceModel>>();
+
+            await using SqlConnection connection = await _connectionFactory.CreateConnectionAsync();
+            await using SqlCommand command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@ExcludeUserId", excludeUserId);
+
+            await using SqlDataReader reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var pref = new UserMoviePreferenceModel
+                {
+                    UserMoviePreferenceId = reader.GetInt32(0),
+                    UserId = reader.GetInt32(1),
+                    MovieId = reader.GetInt32(2),
+                    Score = reader.GetDouble(3),
+                    LastModified = reader.GetDateTime(4),
+                };
+
+                if (!result.ContainsKey(pref.UserId))
+                {
+                    result[pref.UserId] = new List<UserMoviePreferenceModel>();
+                }
+
+                result[pref.UserId].Add(pref);
+            }
+
+            return result;
+        }
+
+        /// <inheritdoc />
+        public async Task<List<int>> GetUnswipedMovieIdsAsync(int userId)
+        {
+            // Returns MovieIds from the Movie table that the user has NOT swiped on.
+            const string sql = @"
+                SELECT m.MovieId
+                FROM   Movie m
+                LEFT JOIN UserMoviePreference ump
+                    ON ump.MovieId = m.MovieId AND ump.UserId = @UserId
+                WHERE  ump.UserMoviePreferenceId IS NULL;";
+
+            var ids = new List<int>();
+
+            await using SqlConnection connection = await _connectionFactory.CreateConnectionAsync();
+            await using SqlCommand command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@UserId", userId);
+
+            await using SqlDataReader reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                ids.Add(reader.GetInt32(0));
+            }
+
+            return ids;
         }
     }
 }
