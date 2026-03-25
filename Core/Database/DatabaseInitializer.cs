@@ -17,7 +17,35 @@ namespace ubb_se_2026_meio_ai.Core.Database
 
         public async Task CreateTablesIfNotExistAsync()
         {
+            // 1. Ensure the MeioAiDb database exists on the server
+            await EnsureDatabaseExistsAsync();
+
+            // 2. Create the tables in the MeioAiDb database
             const string sql = @"
+                -- Movie (external table mock)
+                IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Movie')
+                BEGIN
+                    CREATE TABLE Movie
+                    (
+                        MovieId         INT             IDENTITY(1,1) PRIMARY KEY,
+                        Title           NVARCHAR(256)   NOT NULL,
+                        PosterUrl       NVARCHAR(1024)  NULL,
+                        ReleaseYear     INT             NULL
+                    );
+
+                    -- Insert 8 mock movies
+                    INSERT INTO Movie (Title, PosterUrl, ReleaseYear) 
+                    VALUES 
+                    ('The Matrix', 'https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg', 1999),
+                    ('Inception', 'https://image.tmdb.org/t/p/w500/oYuLEt3zVCKq57qu2F8dT7NIa6f.jpg', 2010),
+                    ('Interstellar', 'https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg', 2014),
+                    ('The Dark Knight', 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911O7UeX07rlhml.jpg', 2008),
+                    ('Pulp Fiction', 'https://image.tmdb.org/t/p/w500/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg', 1994),
+                    ('Fight Club', 'https://image.tmdb.org/t/p/w500/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg', 1999),
+                    ('Forrest Gump', 'https://image.tmdb.org/t/p/w500/arw2vcBveWOVZr6pxd9XTd1TdQa.jpg', 1994),
+                    ('The Shawshank Redemption', 'https://image.tmdb.org/t/p/w500/9cjIGRQL7DPvQMSKqJMtBBbVVka.jpg', 1994);
+                END
+
                 -- MusicTrack (no FK dependencies)
                 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'MusicTrack')
                 BEGIN
@@ -67,6 +95,22 @@ namespace ubb_se_2026_meio_ai.Core.Database
                         ChangeFromPreviousValue INT         NULL,
                         CONSTRAINT UQ_UserMovie UNIQUE (UserId, MovieId)
                     );
+
+                    -- Insert 8 mock preferences for the tournament (UserId = 1)
+                    -- We check for UserId 1 to avoid duplicates if the table existed but was empty
+                    IF NOT EXISTS (SELECT * FROM UserMoviePreference WHERE UserId = 1)
+                    BEGIN
+                        INSERT INTO UserMoviePreference (UserId, MovieId, Score, ChangeFromPreviousValue)
+                        VALUES 
+                        (1, 1, 8.5, 1),
+                        (1, 2, 9.0, 1),
+                        (1, 3, 7.5, 1),
+                        (1, 4, 8.0, 1),
+                        (1, 5, 9.5, 1),
+                        (1, 6, 8.5, 1),
+                        (1, 7, 7.0, 1),
+                        (1, 8, 9.2, 1);
+                    END
                 END
 
                 -- UserProfile (references User — external)
@@ -83,6 +127,9 @@ namespace ubb_se_2026_meio_ai.Core.Database
                         LikeToViewRatio     FLOAT       NOT NULL DEFAULT 0,
                         LastUpdated         DATETIME2   NOT NULL DEFAULT SYSUTCDATETIME()
                     );
+
+                    -- Seed UserId = 1
+                    INSERT INTO UserProfile (UserId) VALUES (1);
                 END
 
                 -- UserReelInteraction (references User and Reel)
@@ -106,6 +153,21 @@ namespace ubb_se_2026_meio_ai.Core.Database
 
             await using SqlConnection connection = await _connectionFactory.CreateConnectionAsync();
             await using SqlCommand command = new SqlCommand(sql, connection);
+            await command.ExecuteNonQueryAsync();
+        }
+
+        private async Task EnsureDatabaseExistsAsync()
+        {
+            const string sql = @"
+                IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'MeioAiDb')
+                BEGIN
+                    CREATE DATABASE [MeioAiDb];
+                END
+            ";
+
+            // We must use the 'master' database connection to create a new database
+            await using SqlConnection masterConnection = await _connectionFactory.CreateMasterConnectionAsync();
+            await using SqlCommand command = new SqlCommand(sql, masterConnection);
             await command.ExecuteNonQueryAsync();
         }
     }

@@ -8,6 +8,7 @@ using ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels;
 using ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels;
 using ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels;
 using ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels;
+using ubb_se_2026_meio_ai.Features.MovieTournament.Services;
 
 namespace ubb_se_2026_meio_ai
 {
@@ -79,8 +80,9 @@ namespace ubb_se_2026_meio_ai
             //                   services.AddTransient<IAudioLibraryService, AudioLibraryService>();
             // TODO (Bogdan):    services.AddTransient<ISwipeService, SwipeService>();
             //                   services.AddTransient<IPreferenceRepository, PreferenceRepository>();
-            // TODO (Gabi):      services.AddTransient<ITournamentLogicService, TournamentLogicService>();
-            //                   services.AddTransient<IMovieTournamentRepository, MovieTournamentRepository>();
+            // TODO (Gabi):
+            services.AddTransient<ITournamentLogicService, TournamentLogicService>();
+            services.AddTransient<IMovieTournamentRepository, MovieTournamentRepository>();
             // TODO (Madi):      services.AddTransient<IPersonalityMatchingService, PersonalityMatchingService>();
             // TODO (Tudor):     services.AddTransient<IReelInteractionService, ReelInteractionService>();
             //                   services.AddTransient<IEngagementProfileService, EngagementProfileService>();
