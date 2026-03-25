@@ -32,8 +32,8 @@ namespace ubb_se_2026_meio_ai
         {
             this.InitializeComponent();
 
-            // Navigate to the first page on startup
-            ContentFrame.Navigate(typeof(ReelsFeedPage));
+            // Navigate to an empty page on startup so reels are opt-in
+            ContentFrame.Navigate(typeof(Page));
         }
 
         private void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)

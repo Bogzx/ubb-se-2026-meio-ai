@@ -1,4 +1,8 @@
+using System;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
+using ubb_se_2026_meio_ai.Core.Models;
+using ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
 
 namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
 {
@@ -8,10 +12,106 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
     /// </summary>
     public partial class ReelsFeedViewModel : ObservableObject
     {
+        private readonly IRecommendationService _recommendationService;
+        private readonly IClipPlaybackService _clipPlaybackService;
+
         [ObservableProperty]
         private string _pageTitle = "Reels Feed";
 
         [ObservableProperty]
         private string _statusMessage = "Scroll to discover reels.";
+
+        [ObservableProperty]
+        private bool _isLoading;
+
+        [ObservableProperty]
+        private string? _errorMessage;
+
+        [ObservableProperty]
+        private ReelModel? _currentReel;
+
+        public System.Collections.ObjectModel.ObservableCollection<ReelModel> ReelQueue { get; } = new();
+
+        public ReelsFeedViewModel(IRecommendationService recommendationService, IClipPlaybackService clipPlaybackService)
+        {
+            _recommendationService = recommendationService;
+            _clipPlaybackService = clipPlaybackService;
+        }
+
+        [CommunityToolkit.Mvvm.Input.RelayCommand]
+        public async Task LoadFeedAsync()
+        {
+            IsLoading = true;
+            ErrorMessage = null;
+            ReelQueue.Clear();
+
+            try
+            {
+                // Passing UserId=1 as mock authenticated user since MVP doesn't have auth wired locally.
+                var reels = await _recommendationService.GetRecommendedReelsAsync(1, 10);
+                foreach (var r in reels)
+                {
+                    ReelQueue.Add(r);
+                }
+
+                if (ReelQueue.Count > 0)
+                {
+                    CurrentReel = ReelQueue[0];
+                    StatusMessage = string.Empty;
+                    // Trigger prefetch for the next few
+                    PrefetchUpcoming(0);
+                }
+                else
+                {
+                    StatusMessage = "No clips found. Feed empty.";
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error loading feed: {ex.Message}";
+                StatusMessage = string.Empty;
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        private void PrefetchUpcoming(int currentIndex)
+        {
+            for (int i = 1; i <= 3; i++)
+            {
+                if (currentIndex + i < ReelQueue.Count)
+                {
+                    var nextReel = ReelQueue[currentIndex + i];
+                    if (!string.IsNullOrEmpty(nextReel.VideoUrl))
+                    {
+                        _ = _clipPlaybackService.PrefetchClipAsync(nextReel.VideoUrl);
+                    }
+                }
+            }
+        }
+
+        [CommunityToolkit.Mvvm.Input.RelayCommand]
+        public void ScrollNext(ReelModel newCurrent)
+        {
+            CurrentReel = newCurrent;
+            var index = ReelQueue.IndexOf(newCurrent);
+            if (index >= 0)
+            {
+                PrefetchUpcoming(index);
+                if (index > ReelQueue.Count - 3)
+                {
+                    // Trigger a fetch internally if we had infinite scrolling, 
+                    // MVP fetches 10 and stops for simplicity
+                }
+            }
+        }
+
+        [CommunityToolkit.Mvvm.Input.RelayCommand]
+        public void ScrollPrevious(ReelModel newCurrent)
+        {
+            CurrentReel = newCurrent;
+        }
     }
 }

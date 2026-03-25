@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
 using Microsoft.UI.Xaml;
 using ubb_se_2026_meio_ai.Core.Database;
 using ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels;
@@ -82,10 +83,10 @@ namespace ubb_se_2026_meio_ai
             // TODO (Gabi):      services.AddTransient<ITournamentLogicService, TournamentLogicService>();
             //                   services.AddTransient<IMovieTournamentRepository, MovieTournamentRepository>();
             // TODO (Madi):      services.AddTransient<IPersonalityMatchingService, PersonalityMatchingService>();
-            // TODO (Tudor):     services.AddTransient<IReelInteractionService, ReelInteractionService>();
-            //                   services.AddTransient<IEngagementProfileService, EngagementProfileService>();
-            //                   services.AddTransient<IRecommendationService, RecommendationService>();
-            //                   services.AddTransient<IClipPlaybackService, ClipPlaybackService>();
+            // TODO (Tudor):     // services.AddTransient<IReelInteractionService, ReelInteractionService>();
+            //                   // services.AddTransient<IEngagementProfileService, EngagementProfileService>();
+                                 services.AddTransient<IRecommendationService, ubb_se_2026_meio_ai.Features.ReelsFeed.Services.RecommendationService>();
+                                 services.AddTransient<IClipPlaybackService, ubb_se_2026_meio_ai.Features.ReelsFeed.Services.ClipPlaybackService>();
         }
     }
 }
