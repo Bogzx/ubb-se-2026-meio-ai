@@ -507,7 +507,7 @@ namespace ubb_se_2026_meio_ai.Core.Database
             const string sql = @"
                 IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'andrei')
                 BEGIN
-                    CREATE DATABASE [andrei];
+                    CREATE DATABASE [MeioAiDb];
                 END
             ";
 
