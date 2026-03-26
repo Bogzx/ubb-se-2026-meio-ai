@@ -22,7 +22,7 @@ namespace ubb_se_2026_meio_ai.Core.Database
         {
             // 1. Ensure the MOVIE database exists on the server
             await EnsureDatabaseExistsAsync();
-            
+
             // 2. Create the tables in the MeioAiDb database
             const string sql = @"
                 -- Movie (shared table — created here so JOINs work)
@@ -36,6 +36,7 @@ namespace ubb_se_2026_meio_ai.Core.Database
                         PrimaryGenre    NVARCHAR(128)   NULL,
                         Description     NVARCHAR(MAX)   NULL,
                         ReleaseYear     INT             NULL,
+                        Synopsis        NVARCHAR(MAX)   NULL,
                         AverageRating   FLOAT           NULL
                     );
                 END
@@ -123,7 +124,7 @@ namespace ubb_se_2026_meio_ai.Core.Database
                         CONSTRAINT UQ_UserMovie UNIQUE (UserId, MovieId)
                     );
 
-                    -- Insert mock preferences for the tournament
+                    -- Insert 8 mock preferences for the tournament (UserId = 1)
                     -- We check for UserId 1 to avoid duplicates if the table existed but was empty
                     IF NOT EXISTS (SELECT * FROM UserMoviePreference WHERE UserId = 1)
                     BEGIN
@@ -136,26 +137,7 @@ namespace ubb_se_2026_meio_ai.Core.Database
                         (1, 5, 9.5, 1),
                         (1, 6, 8.5, 1),
                         (1, 7, 7.0, 1),
-                        (1, 8, 9.2, 1),
-                        (1, 9, 8.7, 1),
-                        (1, 10, 8.3, 1),
-                        (1, 11, 9.1, 1),
-                        (1, 12, 8.9, 1),
-                        (1, 13, 9.4, 1),
-                        (1, 14, 8.2, 1),
-                        (1, 15, 7.9, 1),
-                        (1, 16, 8.6, 1);
-
-                        INSERT INTO UserMoviePreference (UserId, MovieId, Score, ChangeFromPreviousValue)
-                        VALUES
-                        (2, 2, 8.1, 1), (2, 4, 7.6, 1), (2, 6, 8.9, 1), (2, 9, 8.4, 1),
-                        (2, 12, 9.0, 1), (2, 13, 9.2, 1), (2, 15, 7.4, 1), (2, 16, 8.0, 1),
-                        (3, 1, 7.8, 1), (3, 3, 8.2, 1), (3, 5, 8.7, 1), (3, 7, 7.1, 1),
-                        (3, 10, 8.5, 1), (3, 11, 8.9, 1), (3, 14, 8.0, 1), (3, 16, 8.3, 1),
-                        (4, 2, 7.9, 1), (4, 4, 8.1, 1), (4, 8, 8.6, 1), (4, 9, 9.0, 1),
-                        (4, 12, 8.8, 1), (4, 13, 9.1, 1), (4, 15, 7.6, 1), (4, 16, 8.4, 1),
-                        (5, 1, 8.0, 1), (5, 3, 8.4, 1), (5, 6, 8.8, 1), (5, 7, 7.3, 1),
-                        (5, 10, 8.6, 1), (5, 11, 9.0, 1), (5, 14, 8.1, 1), (5, 16, 8.5, 1);
+                        (1, 8, 9.2, 1);
                     END
                 END
 
@@ -290,19 +272,6 @@ namespace ubb_se_2026_meio_ai.Core.Database
                      75.0, 'youtube', DATEADD(day, -1, SYSUTCDATETIME()));
                 END
                 -- ═══════════════════════════════════════════════════════════
-                -- TODO (Madi — account switcher):
-                -- When the team is aligned, create the User table and add these fields:
-                --   UserId          INT PRIMARY KEY
-                --   Username        NVARCHAR(100) NOT NULL
-                --   FacebookAccount NVARCHAR(100) NULL
-                --   IsLogged        BIT NOT NULL DEFAULT 0  (account added to the switcher)
-                --   IsActive        BIT NOT NULL DEFAULT 0  (currently active session; only one row = 1)
-                -- Seed User 1 with IsLogged=1, IsActive=1. Users 2–6 with IsLogged=0, IsActive=0.
-                -- Then replace the hardcoded _demoAccounts, _activeUserId, and _loggedAccountIds
-                -- in PersonalityMatchViewModel with DB calls to IPersonalityMatchRepository.
-                -- ═══════════════════════════════════════════════════════════
-
-                -- ═══════════════════════════════════════════════════════════
                 -- Madi: Seed mock users 2–6 for personality matching demo
                 -- Each user has different taste overlap with user 1
                 -- ═══════════════════════════════════════════════════════════
@@ -392,131 +361,6 @@ namespace ubb_se_2026_meio_ai.Core.Database
                 IF NOT EXISTS (SELECT 1 FROM UserProfile WHERE UserId = 6)
                     INSERT INTO UserProfile (UserId, TotalLikes, TotalWatchTimeSec, AvgWatchTimeSec, TotalClipsViewed, LikeToViewRatio)
                     VALUES (6, 25, 12000, 110.0, 109, 0.23);
-
-               
-                -- Madi: Extended demo users 7–13 for account-switcher testing
-                --
-                -- Users 7, 8, 10, 11, 12, 13 all share movies with Alice (User 2),
-                -- giving her 11 total matches — enough to test the top-10 cap.
-                --
-                -- User 9 (Sam Taylor) has NO preferences intentionally — when logged
-                -- in as Sam the app shows the No match screen and the Maybe you like fallback.
-                
-
-                -- User 7 (James Park) — sci-fi/action fan, overlaps with Alice on movies 1,2,4,5
-                IF NOT EXISTS (SELECT 1 FROM UserMoviePreference WHERE UserId = 7)
-                BEGIN
-                    INSERT INTO UserMoviePreference (UserId, MovieId, Score, ChangeFromPreviousValue)
-                    VALUES
-                    (7, 1, 8.2, 1),   -- Inception
-                    (7, 2, 9.0, 1),   -- The Dark Knight
-                    (7, 4, 8.8, 1),   -- The Matrix
-                    (7, 5, 8.5, 1);   -- Parasite
-                END
-
-                -- User 8 (Luna Kim) — thriller/drama fan, overlaps with Alice on movies 2,3,8
-                IF NOT EXISTS (SELECT 1 FROM UserMoviePreference WHERE UserId = 8)
-                BEGIN
-                    INSERT INTO UserMoviePreference (UserId, MovieId, Score, ChangeFromPreviousValue)
-                    VALUES
-                    (8, 2, 9.5, 1),   -- The Dark Knight
-                    (8, 3, 8.0, 1),   -- Interstellar
-                    (8, 8, 9.2, 1);   -- The Grand Budapest Hotel
-                END
-
-                -- User 9 (Sam Taylor) — NO preferences intentionally.
-                -- Triggers the No match screen and Maybe you like fallback. Do NOT add rows here.
-
-                -- Add movies 9 and 10 for the Alice vs Alex match-count differentiation.
-                -- Alex (User 1) only rates movies 1-8. Alice (User 2) will also rate 9 and 10.
-                -- Users 10-13 are migrated to ONLY rate movies 9 and 10.
-                -- Result: Alex gets ~7 matches, Alice gets 11 (tests the top-10 cap).
-                IF NOT EXISTS (SELECT 1 FROM Movie WHERE Title = 'The Godfather')
-                    INSERT INTO Movie (Title, PosterUrl, PrimaryGenre, ReleaseYear)
-                    VALUES ('The Godfather', 'https://m.media-amazon.com/images/M/MV5BM2MyNjYxNmUtYTAwNi00MTYxLWJmNWYtYzZlODY3ZTk3OTFlXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg', 'Crime', 1972);
-
-                IF NOT EXISTS (SELECT 1 FROM Movie WHERE Title = 'Forrest Gump')
-                    INSERT INTO Movie (Title, PosterUrl, PrimaryGenre, ReleaseYear)
-                    VALUES ('Forrest Gump', 'https://m.media-amazon.com/images/M/MV5BNWIwODRlZTUtY2U3ZS00Yzg1LWJhNzYtMmZiYmEyNmU1NjMzXkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_.jpg', 'Drama', 1994);
-
-                -- Alice (User 2) also rates movies 9 and 10 so she overlaps with Users 10-13.
-                IF NOT EXISTS (SELECT 1 FROM UserMoviePreference WHERE UserId = 2 AND MovieId = (SELECT MovieId FROM Movie WHERE Title = 'The Godfather'))
-                    INSERT INTO UserMoviePreference (UserId, MovieId, Score, ChangeFromPreviousValue)
-                    VALUES (2, (SELECT MovieId FROM Movie WHERE Title = 'The Godfather'), 8.8, 1);
-
-                IF NOT EXISTS (SELECT 1 FROM UserMoviePreference WHERE UserId = 2 AND MovieId = (SELECT MovieId FROM Movie WHERE Title = 'Forrest Gump'))
-                    INSERT INTO UserMoviePreference (UserId, MovieId, Score, ChangeFromPreviousValue)
-                    VALUES (2, (SELECT MovieId FROM Movie WHERE Title = 'Forrest Gump'), 9.1, 1);
-
-                -- Migrate Users 10-13 to only rate movies 9-10.
-                -- This DELETE is idempotent: if already migrated, nothing to remove.
-                DELETE FROM UserMoviePreference WHERE UserId IN (10,11,12,13) AND MovieId BETWEEN 1 AND 8;
-
-                -- User 10 (Nina Reeves) — The Godfather / Forrest Gump fan
-                IF NOT EXISTS (SELECT 1 FROM UserMoviePreference WHERE UserId = 10)
-                BEGIN
-                    INSERT INTO UserMoviePreference (UserId, MovieId, Score, ChangeFromPreviousValue)
-                    VALUES
-                    (10, (SELECT MovieId FROM Movie WHERE Title = 'The Godfather'), 8.5, 1),
-                    (10, (SELECT MovieId FROM Movie WHERE Title = 'Forrest Gump'),  7.9, 1);
-                END
-
-                -- User 11 (Tom Walsh) — The Godfather / Forrest Gump fan
-                IF NOT EXISTS (SELECT 1 FROM UserMoviePreference WHERE UserId = 11)
-                BEGIN
-                    INSERT INTO UserMoviePreference (UserId, MovieId, Score, ChangeFromPreviousValue)
-                    VALUES
-                    (11, (SELECT MovieId FROM Movie WHERE Title = 'The Godfather'), 9.0, 1),
-                    (11, (SELECT MovieId FROM Movie WHERE Title = 'Forrest Gump'),  8.3, 1);
-                END
-
-                -- User 12 (Zara Foster) — The Godfather / Forrest Gump fan
-                IF NOT EXISTS (SELECT 1 FROM UserMoviePreference WHERE UserId = 12)
-                BEGIN
-                    INSERT INTO UserMoviePreference (UserId, MovieId, Score, ChangeFromPreviousValue)
-                    VALUES
-                    (12, (SELECT MovieId FROM Movie WHERE Title = 'The Godfather'), 7.8, 1),
-                    (12, (SELECT MovieId FROM Movie WHERE Title = 'Forrest Gump'),  9.2, 1);
-                END
-
-                -- User 13 (Kai Rivera) — The Godfather / Forrest Gump fan
-                IF NOT EXISTS (SELECT 1 FROM UserMoviePreference WHERE UserId = 13)
-                BEGIN
-                    INSERT INTO UserMoviePreference (UserId, MovieId, Score, ChangeFromPreviousValue)
-                    VALUES
-                    (13, (SELECT MovieId FROM Movie WHERE Title = 'The Godfather'), 8.6, 1),
-                    (13, (SELECT MovieId FROM Movie WHERE Title = 'Forrest Gump'),  8.0, 1);
-                END
-
-                -- UserProfile rows for users 7–13
-                IF NOT EXISTS (SELECT 1 FROM UserProfile WHERE UserId = 7)
-                    INSERT INTO UserProfile (UserId, TotalLikes, TotalWatchTimeSec, AvgWatchTimeSec, TotalClipsViewed, LikeToViewRatio)
-                    VALUES (7, 35, 15000, 100.0, 130, 0.27);
-
-                IF NOT EXISTS (SELECT 1 FROM UserProfile WHERE UserId = 8)
-                    INSERT INTO UserProfile (UserId, TotalLikes, TotalWatchTimeSec, AvgWatchTimeSec, TotalClipsViewed, LikeToViewRatio)
-                    VALUES (8, 55, 24000, 130.5, 180, 0.31);
-
-                -- User 9 (Sam Taylor) — new account, no activity yet
-                IF NOT EXISTS (SELECT 1 FROM UserProfile WHERE UserId = 9)
-                    INSERT INTO UserProfile (UserId, TotalLikes, TotalWatchTimeSec, AvgWatchTimeSec, TotalClipsViewed, LikeToViewRatio)
-                    VALUES (9, 0, 0, 0.0, 0, 0.0);
-
-                IF NOT EXISTS (SELECT 1 FROM UserProfile WHERE UserId = 10)
-                    INSERT INTO UserProfile (UserId, TotalLikes, TotalWatchTimeSec, AvgWatchTimeSec, TotalClipsViewed, LikeToViewRatio)
-                    VALUES (10, 20, 9000, 80.0, 90, 0.22);
-
-                IF NOT EXISTS (SELECT 1 FROM UserProfile WHERE UserId = 11)
-                    INSERT INTO UserProfile (UserId, TotalLikes, TotalWatchTimeSec, AvgWatchTimeSec, TotalClipsViewed, LikeToViewRatio)
-                    VALUES (11, 70, 35000, 160.0, 240, 0.29);
-
-                IF NOT EXISTS (SELECT 1 FROM UserProfile WHERE UserId = 12)
-                    INSERT INTO UserProfile (UserId, TotalLikes, TotalWatchTimeSec, AvgWatchTimeSec, TotalClipsViewed, LikeToViewRatio)
-                    VALUES (12, 45, 20000, 115.0, 165, 0.27);
-
-                IF NOT EXISTS (SELECT 1 FROM UserProfile WHERE UserId = 13)
-                    INSERT INTO UserProfile (UserId, TotalLikes, TotalWatchTimeSec, AvgWatchTimeSec, TotalClipsViewed, LikeToViewRatio)
-                    VALUES (13, 30, 13000, 95.0, 120, 0.25);
             ";
 
             await using SqlConnection connection = await _connectionFactory.CreateConnectionAsync();

@@ -15,6 +15,6 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
 
         MatchPair? GetCurrentMatch();
         bool IsTournamentComplete();
-        Models.MovieCard GetFinalWinner();
+        MovieCardModel GetFinalWinner();
     }
 }

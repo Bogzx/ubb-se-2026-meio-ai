@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using ubb_se_2026_meio_ai.Features.MovieTournament.Services;
+using ubb_se_2026_meio_ai.Core.Models;
 using static System.Net.WebRequestMethods;
 
 namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
@@ -38,10 +39,10 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
 
         // Second View state ( movieA vs movieB )
         [ObservableProperty]
-        private Models.MovieCard? _movieOptionA;
+        private MovieCardModel? _movieOptionA;
 
         [ObservableProperty]
-        private Models.MovieCard? _movieOptionB;
+        private MovieCardModel? _movieOptionB;
 
         [ObservableProperty]
         private int _roundNumber;
@@ -51,7 +52,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
 
         // Winner view state
         [ObservableProperty]
-        private Models.MovieCard? _winnerMovie;
+        private MovieCardModel? _winnerMovie;
 
         public MovieTournamentViewModel(
             ITournamentLogicService tournamentService,

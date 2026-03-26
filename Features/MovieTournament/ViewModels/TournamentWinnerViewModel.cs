@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using ubb_se_2026_meio_ai.Features.MovieTournament.Services;
+using ubb_se_2026_meio_ai.Core.Models;
 
 namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
 {
@@ -11,7 +12,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
         private readonly ITournamentLogicService _tournamentService;
 
         [ObservableProperty]
-        private Models.MovieCard? _winnerMovie;
+        private MovieCardModel? _winnerMovie;
 
         /// <summary>Raised when user wants to start a new tournament — nav back to Setup.</summary>
         public event EventHandler? NavigateToSetup;

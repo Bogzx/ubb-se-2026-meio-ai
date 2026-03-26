@@ -1,4 +1,5 @@
 using ubb_se_2026_meio_ai.Features.MovieTournament.Models;
+using ubb_se_2026_meio_ai.Core.Models;
 
 namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
 {
@@ -84,13 +85,13 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
             if (IsTournamentComplete())
             {
                 var finalWinner = GetFinalWinner();
-                await _repository.BoostMovieScoreAsync(userId, finalWinner.MovieId, 2.0f);
+                await _repository.BoostMovieScoreAsync(userId, finalWinner.MovieId, 2.0);
             }
         }
 
         private void GenerateNextRound()
         {
-            var winners = new List<MovieCard>(_state!.CurrentRoundWinners);
+            var winners = new List<MovieCardModel>(_state!.CurrentRoundWinners);
             _state.CurrentRoundWinners.Clear();
             _state.CurrentRound++;
 
@@ -130,7 +131,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
             return _state != null && _state.PendingMatches.Count == 0 && _state.CurrentRoundWinners.Count == 1;
         }
 
-        public MovieCard GetFinalWinner()
+        public MovieCardModel GetFinalWinner()
         {
             if (!IsTournamentComplete())
                 throw new InvalidOperationException("Tournament is not yet complete.");
