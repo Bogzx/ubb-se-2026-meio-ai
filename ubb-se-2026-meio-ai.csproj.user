@@ -4,7 +4,7 @@
     <DebuggerFlavor>ProjectDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup>
-    <ActiveDebugProfile>ubb-se-2026-meio-ai (Unpackaged)</ActiveDebugProfile>
+    <ActiveDebugProfile>ubb-se-2026-meio-ai (Package)</ActiveDebugProfile>
   </PropertyGroup>
   <ItemGroup>
     <None Update="App.xaml">

@@ -179,20 +179,57 @@ namespace ubb_se_2026_meio_ai.Core.Database
                 END
 
                 -- Seed Movies for Demo
-                IF (SELECT COUNT(*) FROM Movie) = 0
-                BEGIN
-                    INSERT INTO Movie (Title, PosterUrl, PrimaryGenre, ReleaseYear)
-                    VALUES
-                    ('Inception', 'https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_.jpg', 'Sci-Fi', 2010),
-                    ('The Dark Knight', 'https://m.media-amazon.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTcwODAyMTk2Mw@@._V1_.jpg', 'Action', 2008),
-                    ('Interstellar', 'https://m.media-amazon.com/images/M/MV5BZjdkOTU3MDktN2IxOS00OGEyLWFmMjktY2FiMmZkNWIyODZiXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg', 'Adventure', 2014),
-                    ('The Matrix', 'https://m.media-amazon.com/images/M/MV5BNzQzOTk3NTAtNDQ2Ny00Njc2LTk3M2QtN2FjYTJjNzQzYzQwXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg', 'Sci-Fi', 1999),
-                    ('Parasite', 'https://m.media-amazon.com/images/M/MV5BYWZjMjk3ZTAtZGYzMC00ODQ0LWI2YTMtYjQ5NDU3N2NmZDIzXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg', 'Thriller', 2019),
-                    ('La La Land', 'https://m.media-amazon.com/images/M/MV5BMjA2OTYxNTY2Nl5BMl5BanBnXkFtZTgwNzg4OTA5OTE@._V1_.jpg', 'Musical', 2016),
-                    ('Whiplash', 'https://m.media-amazon.com/images/M/MV5BMjE4NDYxNTAxNV5BMl5BanBnXkFtZTgwNzM0NDM1MjE@._V1_.jpg', 'Drama', 2014),
-                    ('The Grand Budapest Hotel', 'https://m.media-amazon.com/images/M/MV5BMjM2NTQzMzc5OF5BMl5BanBnXkFtZTgwNzM2ODU3MDE@._V1_.jpg', 'Comedy', 2014);
-                END
+                -- Seed Movies for Demo
+-- Seed Movies for Demo
+IF (SELECT COUNT(*) FROM Movie) = 0
+BEGIN
+    INSERT INTO Movie (Title, PosterUrl, PrimaryGenre, ReleaseYear)
+    VALUES
+    ('Inception', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/vr6ouTojPp0zlSpJvCbODPp19nd.jpg', 'Sci-Fi', 2010),
+    ('The Dark Knight', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/a1UL3FTJDgQikYIebnMDhTPFVfm.jpg', 'Action', 2008),
+    ('Interstellar', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/wbnrYkn59cdFuu0LNAZ2BWh2i37.jpg', 'Adventure', 2014),
+    ('The Matrix', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/fvCgaMLmIcGTAGgWfunRHMyMDOW.jpg', 'Sci-Fi', 1999),
+    ('Parasite', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/wHi9bQf2NBtOFfKt7fLDHWi3v5E.jpg', 'Thriller', 2019),
+    ('La La Land', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/yDsIOWs7KNij8RYsbbfLpRfjspd.jpg', 'Musical', 2016),
+    ('Whiplash', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/jE8LZWIMgfi4o1KM9ZLrznC0kHk.jpg', 'Drama', 2014),
+    ('The Grand Budapest Hotel', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/tysFrnXp6o8vhXfhACWCme9N4Jl.jpg', 'Comedy', 2014);
+END
 
+IF (SELECT COUNT(*) FROM Movie) < 50
+BEGIN
+    INSERT INTO Movie (Title, PosterUrl, PrimaryGenre, ReleaseYear)
+    VALUES
+    ('Avatar', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/gKY6q7SjCkAU6FqvqWybDYgUKIF.jpg', 'Sci-Fi', 2009),
+    ('Titanic', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/9xjZS2rlVxm8SFx8kPC3aIGCOYQ.jpg', 'Romance', 1997),
+    ('Gladiator', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/yafsp1whNDGqmn6vqHdgg0PbZA5.jpg', 'Action', 2000),
+    ('The Shawshank Redemption', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/tsY4m4IH8MZly4kvxZszbommLKj.jpg', 'Drama', 1994),
+    ('Forrest Gump', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/n7NEvy20kMLD0X6lrzoaSGXnr3I.jpg', 'Drama', 1994),
+    ('The Godfather', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/z4lzwl3Gff5IOWKGiYY7gUFYXUb.jpg', 'Crime', 1972),
+    ('Pulp Fiction', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/vQWk5YBFWF4bZaofAbv0tShwBvQ.jpg', 'Crime', 1994),
+    ('Fight Club', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg', 'Drama', 1999),
+    ('The Social Network', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/jD2LsdNu9zWwXjjlbxO0Iibpefz.jpg', 'Drama', 2010),
+    ('Joker', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/6zIyfSojJxoCj6mL3TZPFZBByfP.jpg', 'Thriller', 2019),
+    ('Avengers: Endgame', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/5hRf3rT7T5QNTmfbv00yXzpGvXw.jpg', 'Action', 2019),
+    ('Iron Man', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/frW3QzyDondJdnd6ydzT8ekKHAw.jpg', 'Action', 2008),
+    ('Toy Story', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/RyAWIbSmt4xC859hyQ43wUumM9.jpg', 'Animation', 1995),
+    ('Finding Nemo', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/7YrKAe5GBg2f2WnwMrX9IdLFqCq.jpg', 'Animation', 2003),
+    ('Up', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/f6ytrGR8IJ0qizc2gI0HSJN6OaU.jpg', 'Animation', 2009),
+    ('The Lion King', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/Pa9euUkkwUqHJoMh6eIj2XVeV4.jpg', 'Animation', 1994),
+    ('Frozen', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/itAKcobTYGpYT8Phwjd8c9hleTo.jpg', 'Animation', 2013),
+    ('The Conjuring', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/A09nKeXAa0FlOr6Y6EVnvAINKQ2.jpg', 'Horror', 2013),
+    ('Get Out', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/yY33WCqDYUHdT6LJWsJUekSM4E.jpg', 'Horror', 2017),
+    ('A Quiet Place', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/yelqLnp4My4WWqD647wwwpw552P.jpg', 'Horror', 2018),
+    ('Mad Max: Fury Road', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/89BIhHMvGAoxQkniNFB8ENrfzxk.jpg', 'Action', 2015),
+    ('John Wick', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/rP7X52bxOEBc09h5qzHJnHXxE3C.jpg', 'Action', 2014),
+    ('The Wolf of Wall Street', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/bm6TEyJMpvzTeBOP1V43UfRrrfg.jpg', 'Biography', 2013),
+    ('Django Unchained', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/w1P4HHXJT6CRbcZ2x6Yq2sjWsdF.jpg', 'Western', 2012),
+    ('The Revenant', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/6Z6bzPW2K6i5nD2NO8wRZRKQJ5y.jpg', 'Adventure', 2015),
+    ('Blade Runner 2049', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/9pz5bPDufSrJd8yTNjp0apTAVf8.jpg', 'Sci-Fi', 2017),
+    ('Her', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/kBK4UlVOIx6NZyD0QkHlFi9XnAw.jpg', 'Romance', 2013),
+    ('The Prestige', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/cNpg2TjWtsut8QUBqezkbHXQFgb.jpg', 'Drama', 2006),
+    ('Memento', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/fKTPH2WvH8nHTXeBYBVhawtRqtR.jpg', 'Thriller', 2000),
+    ('Shutter Island', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/qfpFopx4AHd3oTOkj0VGG50AS39.jpg', 'Thriller', 2010);
+END
                 -- Seed Music Tracks (for Reel Editing feature)
                 IF (SELECT COUNT(*) FROM MusicTrack) = 0
                 BEGIN

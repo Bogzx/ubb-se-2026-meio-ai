@@ -6,7 +6,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
 
     public interface ITournamentLogicService
     {
-        Models.TournamentState CurrentState { get; }
+        TournamentState CurrentState { get; }
         bool IsTournamentActive { get; }
 
         Task StartTournamentAsync(int userId, int poolSize);
