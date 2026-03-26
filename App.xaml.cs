@@ -112,9 +112,11 @@ namespace ubb_se_2026_meio_ai
                 {
                     await dbInit.CreateTablesIfNotExistAsync();
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Database may not be available during development — continue anyway.
+                    File.AppendAllText(CrashLogPath,
+                        $"[{DateTime.Now:HH:mm:ss.fff}] DB INIT FAILED: {ex}\n\n");
+                    // Keep the app running so the UI still opens even when LocalDB is unavailable.
                 }
 
                 m_window = new MainWindow();

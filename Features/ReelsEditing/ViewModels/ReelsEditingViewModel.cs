@@ -118,8 +118,18 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
                 _ = LoadMusicTracksAsync();
         }
 
-        public void LoadReel(ReelModel reel)
+        public async Task LoadReelAsync(ReelModel reel)
         {
+            // Always fetch fresh data from the database so persisted edits
+            // are never lost due to stale in-memory gallery models.
+            var fresh = await _reelRepository.GetReelByIdAsync(reel.ReelId);
+            if (fresh != null)
+            {
+                reel.CropDataJson = fresh.CropDataJson;
+                reel.BackgroundMusicId = fresh.BackgroundMusicId;
+                reel.LastEditedAt = fresh.LastEditedAt;
+            }
+
             SelectedReel = reel;
             CurrentEdits = new VideoEditMetadata();
             SelectedMusicTrack = null;
@@ -188,12 +198,22 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
             IsStatusSuccess = true;
             try
             {
-                await _reelRepository.UpdateReelEditsAsync(
+                var payload = CurrentEdits.ToCropDataJson();
+                int rows = await _reelRepository.UpdateReelEditsAsync(
                     SelectedReel.ReelId,
-                    CurrentEdits.ToCropDataJson(),
+                    payload,
                     CurrentEdits.SelectedMusicTrackId);
-                SelectedReel.CropDataJson = CurrentEdits.ToCropDataJson();
-                StatusMessage = "Thumbnail saved successfully.";
+
+                if (rows == 0)
+                    throw new InvalidOperationException($"No reel found with ReelId={SelectedReel.ReelId}.");
+
+                var persisted = await _reelRepository.GetReelByIdAsync(SelectedReel.ReelId);
+                if (persisted?.CropDataJson != payload)
+                    throw new InvalidOperationException("Thumbnail edits were not persisted correctly.");
+
+                SelectedReel.CropDataJson = persisted.CropDataJson;
+                SelectedReel.LastEditedAt = persisted.LastEditedAt;
+                StatusMessage = $"Thumbnail saved successfully at {TimeSpan.FromSeconds(CurrentEdits.ThumbnailFrameSeconds):mm\\:ss\\.f}.";
             }
             catch (Exception ex)
             {
@@ -221,9 +241,18 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
 
                 string cropJson = CurrentEdits.ToCropDataJson();
                 await _videoProcessing.ApplyCropAsync(SelectedReel.VideoUrl, cropJson);
-                await _reelRepository.UpdateReelEditsAsync(SelectedReel.ReelId, cropJson, CurrentEdits.SelectedMusicTrackId);
-                SelectedReel.CropDataJson = cropJson;
-                StatusMessage = "Crop dimensions updated successfully.";
+                int rows = await _reelRepository.UpdateReelEditsAsync(SelectedReel.ReelId, cropJson, CurrentEdits.SelectedMusicTrackId);
+
+                if (rows == 0)
+                    throw new InvalidOperationException($"No reel found with ReelId={SelectedReel.ReelId}.");
+
+                var persisted = await _reelRepository.GetReelByIdAsync(SelectedReel.ReelId);
+                if (persisted?.CropDataJson != cropJson)
+                    throw new InvalidOperationException("Crop edits were not persisted correctly.");
+
+                SelectedReel.CropDataJson = persisted.CropDataJson;
+                SelectedReel.LastEditedAt = persisted.LastEditedAt;
+                StatusMessage = $"Crop dimensions updated successfully: X={CurrentEdits.CropX}, Y={CurrentEdits.CropY}, W={CurrentEdits.CropWidth}, H={CurrentEdits.CropHeight}.";
             }
             catch (Exception ex)
             {
@@ -251,11 +280,18 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
                     SelectedReel.VideoUrl,
                     SelectedMusicTrack.MusicTrackId,
                     MusicStartTime);
-                await _reelRepository.UpdateReelEditsAsync(
+                int rows = await _reelRepository.UpdateReelEditsAsync(
                     SelectedReel.ReelId,
                     CurrentEdits.ToCropDataJson(),
                     SelectedMusicTrack.MusicTrackId);
+
+                if (rows == 0)
+                    throw new InvalidOperationException($"No reel found with ReelId={SelectedReel.ReelId}.");
+
+                var persisted = await _reelRepository.GetReelByIdAsync(SelectedReel.ReelId);
+                SelectedReel.CropDataJson = persisted?.CropDataJson;
                 SelectedReel.BackgroundMusicId = SelectedMusicTrack.MusicTrackId;
+                SelectedReel.LastEditedAt = persisted?.LastEditedAt;
                 StatusMessage = "Music saved!";
             }
             catch (Exception ex)

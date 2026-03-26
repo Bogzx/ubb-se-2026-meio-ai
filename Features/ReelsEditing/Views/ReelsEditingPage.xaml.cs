@@ -68,12 +68,12 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Views
             // Selection tracked by TwoWay binding
         }
 
-        private void ReelGridView_ItemClick(object sender, ItemClickEventArgs e)
+        private async void ReelGridView_ItemClick(object sender, ItemClickEventArgs e)
         {
             if (e.ClickedItem is ubb_se_2026_meio_ai.Core.Models.ReelModel reel)
             {
                 GalleryViewModel.SelectedReel = reel;
-                ViewModel.LoadReel(reel);
+                await ViewModel.LoadReelAsync(reel);
                 LoadVideo(reel.VideoUrl);
                 SyncSavedThumbnailSelection();
             }
