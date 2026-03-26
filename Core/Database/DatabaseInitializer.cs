@@ -33,6 +33,7 @@ namespace ubb_se_2026_meio_ai.Core.Database
                         PrimaryGenre    NVARCHAR(128)   NULL,
                         Description     NVARCHAR(MAX)   NULL,
                         ReleaseYear     INT             NULL,
+                        Synopsis        NVARCHAR(MAX)   NULL,
                         AverageRating   FLOAT           NULL
                     );
                 END
