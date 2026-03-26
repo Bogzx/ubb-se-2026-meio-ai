@@ -167,6 +167,8 @@ namespace ubb_se_2026_meio_ai
             services.AddTransient<ReelsUploadViewModel>();
             services.AddTransient<TrailerScrapingViewModel>();
             services.AddTransient<ReelsEditingViewModel>();
+            services.AddTransient<Features.ReelsEditing.ViewModels.ReelGalleryViewModel>();
+            services.AddTransient<Features.ReelsEditing.ViewModels.MusicSelectionDialogViewModel>();
             services.AddTransient<MovieSwipeViewModel>();
             services.AddTransient<MovieTournamentViewModel>();
             services.AddTransient<PersonalityMatchViewModel>();
@@ -175,8 +177,12 @@ namespace ubb_se_2026_meio_ai
 
             // ── Feature Services ─────────────────────────────────────────
             // TODO (Alex):      services.AddTransient<IVideoStorageService, VideoStorageService>();
-            // TODO (Beatrice):  services.AddTransient<IVideoProcessingService, VideoProcessingService>();
-            //                   services.AddTransient<IAudioLibraryService, AudioLibraryService>();
+            // ── Beatrice (Reels Editing) ──
+            services.AddTransient<Features.ReelsEditing.Services.ReelRepository>();
+            services.AddTransient<Features.ReelsEditing.Services.IVideoProcessingService,
+                                  Features.ReelsEditing.Services.VideoProcessingService>();
+            services.AddTransient<Features.ReelsEditing.Services.IAudioLibraryService,
+                                  Features.ReelsEditing.Services.AudioLibraryService>();
             // TODO (Bogdan):    services.AddTransient<ISwipeService, SwipeService>();
             //                   services.AddTransient<IPreferenceRepository, PreferenceRepository>();
             // TODO (Gabi):

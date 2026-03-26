@@ -6,18 +6,211 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
+    Loaded="Page_Loaded"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Grid Padding="32">
-        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="12">
-            <TextBlock Text="{x:Bind ViewModel.PageTitle, Mode=OneWay}"
-                       Style="{StaticResource TitleTextBlockStyle}" />
-            <TextBlock Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}"
+    <Grid Padding="24,32,24,24">
+
+        <!-- ════════════════════════════════════════════════════ -->
+        <!-- STEP 1: Gallery View (shown when no reel is selected) -->
+        <!-- ════════════════════════════════════════════════════ -->
+        <Grid x:Name="GalleryPanel" RowSpacing="8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="Reel Editing" Style="{StaticResource TitleTextBlockStyle}"/>
+            <TextBlock Grid.Row="1" Text="Select a reel to edit"
                        Style="{StaticResource SubtitleTextBlockStyle}"
-                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-            <TextBlock Text="Owner: Beatrice"
+                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+
+            <TextBlock Grid.Row="2"
+                       Text="{x:Bind GalleryViewModel.StatusMessage, Mode=OneWay}"
                        Style="{StaticResource CaptionTextBlockStyle}"
-                       Foreground="{ThemeResource SystemControlForegroundBaseMediumLowBrush}" />
-        </StackPanel>
+                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                       TextWrapping="Wrap"
+                       Margin="0,4,0,4"/>
+
+            <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto">
+                <GridView ItemsSource="{x:Bind GalleryViewModel.UserReels, Mode=OneWay}"
+                          SelectedItem="{x:Bind GalleryViewModel.SelectedReel, Mode=TwoWay}"
+                          SelectionChanged="ReelGridView_SelectionChanged"
+                          IsItemClickEnabled="True"
+                          ItemClick="ReelGridView_ItemClick"
+                          HorizontalAlignment="Stretch"
+                          ScrollViewer.VerticalScrollMode="Disabled">
+                    <GridView.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <ItemsWrapGrid MaximumRowsOrColumns="5" Orientation="Horizontal"
+                                           ItemWidth="280" ItemHeight="280"
+                                           HorizontalAlignment="Stretch"/>
+                        </ItemsPanelTemplate>
+                    </GridView.ItemsPanel>
+                    <GridView.ItemContainerStyle>
+                        <Style TargetType="GridViewItem">
+                            <Setter Property="Margin" Value="6"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                        </Style>
+                    </GridView.ItemContainerStyle>
+                    <GridView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    CornerRadius="8">
+                                <StackPanel>
+                                    <Grid Height="180" CornerRadius="8,8,0,0">
+                                        <Border Background="#E8E0F0"/>
+                                        <Image Source="{Binding ThumbnailUrl}"
+                                               Stretch="UniformToFill"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                                    </Grid>
+                                    <StackPanel Padding="12,10">
+                                        <TextBlock Text="{Binding Title}"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="14"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   MaxLines="2"
+                                                   TextWrapping="Wrap"/>
+                                        <TextBlock Text="{Binding Source}"
+                                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </GridView.ItemTemplate>
+                </GridView>
+            </ScrollViewer>
+
+            <TextBlock Grid.Row="4" Text="Owner: Beatrice"
+                       Style="{StaticResource CaptionTextBlockStyle}"
+                       Foreground="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
+                       Margin="0,8,0,0"/>
+        </Grid>
+
+        <!-- ════════════════════════════════════════════════════ -->
+        <!-- STEP 2: Editor View (shown after selecting a reel)  -->
+        <!-- ════════════════════════════════════════════════════ -->
+        <ScrollViewer x:Name="EditorPanel" Visibility="Collapsed">
+            <StackPanel Spacing="16" MaxWidth="700" HorizontalAlignment="Left">
+
+                <!-- Back button + title -->
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Button Command="{x:Bind ViewModel.GoBackCommand}"
+                            VerticalAlignment="Center"
+                            Padding="8,6">
+                        <FontIcon Glyph="&#xE72B;" FontSize="16"/>
+                    </Button>
+                    <TextBlock Text="Reel Editing" Style="{StaticResource TitleTextBlockStyle}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Reel title + status -->
+                <StackPanel Spacing="4">
+                    <TextBlock Text="{x:Bind ViewModel.SelectedReel.Title, Mode=OneWay}"
+                               FontSize="18" FontWeight="SemiBold"
+                               TextWrapping="Wrap"/>
+                    <TextBlock Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}"
+                               Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                </StackPanel>
+
+                <!-- Video Player -->
+                <Border Background="Black" CornerRadius="8"
+                        HorizontalAlignment="Stretch">
+                    <MediaPlayerElement x:Name="ReelPlayer"
+                                        AutoPlay="False"
+                                        AreTransportControlsEnabled="True"
+                                        MaxHeight="400"
+                                        Stretch="Uniform"/>
+                </Border>
+
+                <!-- Expander: Thumbnail -->
+                <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                          ExpandDirection="Down">
+                    <Expander.Header>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE8B9;" FontSize="16"/>
+                            <TextBlock Text="Thumbnail" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Expander.Header>
+                    <StackPanel Spacing="12" Padding="4">
+                        <Image Source="{x:Bind ViewModel.SelectedReel.ThumbnailUrl, Mode=OneWay}"
+                               MaxHeight="200" Stretch="Uniform"
+                               HorizontalAlignment="Left"/>
+                        <TextBlock Text="Current thumbnail from the reel. Thumbnail editing coming soon."
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                    </StackPanel>
+                </Expander>
+
+                <!-- Expander: Crop Dimensions -->
+                <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                          ExpandDirection="Down">
+                    <Expander.Header>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE7A8;" FontSize="16"/>
+                            <TextBlock Text="Crop Dimensions" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Expander.Header>
+                    <StackPanel Spacing="12" Padding="4">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Crop X"/>
+                            <Slider Minimum="0" Maximum="1920" StepFrequency="1"
+                                    Value="{x:Bind ViewModel.CurrentEdits.CropX, Mode=TwoWay}"/>
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Crop Y"/>
+                            <Slider Minimum="0" Maximum="1080" StepFrequency="1"
+                                    Value="{x:Bind ViewModel.CurrentEdits.CropY, Mode=TwoWay}"/>
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Width"/>
+                            <Slider Minimum="100" Maximum="1920" StepFrequency="1"
+                                    Value="{x:Bind ViewModel.CurrentEdits.CropWidth, Mode=TwoWay}"/>
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Height"/>
+                            <Slider Minimum="100" Maximum="1080" StepFrequency="1"
+                                    Value="{x:Bind ViewModel.CurrentEdits.CropHeight, Mode=TwoWay}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Expander>
+
+                <!-- Expander: Background Music -->
+                <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                          ExpandDirection="Down">
+                    <Expander.Header>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE8D6;" FontSize="16"/>
+                            <TextBlock Text="Background Music" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Expander.Header>
+                    <StackPanel Spacing="12" Padding="4">
+                        <TextBlock Text="{x:Bind ViewModel.SelectedMusicTrack.TrackName, Mode=OneWay, FallbackValue='No music selected'}"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                        <Button Content="Choose Music..." Click="ChooseMusicButton_Click"/>
+                    </StackPanel>
+                </Expander>
+
+                <!-- Action Buttons -->
+                <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,8,0,0">
+                    <Button Content="Save Edits"
+                            Command="{x:Bind ViewModel.SaveEditsCommand}"
+                            Style="{StaticResource AccentButtonStyle}"/>
+                    <Button Content="Reset" Command="{x:Bind ViewModel.ResetEditsCommand}"/>
+                </StackPanel>
+
+                <TextBlock Text="Owner: Beatrice"
+                           Style="{StaticResource CaptionTextBlockStyle}"
+                           Foreground="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"/>
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </Page>
