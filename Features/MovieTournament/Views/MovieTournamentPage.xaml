@@ -46,7 +46,8 @@
                            FontSize="32" FontWeight="Bold" HorizontalAlignment="Center" Foreground="White" />
 
                 <TextBlock Text="{x:Bind ViewModel.SetupErrorMessage, Mode=OneWay}" 
-                           Foreground="Red" HorizontalAlignment="Center"/>
+                           Foreground="Red" HorizontalAlignment="Center"
+                            TextAlignment="Center" TextWrapping="Wrap" />
 
                 <Button Content="Start Tournament" 
                         Command="{x:Bind ViewModel.StartTournamentCommand}" 

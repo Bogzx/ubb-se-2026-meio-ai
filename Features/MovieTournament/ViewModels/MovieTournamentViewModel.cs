@@ -113,7 +113,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
         {
             if (PoolSize < 4)
             {
-                SetupErrorMessage = "Pool size must be at least 4. If you don't have enough, go like some movies!";
+                SetupErrorMessage = "Pool size must be at least 4.\nIf you don't have enough, go like some movies!";
                 return;
             }
             

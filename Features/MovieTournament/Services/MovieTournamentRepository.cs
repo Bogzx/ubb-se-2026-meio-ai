@@ -51,8 +51,8 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
             {
                 movies.Add(new Models.MovieCard(
                     reader.GetInt32(0),   
-                    reader.GetString(1),  
-                    reader.IsDBNull(2) ? null : reader.GetString(2), 
+                    reader.GetString(1),
+                    reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
                     reader.IsDBNull(3) ? 0 : reader.GetInt32(3)              
                 ));
             }
@@ -66,7 +66,8 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
             const string sql = @"
                 UPDATE UserMoviePreference
                 SET Score = Score + @ScoreBoost,
-                    LastModified = SYSUTCDATETIME()
+                    LastModified = SYSUTCDATETIME(),
+                    ChangeFromPreviousValue = @ScoreBoost
                 WHERE UserId = @UserId AND MovieId = @MovieId;
             ";
 
