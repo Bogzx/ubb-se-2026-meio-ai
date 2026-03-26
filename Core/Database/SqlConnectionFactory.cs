@@ -10,10 +10,10 @@ namespace ubb_se_2026_meio_ai.Core.Database
     {
         // Use LocalDB instead of a full SQL server instance, as it is installed by default with Visual Studio
         private const string DefaultConnectionString =
-            @"Server=(localdb)\MSSQLLocalDB;Database=MeioAiDb;Trusted_Connection=True;TrustServerCertificate=True;";
+            @"Data Source=BEATRICE\SQLEXPRESS;Integrated Security=True;Persist Security Info=False;Pooling=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Application Name=""SQL Server Management Studio"";Command Timeout=30";
 
         private const string MasterConnectionString =
-            @"Server=(localdb)\MSSQLLocalDB;Database=master;Trusted_Connection=True;TrustServerCertificate=True;";
+            @"Data Source=BEATRICE\SQLEXPRESS;Integrated Security=True;Persist Security Info=False;Pooling=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Application Name=""SQL Server Management Studio"";Command Timeout=30";
 
         private readonly string _connectionString;
 
