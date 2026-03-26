@@ -10,6 +10,9 @@ namespace ubb_se_2026_meio_ai.Core.Database
     {
         private readonly ISqlConnectionFactory _connectionFactory;
 
+        private const string DatabaseName = "MeioAiDb";
+
+
         public DatabaseInitializer(ISqlConnectionFactory connectionFactory)
         {
             _connectionFactory = connectionFactory;
@@ -17,7 +20,7 @@ namespace ubb_se_2026_meio_ai.Core.Database
 
         public async Task CreateTablesIfNotExistAsync()
         {
-            // 1. Ensure the MeioAiDb database exists on the server
+            // 1. Ensure the MOVIE database exists on the server
             await EnsureDatabaseExistsAsync();
 
             // 2. Create the tables in the MeioAiDb database
@@ -33,7 +36,7 @@ namespace ubb_se_2026_meio_ai.Core.Database
                         ReleaseYear     INT             NULL
                     );
 
-                    -- Insert 8 mock movies
+                    -- Insert mock movies
                     INSERT INTO Movie (Title, PosterUrl, ReleaseYear) 
                     VALUES 
                     ('The Matrix', 'https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg', 1999),
@@ -43,7 +46,15 @@ namespace ubb_se_2026_meio_ai.Core.Database
                     ('Pulp Fiction', 'https://image.tmdb.org/t/p/w500/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg', 1994),
                     ('Fight Club', 'https://image.tmdb.org/t/p/w500/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg', 1999),
                     ('Forrest Gump', 'https://image.tmdb.org/t/p/w500/arw2vcBveWOVZr6pxd9XTd1TdQa.jpg', 1994),
-                    ('The Shawshank Redemption', 'https://image.tmdb.org/t/p/w500/9cjIGRQL7DPvQMSKqJMtBBbVVka.jpg', 1994);
+                    ('The Shawshank Redemption', 'https://image.tmdb.org/t/p/w500/9cjIGRQL7DPvQMSKqJMtBBbVVka.jpg', 1994),
+                    ('Gladiator', 'https://image.tmdb.org/t/p/w500/ty8TGRuvJLPUmAR1H1nRIsgwvim.jpg', 2000),
+                    ('The Prestige', 'https://image.tmdb.org/t/p/w500/5MXyQfz8xUP3dIFPTubhTsbFY6N.jpg', 2006),
+                    ('Whiplash', 'https://image.tmdb.org/t/p/w500/lIv1QinFqz4dlp5U4lQ6HaiskOZ.jpg', 2014),
+                    ('Parasite', 'https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg', 2019),
+                    ('The Godfather', 'https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg', 1972),
+                    ('Se7en', 'https://image.tmdb.org/t/p/w500/6yoghtyTpznpBik8EngEmJskVUO.jpg', 1995),
+                    ('The Social Network', 'https://image.tmdb.org/t/p/w500/n0ybibhJtQ5icDqTp8eRytcIHJx.jpg', 2010),
+                    ('Blade Runner 2049', 'https://image.tmdb.org/t/p/w500/gajva2L0rPYkEWjzgFlBXCAVBE5.jpg', 2017);
                 END
 
                 -- MusicTrack (no FK dependencies)
@@ -96,7 +107,7 @@ namespace ubb_se_2026_meio_ai.Core.Database
                         CONSTRAINT UQ_UserMovie UNIQUE (UserId, MovieId)
                     );
 
-                    -- Insert 8 mock preferences for the tournament (UserId = 1)
+                    -- Insert mock preferences for the tournament
                     -- We check for UserId 1 to avoid duplicates if the table existed but was empty
                     IF NOT EXISTS (SELECT * FROM UserMoviePreference WHERE UserId = 1)
                     BEGIN
@@ -109,7 +120,26 @@ namespace ubb_se_2026_meio_ai.Core.Database
                         (1, 5, 9.5, 1),
                         (1, 6, 8.5, 1),
                         (1, 7, 7.0, 1),
-                        (1, 8, 9.2, 1);
+                        (1, 8, 9.2, 1),
+                        (1, 9, 8.7, 1),
+                        (1, 10, 8.3, 1),
+                        (1, 11, 9.1, 1),
+                        (1, 12, 8.9, 1),
+                        (1, 13, 9.4, 1),
+                        (1, 14, 8.2, 1),
+                        (1, 15, 7.9, 1),
+                        (1, 16, 8.6, 1);
+
+                        INSERT INTO UserMoviePreference (UserId, MovieId, Score, ChangeFromPreviousValue)
+                        VALUES
+                        (2, 2, 8.1, 1), (2, 4, 7.6, 1), (2, 6, 8.9, 1), (2, 9, 8.4, 1),
+                        (2, 12, 9.0, 1), (2, 13, 9.2, 1), (2, 15, 7.4, 1), (2, 16, 8.0, 1),
+                        (3, 1, 7.8, 1), (3, 3, 8.2, 1), (3, 5, 8.7, 1), (3, 7, 7.1, 1),
+                        (3, 10, 8.5, 1), (3, 11, 8.9, 1), (3, 14, 8.0, 1), (3, 16, 8.3, 1),
+                        (4, 2, 7.9, 1), (4, 4, 8.1, 1), (4, 8, 8.6, 1), (4, 9, 9.0, 1),
+                        (4, 12, 8.8, 1), (4, 13, 9.1, 1), (4, 15, 7.6, 1), (4, 16, 8.4, 1),
+                        (5, 1, 8.0, 1), (5, 3, 8.4, 1), (5, 6, 8.8, 1), (5, 7, 7.3, 1),
+                        (5, 10, 8.6, 1), (5, 11, 9.0, 1), (5, 14, 8.1, 1), (5, 16, 8.5, 1);
                     END
                 END
 
@@ -158,10 +188,10 @@ namespace ubb_se_2026_meio_ai.Core.Database
 
         private async Task EnsureDatabaseExistsAsync()
         {
-            const string sql = @"
-                IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'MeioAiDb')
+            string sql = $@"
+                IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = '{DatabaseName}')
                 BEGIN
-                    CREATE DATABASE [MeioAiDb];
+                    CREATE DATABASE [{DatabaseName}];
                 END
             ";
 

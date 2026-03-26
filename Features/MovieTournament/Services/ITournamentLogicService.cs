@@ -1,11 +1,9 @@
 using ubb_se_2026_meio_ai.Core.Models;
+using ubb_se_2026_meio_ai.Features.MovieTournament.Models;
 
 namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
 {
-    /// <summary>
-    /// Core bracket generation and tournament progression logic.
-    /// Owner: Gabi
-    /// </summary>
+
     public interface ITournamentLogicService
     {
         Models.TournamentState CurrentState { get; }
@@ -15,7 +13,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
         Task AdvanceWinnerAsync(int userId, int winnerId);
         void ResetTournament();
 
-        Models.MatchPair GetCurrentMatch();
+        MatchPair? GetCurrentMatch();
         bool IsTournamentComplete();
         Models.MovieCard GetFinalWinner();
     }

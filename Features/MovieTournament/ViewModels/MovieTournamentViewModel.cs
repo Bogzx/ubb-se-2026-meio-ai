@@ -1,5 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using ubb_se_2026_meio_ai.Features.MovieTournament.Services;
 
 namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
@@ -31,19 +33,27 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
         [ObservableProperty]
         private string _setupErrorMessage = string.Empty;
 
+        [ObservableProperty] private string? _bg1;
+        [ObservableProperty] private string? _bg2;
+        [ObservableProperty] private string? _bg3;
+        [ObservableProperty] private string? _bg4;
+
         // --- Match State ---
         [ObservableProperty]
-        private Models.MovieCard _movieOptionA;
+        private Models.MovieCard? _movieOptionA;
 
         [ObservableProperty]
-        private Models.MovieCard _movieOptionB;
+        private Models.MovieCard? _movieOptionB;
 
         [ObservableProperty]
         private int _roundNumber;
 
+        [ObservableProperty]
+        private string _roundDisplay = string.Empty;
+
         // --- Winner State ---
         [ObservableProperty]
-        private Models.MovieCard _winnerMovie;
+        private Models.MovieCard? _winnerMovie;
 
         public MovieTournamentViewModel(
             ITournamentLogicService tournamentService,
@@ -52,8 +62,21 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
             _tournamentService = tournamentService;
             _repository = repository;
 
-            // Load initial data
-            LoadMaxPoolSizeAsync();
+            if (_tournamentService.IsTournamentActive)
+            {
+                UpdateCurrentMatchDisplay();
+                CurrentViewState = 1; // Go right to active match summary
+            }
+            else if (_tournamentService.IsTournamentComplete())
+            {
+                WinnerMovie = _tournamentService.GetFinalWinner();
+                CurrentViewState = 2; // Show the winner
+            }
+            else
+            {
+                // Load initial data
+                LoadMaxPoolSizeAsync();
+            }
         }
 
         private async void LoadMaxPoolSizeAsync()
@@ -61,6 +84,16 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
             try
             {
                 MaxPoolSize = await _repository.GetTournamentPoolSizeAsync(_currentUserId);
+                
+                // Load 4 posters for background
+                var bgMovies = await _repository.GetTournamentPoolAsync(_currentUserId, 4);
+                if (bgMovies.Count >= 4)
+                {
+                    Bg1 = bgMovies[0].PosterUrl;
+                    Bg2 = bgMovies[1].PosterUrl;
+                    Bg3 = bgMovies[2].PosterUrl;
+                    Bg4 = bgMovies[3].PosterUrl;
+                }
             }
             catch (Exception ex)
             {
@@ -129,6 +162,20 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
                 MovieOptionA = match.MovieA;
                 MovieOptionB = match.MovieB;
                 RoundNumber = _tournamentService.CurrentState.CurrentRound;
+                RoundDisplay = $"Round {RoundNumber}";
+            }
+        }
+
+        public ImageSource? GetImageSource(string? url)
+        {
+            if (string.IsNullOrWhiteSpace(url)) return null;
+            try
+            {
+                return new BitmapImage(new Uri(url));
+            }
+            catch
+            {
+                return null;
             }
         }
     }

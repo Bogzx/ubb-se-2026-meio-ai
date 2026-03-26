@@ -25,7 +25,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
             await using var command = new SqlCommand(sql, connection);
             command.Parameters.AddWithValue("@UserId", userId);
 
-            return (int)await command.ExecuteScalarAsync();
+            return (int)(await command.ExecuteScalarAsync() ?? 0);
         }
 
         public async Task<List<Models.MovieCard>> GetTournamentPoolAsync(int userId, int poolSize)
@@ -50,10 +50,10 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
             while (await reader.ReadAsync())
             {
                 movies.Add(new Models.MovieCard(
-                    reader.GetInt32(0),   // MovieId
-                    reader.GetString(1),  // Title
-                    reader.IsDBNull(2) ? string.Empty : reader.GetString(2), // PosterUrl
-                    reader.IsDBNull(3) ? 0 : reader.GetInt32(3)              // ReleaseYear
+                    reader.GetInt32(0),   
+                    reader.GetString(1),  
+                    reader.IsDBNull(2) ? null : reader.GetString(2), 
+                    reader.IsDBNull(3) ? 0 : reader.GetInt32(3)              
                 ));
             }
 
@@ -62,7 +62,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
 
         public async Task BoostMovieScoreAsync(int userId, int movieId, float scoreBoost)
         {
-            // Boosts the score in the UserMoviePreference table
+            
             const string sql = @"
                 UPDATE UserMoviePreference
                 SET Score = Score + @ScoreBoost,

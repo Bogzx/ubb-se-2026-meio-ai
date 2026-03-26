@@ -81,7 +81,7 @@ namespace ubb_se_2026_meio_ai
             // TODO (Bogdan):    services.AddTransient<ISwipeService, SwipeService>();
             //                   services.AddTransient<IPreferenceRepository, PreferenceRepository>();
             // TODO (Gabi):
-            services.AddTransient<ITournamentLogicService, TournamentLogicService>();
+            services.AddSingleton<ITournamentLogicService, TournamentLogicService>();
             services.AddTransient<IMovieTournamentRepository, MovieTournamentRepository>();
             // TODO (Madi):      services.AddTransient<IPersonalityMatchingService, PersonalityMatchingService>();
             // TODO (Tudor):     services.AddTransient<IReelInteractionService, ReelInteractionService>();
