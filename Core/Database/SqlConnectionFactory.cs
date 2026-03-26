@@ -10,10 +10,10 @@ namespace ubb_se_2026_meio_ai.Core.Database
     {
         // Use SQL Server Express instance (visible in SSMS)
         private const string DefaultConnectionString =
-            @"Server=DESKTOP-2TK0CUF\SQLEXPRESS;Database=MeioAiDb;Trusted_Connection=True;TrustServerCertificate=True;";
+            @"Data Source=localhost\SQLEXPRESS;Initial Catalog=andrei;Integrated Security=True;Encrypt=True;Trust Server Certificate=True";
 
         private const string MasterConnectionString =
-            @"Server=DESKTOP-2TK0CUF\SQLEXPRESS;Database=master;Trusted_Connection=True;TrustServerCertificate=True;";
+            @"Data Source=localhost\SQLEXPRESS;Initial Catalog=master;Integrated Security=True;Encrypt=True;Trust Server Certificate=True";
 
         private readonly string _connectionString;
 

@@ -159,7 +159,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
             {
                 await using var connection = await _connectionFactory.CreateConnectionAsync();
                 
-                string sql = "SELECT TOP 10 MovieId, Title, PosterUrl, Genre, ReleaseYear, Synopsis FROM Movie WHERE Title LIKE @SearchTerm";
+                string sql = "SELECT TOP 10 MovieId, Title, PosterUrl, PrimaryGenre, ReleaseYear, Description FROM Movie WHERE Title LIKE @SearchTerm";
                 await using var command = new SqlCommand(sql, connection);
                 command.Parameters.AddWithValue("@SearchTerm", $"%{partialMovieName}%");
 
@@ -173,9 +173,9 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
                         MovieId = reader.GetInt32(reader.GetOrdinal("MovieId")),
                         Title = reader.GetString(reader.GetOrdinal("Title")),
                         PosterUrl = reader.IsDBNull(reader.GetOrdinal("PosterUrl")) ? "" : reader.GetString(reader.GetOrdinal("PosterUrl")),
-                        Genre = reader.IsDBNull(reader.GetOrdinal("Genre")) ? "" : reader.GetString(reader.GetOrdinal("Genre")),
+                        PrimaryGenre = reader.IsDBNull(reader.GetOrdinal("PrimaryGenre")) ? "" : reader.GetString(reader.GetOrdinal("PrimaryGenre")),
                         ReleaseYear = reader.IsDBNull(reader.GetOrdinal("ReleaseYear")) ? 0 : reader.GetInt32(reader.GetOrdinal("ReleaseYear")),
-                        Synopsis = reader.IsDBNull(reader.GetOrdinal("Synopsis")) ? "" : reader.GetString(reader.GetOrdinal("Synopsis"))
+                        Synopsis = reader.IsDBNull(reader.GetOrdinal("Description")) ? "" : reader.GetString(reader.GetOrdinal("Description"))
                     });
                 }
 

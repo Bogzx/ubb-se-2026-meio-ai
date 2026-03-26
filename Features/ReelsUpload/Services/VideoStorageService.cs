@@ -25,8 +25,8 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
             
             _blobStorageDirectory = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), 
-                "MeioAiBlobs", 
-                "Reels");
+                "MeioAI", 
+                "Videos");
                 
             if (!Directory.Exists(_blobStorageDirectory))
             {
