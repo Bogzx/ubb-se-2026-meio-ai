@@ -21,38 +21,38 @@
     *   **Shared Table: `Reel`** — New rows created with `Source = 'upload'`, `CreatorUserId = current user`, `MovieId = selected movie (nullable)`.
 *   **Class Diagram (MVVM) Additions:**
     *   *Models:* `ReelModel`, `ReelUploadRequest` (DTO for the upload payload)
-    *   *Views:* `ReelUploadView`
-    *   *ViewModels:* `ReelUploadViewModel`
+    *   *Views:* `ReelsUploadPage`
+    *   *ViewModels:* `ReelsUploadViewModel`
     *   *Utils/Services:* `VideoStorageService` (handles file upload to blob storage and `Reel` row insertion)
 
 ### 3. Project Management Tasks (Max 30-Minutes Each)
 
 **Database & Models**
 *   **Task:** Define `Reel` Table Schema
-    *   **Description:** Design and create the database migration for the `Reel` table with columns: `ReelId` (PK), `MovieId` (FK → Movie, nullable), `CreatorUserId` (FK → User, nullable), `VideoUrl`, `ThumbnailUrl`, `Title`, `Caption`, `DurationSeconds`, `CropDataJson` (nullable), `BackgroundMusicId` (FK → MusicTrack, nullable), `Source` (enum: upload/scraped), `CreatedAt`, `LastEditedAt`. Define all constraints and foreign keys. Max 30 mins effort.
+    *   **Description:** Design and create the database migration for the `Reel` table with columns: `ReelId` (PK), `MovieId` (FK → Movie, not nullable), `CreatorUserId` (FK → User, nullable), `VideoUrl`, `ThumbnailUrl`, `Title`, `Caption`, `FeatureDurationSeconds`, `CropDataJson` (nullable), `BackgroundMusicId` (FK → MusicTrack, nullable), `Source` (enum: upload/scraped), `CreatedAt`, `LastEditedAt`. Define all constraints and foreign keys. Max 30 mins effort.
 *   **Task:** Create `ReelModel` Data Class
-    *   **Description:** Define the Model class mirroring the `Reel` table: `ReelId`, `MovieId`, `CreatorUserId`, `VideoUrl`, `ThumbnailUrl`, `Title`, `Caption`, `DurationSeconds`, `CropDataJson`, `BackgroundMusicId`, `Source`, `CreatedAt`, `LastEditedAt`. Max 30 mins effort.
+    *   **Description:** Define the Model class mirroring the `Reel` table: `ReelId`, `MovieId`, `CreatorUserId`, `VideoUrl`, `ThumbnailUrl`, `Title`, `Caption`, `FeatureDurationSeconds`, `CropDataJson`, `BackgroundMusicId`, `Source`, `CreatedAt`, `LastEditedAt`. Max 30 mins effort.
 *   **Task:** Create `ReelUploadRequest` DTO
-    *   **Description:** Define a data transfer object with properties: `VideoFileStream`, `FileName`, `UploaderUserId`, `MovieId` (nullable), `Caption` (nullable). This is used to pass upload data from the ViewModel to the service. Max 30 mins effort.
+    *   **Description:** Define a data transfer object with properties: `LocalFilePath`, `Title`, `UploaderUserId`, `MovieId` (nullable), `Caption` (nullable). This is used to pass upload data from the ViewModel to the service. Max 30 mins effort.
 *   **Task:** Implement Reel Insert Repository Method
-    *   **Description:** Write the repository method to insert a new `Reel` row with `Source = 'upload'`, `CreatorUserId`, `VideoUrl` (from blob storage), `DurationSeconds`, `MovieId`, `Caption`, and `CreatedAt`. Max 30 mins effort.
+    *   **Description:** Write the repository method to insert a new `Reel` row with `Source = 'upload'`, `CreatorUserId`, `VideoUrl` (from blob storage), `FeatureDurationSeconds`, `MovieId`, `Caption`, and `CreatedAt`. Max 30 mins effort.
 *   **Task:** Define `IVideoStorageService` Interface
     *   **Description:** Create the interface with methods: `UploadVideoAsync(ReelUploadRequest)` returning the stored `ReelModel`, and `ValidateVideoAsync(fileStream)` returning validation results. Max 30 mins effort.
 
 **Backend Services & ViewModels**
-*   **Task:** Implement `ReelUploadViewModel` — File Picker Logic
+*   **Task:** Implement `ReelsUploadViewModel` — File Picker Logic
     *   **Description:** Add commands and properties to trigger the OS-level file picker and capture the selected file path/stream in a local variable. Max 30 mins effort.
-*   **Task:** Implement `ReelUploadViewModel` — Validation Logic
+*   **Task:** Implement `ReelsUploadViewModel` — Validation Logic
     *   **Description:** Add logic to verify the selected file has a valid video extension (e.g., .mp4, .mov) and is under the maximum file size/duration limit. Update a `StatusMessage` binding. Max 30 mins effort.
-*   **Task:** Implement `ReelUploadViewModel` — Upload Command
+*   **Task:** Implement `ReelsUploadViewModel` — Upload Command
     *   **Description:** Wire up `SubmitUploadCommand` to pass the validated file and metadata to `IVideoStorageService`. Toggle an `IsUploading` boolean during the operation. Max 30 mins effort.
-*   **Task:** Implement `ReelUploadViewModel` — Movie Association Picker
+*   **Task:** Implement `ReelsUploadViewModel` — Movie Association Picker
     *   **Description:** Add an optional movie-selection step where the user can search/select a movie from the external Movie table to link to their reel. Bind selected movie to `SelectedMovieId`. Max 30 mins effort.
 
 **GUI (Views)**
-*   **Task:** Create `ReelUploadView` — Layout & Select Button
+*   **Task:** Create `ReelsUploadPage` — Layout & Select Button
     *   **Description:** Create the base layout for the upload screen. Add a stylized "Select Video" button bound to the file picker command. Max 30 mins effort.
-*   **Task:** Create `ReelUploadView` — Progress & Submit UI
+*   **Task:** Create `ReelsUploadPage` — Progress & Submit UI
     *   **Description:** Add a "Submit" button (disabled if no valid file), a loading spinner bound to `IsUploading`, and a text field for a caption. Max 30 mins effort.
-*   **Task:** Create `ReelUploadView` — Movie Selector Dropdown
+*   **Task:** Create `ReelsUploadPage` — Movie Selector Dropdown
     *   **Description:** Add a searchable dropdown or autocomplete field for optionally linking the reel to a movie. Bind to the ViewModel's movie selection property. Max 30 mins effort.
