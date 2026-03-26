@@ -1,4 +1,5 @@
 using Microsoft.Data.SqlClient;
+using System.IO;
 
 namespace ubb_se_2026_meio_ai.Core.Database
 {
@@ -504,17 +505,72 @@ namespace ubb_se_2026_meio_ai.Core.Database
 
         private async Task EnsureDatabaseExistsAsync()
         {
-            const string sql = @"
-                IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'MeioAiDb')
-                BEGIN
-                    CREATE DATABASE [MeioAiDb];
-                END
-            ";
-
             // We must use the 'master' database connection to create a new database
             await using SqlConnection masterConnection = await _connectionFactory.CreateMasterConnectionAsync();
-            await using SqlCommand command = new SqlCommand(sql, masterConnection);
-            await command.ExecuteNonQueryAsync();
+
+            if (await DatabaseExistsAsync(masterConnection))
+            {
+                return;
+            }
+
+            var dataFilePath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "MeioAiDb.mdf");
+
+            var logFilePath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "MeioAiDb_log.ldf");
+
+            bool isLocalDbConnection = masterConnection.DataSource.Contains(
+                "(localdb)",
+                StringComparison.OrdinalIgnoreCase);
+
+            if (isLocalDbConnection && File.Exists(dataFilePath))
+            {
+                var attachSql = File.Exists(logFilePath)
+                    ? $@"
+                        CREATE DATABASE [MeioAiDb]
+                        ON
+                            (FILENAME = N'{EscapeSqlLiteral(dataFilePath)}'),
+                            (FILENAME = N'{EscapeSqlLiteral(logFilePath)}')
+                        FOR ATTACH;
+                    "
+                    : $@"
+                        CREATE DATABASE [MeioAiDb]
+                        ON (FILENAME = N'{EscapeSqlLiteral(dataFilePath)}')
+                        FOR ATTACH_REBUILD_LOG;
+                    ";
+
+                await using var attachCommand = new SqlCommand(attachSql, masterConnection);
+                await attachCommand.ExecuteNonQueryAsync();
+                return;
+            }
+
+            const string createSql = @"
+                CREATE DATABASE [MeioAiDb];
+            ";
+
+            await using var createCommand = new SqlCommand(createSql, masterConnection);
+            await createCommand.ExecuteNonQueryAsync();
+        }
+
+        private static async Task<bool> DatabaseExistsAsync(SqlConnection masterConnection)
+        {
+            const string existsSql = @"
+                SELECT CASE
+                    WHEN EXISTS (SELECT 1 FROM sys.databases WHERE name = 'MeioAiDb') THEN 1
+                    ELSE 0
+                END;
+            ";
+
+            await using var existsCommand = new SqlCommand(existsSql, masterConnection);
+            var exists = await existsCommand.ExecuteScalarAsync();
+            return Convert.ToInt32(exists) == 1;
+        }
+
+        private static string EscapeSqlLiteral(string value)
+        {
+            return value.Replace("'", "''");
         }
     }
 }
