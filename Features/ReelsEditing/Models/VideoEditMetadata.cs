@@ -1,9 +1,6 @@
 namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Models
 {
-    /// <summary>
-    /// Local DTO holding in-progress crop + music edits before saving.
-    /// Owner: Beatrice
-    /// </summary>
+
     public class VideoEditMetadata
     {
         public int CropX { get; set; }

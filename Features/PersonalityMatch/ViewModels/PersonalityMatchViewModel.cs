@@ -58,25 +58,18 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels
         [ObservableProperty]
         private string _currentFacebookAccount = "fb_alex_carter";
 
-        /// <summary>Top personality matches (up to 10).</summary>
         public ObservableCollection<MatchResult> MatchResults { get; } = new();
 
-        /// <summary>Random fallback users shown when no matches found.</summary>
+      
         public ObservableCollection<MatchResult> FallbackUsers { get; } = new();
 
-        /// <summary>Other logged-in accounts available for switching.</summary>
+     
         public ObservableCollection<UserAccountModel> OtherAccounts { get; } = new();
 
-        /// <summary>
-        /// Fired when the user wants to view a matched user's details.
-        /// The subscriber (code-behind) handles Frame navigation.
-        /// </summary>
+
         public event Action<MatchResult>? NavigateToDetail;
 
-        /// <summary>
-        /// Fired when the user clicks their own account to view their details.
-        /// The subscriber (code-behind) handles Frame navigation.
-        /// </summary>
+
         public event Action<UserAccountModel>? NavigateToCurrentUserDetail;
 
         public PersonalityMatchViewModel(IPersonalityMatchingService matchingService)
