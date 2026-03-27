@@ -22,6 +22,7 @@ namespace ubb_se_2026_meio_ai.Core.Database
 
             // 2. Create the tables in the database
             const string sql = @"
+                USE [MeioAiDb];
                 -- Movie (shared table — created here so JOINs work)
                 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Movie')
                 BEGIN
