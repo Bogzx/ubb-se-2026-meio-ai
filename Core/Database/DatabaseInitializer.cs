@@ -25,6 +25,7 @@ namespace ubb_se_2026_meio_ai.Core.Database
 
             // 2. Create the tables in the database
             const string sql = @"
+                USE [MeioAiDb]; 
                 -- Movie (shared table — created here so JOINs work)
                 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Movie')
                 BEGIN
@@ -185,14 +186,14 @@ IF (SELECT COUNT(*) FROM Movie) = 0
 BEGIN
     INSERT INTO Movie (Title, PosterUrl, PrimaryGenre, ReleaseYear)
     VALUES
-    ('Inception', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/vr6ouTojPp0zlSpJvCbODPp19nd.jpg', 'Sci-Fi', 2010),
-    ('The Dark Knight', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/a1UL3FTJDgQikYIebnMDhTPFVfm.jpg', 'Action', 2008),
-    ('Interstellar', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/wbnrYkn59cdFuu0LNAZ2BWh2i37.jpg', 'Adventure', 2014),
-    ('The Matrix', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/fvCgaMLmIcGTAGgWfunRHMyMDOW.jpg', 'Sci-Fi', 1999),
-    ('Parasite', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/wHi9bQf2NBtOFfKt7fLDHWi3v5E.jpg', 'Thriller', 2019),
-    ('La La Land', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/yDsIOWs7KNij8RYsbbfLpRfjspd.jpg', 'Musical', 2016),
-    ('Whiplash', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/jE8LZWIMgfi4o1KM9ZLrznC0kHk.jpg', 'Drama', 2014),
-    ('The Grand Budapest Hotel', 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/tysFrnXp6o8vhXfhACWCme9N4Jl.jpg', 'Comedy', 2014);
+    ('Inception', 'https://media.themoviedb.org/t/p/w600_and_h900_face/vr6ouTojPp0zlSpJvCbODPp19nd.jpg', 'Sci-Fi', 2010),
+    ('The Dark Knight', 'https://media.themoviedb.org/t/p/w600_and_h900_face/a1UL3FTJDgQikYIebnMDhTPFVfm.jpg', 'Action', 2008),
+    ('Interstellar', 'https://media.themoviedb.org/t/p/w600_and_h900_face/wbnrYkn59cdFuu0LNAZ2BWh2i37.jpg', 'Adventure', 2014),
+    ('The Matrix', 'https://media.themoviedb.org/t/p/w600_and_h900_face/p96dm7sCMn4VYAStA6siNz30G1r.jpg', 'Sci-Fi', 1999),
+    ('Parasite', 'https://media.themoviedb.org/t/p/w600_and_h900_face/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg', 'Thriller', 2019),
+    ('La La Land', 'https://media.themoviedb.org/t/p/w600_and_h900_face/uDO8zWDhfWwoFdKS4fzkUJt0Rf0.jpg', 'Musical', 2016),
+    ('Whiplash', 'https://media.themoviedb.org/t/p/w600_and_h900_face/7fn624j5lj3xTme2SgiLCeuedmO.jpg', 'Drama', 2014),
+    ('The Grand Budapest Hotel', 'https://media.themoviedb.org/t/p/w600_and_h900_face/eWdyYQreja6JGCzqHWXpWHDrrPo.jpg', 'Comedy', 2014);
 END
 
 IF (SELECT COUNT(*) FROM Movie) < 50
@@ -407,10 +408,10 @@ END
 
         private async Task EnsureDatabaseExistsAsync()
         {
-            string sql = $@"
-                IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = '{DatabaseName}')
+            const string sql = @"
+                IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'MeioAiDb')
                 BEGIN
-                    CREATE DATABASE [{DatabaseName}];
+                    CREATE DATABASE [MeioAiDb];
                 END
             ";
 

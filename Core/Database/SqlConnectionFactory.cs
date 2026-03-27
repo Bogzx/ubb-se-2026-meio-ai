@@ -6,14 +6,13 @@ namespace ubb_se_2026_meio_ai.Core.Database
     public class SqlConnectionFactory : ISqlConnectionFactory
     {
     
-        private const string DatabaseName = "MeioAiDb";
+        private const string DatabaseName = "MeioAiDb1";
         private const string DefaultConnectionString =
-            @"Server=.\MEIOAI;" +
-            "Database=" + DatabaseName + ";" +
-            "Trusted_Connection=True;TrustServerCertificate=True;";
+            @"Data Source=LENOVOLOQIN\MEIOAI;Integrated Security=True;Persist Security Info=False;Pooling=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Application Name=""SQL Server Management Studio"";Command Timeout=0";
+
 
         private const string MasterConnectionString =
-            @"Server=.\MEIOAI;Database=master;Trusted_Connection=True;TrustServerCertificate=True;";
+            @"Data Source=LENOVOLOQIN\MEIOAI;Integrated Security=True;Persist Security Info=False;Pooling=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Application Name=""SQL Server Management Studio"";Command Timeout=0";
 
         private readonly string _connectionString;
 

@@ -33,7 +33,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
         public async Task<List<MovieCardModel>> GetTournamentPoolAsync(int userId, int poolSize)
         {
             const string sql = @"
-                SELECT TOP (@PoolSize) m.MovieId, m.Title, m.PosterUrl, m.ReleaseYear, m.PrimaryGenre, m.Synopsis
+                SELECT TOP (@PoolSize) m.MovieId, m.Title, m.PosterUrl, m.ReleaseYear, m.PrimaryGenre
                 FROM Movie m
                 INNER JOIN UserMoviePreference ump ON m.MovieId = ump.MovieId
                 WHERE ump.UserId = @UserId AND ump.ChangeFromPreviousValue > 0
@@ -58,7 +58,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
                     PosterUrl = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
                     ReleaseYear = reader.IsDBNull(3) ? 0 : reader.GetInt32(3),
                     Genre = reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
-                    Synopsis = reader.IsDBNull(5) ? string.Empty : reader.GetString(5)
+                    
                 });
             }
 
