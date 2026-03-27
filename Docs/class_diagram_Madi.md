@@ -1,81 +1,161 @@
-# Class Diagram — Madi (Personality Matching)
+# Class Diagram — Madi (Personality Match)
 
 ```mermaid
 classDiagram
     direction TB
 
     %% ── Models ──
-    class UserMoviePreferenceModel {
-        +int UserMoviePreferenceId
-        +int UserId
+    class MatchResult {
+        +int MatchedUserId
+        +string MatchedUsername
+        +double MatchScore
+        +string FacebookAccount
+        +bool IsSelfView
+    }
+
+    class MoviePreferenceDisplayModel {
         +int MovieId
-        +float Score
-        +DateTime LastModified
+        +string Title
+        +double Score
+        +bool IsBestMovie
+    }
+
+    class UserAccountModel {
+        +int UserId
+        +string Username
+        +string FacebookAccount
     }
 
     class UserProfileModel {
-        +int UserProfileId
-        +int UserId
-        +int TotalLikes
-        +long TotalWatchTimeSec
-        +float AvgWatchTimeSec
-        +int TotalClipsViewed
-        +float LikeToViewRatio
-        +DateTime LastUpdated
+        <<Core Model>>
     }
 
-    class MatchResult {
-        <<DTO / in-memory>>
-        +int MatchedUserId
-        +string MatchedUsername
-        +float MatchScore
+    class UserMoviePreferenceModel {
+        <<Core Model>>
+    }
+
+    %% ── Repositories ──
+    class IPersonalityMatchRepository {
+        <<interface>>
+        +GetAllPreferencesExceptUserAsync(int excludeUserId) Task~Dictionary~int, List~UserMoviePreferenceModel~~~
+        +GetCurrentUserPreferencesAsync(int userId) Task~List~UserMoviePreferenceModel~~
+        +GetUserProfileAsync(int userId) Task~UserProfileModel?~
+        +GetRandomUserIdsAsync(int excludeUserId, int count) Task~List~int~~
+        +GetUsernameAsync(int userId) Task~string~
+        +GetTopPreferencesWithTitlesAsync(int userId, int count) Task~List~MoviePreferenceDisplayModel~~
+    }
+
+    class PersonalityMatchRepository {
+        -ISqlConnectionFactory _connectionFactory
+        +PersonalityMatchRepository(ISqlConnectionFactory connectionFactory)
+        +GetAllPreferencesExceptUserAsync(int excludeUserId) Task~Dictionary~int, List~UserMoviePreferenceModel~~~
+        +GetCurrentUserPreferencesAsync(int userId) Task~List~UserMoviePreferenceModel~~
+        +GetUserProfileAsync(int userId) Task~UserProfileModel?~
+        +GetRandomUserIdsAsync(int excludeUserId, int count) Task~List~int~~
+        +GetUsernameAsync(int userId) Task~string~
+        +GetTopPreferencesWithTitlesAsync(int userId, int count) Task~List~MoviePreferenceDisplayModel~~
     }
 
     %% ── Services ──
     class IPersonalityMatchingService {
         <<interface>>
-        +GetTopMatchesAsync(int userId, int limit) List~MatchResult~
+        +GetTopMatchesAsync(int userId, int count) Task~List~MatchResult~~
+        +GetRandomUsersAsync(int userId, int count) Task~List~MatchResult~~
     }
 
-    class PreferenceRepository {
-        +GetAllUsersPreferencesAsync(int excludeUserId) Map~int, List~Preference~~
-    }
-
-    class ProfileRepository {
-        +GetUserProfileAsync(int userId) UserProfileModel
+    class PersonalityMatchingService {
+        -IPersonalityMatchRepository _repository
+        -Dictionary~int, string~ HardcodedUsernames
+        -Dictionary~int, string~ HardcodedFacebookAccounts
+        +PersonalityMatchingService(IPersonalityMatchRepository repository)
+        +GetTopMatchesAsync(int userId, int count) Task~List~MatchResult~~
+        +GetRandomUsersAsync(int userId, int count) Task~List~MatchResult~~
+        -ComputeCosineSimilarity(Dictionary~int, double~ vectorA, Dictionary~int, double~ vectorB) double
+        -GetHardcodedUsername(int userId) string
+        -GetFacebookAccount(int userId) string
     }
 
     %% ── ViewModels ──
-    class MatchListViewModel {
-        +ObservableCollection~MatchResult~ MatchResults
+    class PersonalityMatchViewModel {
+        -IPersonalityMatchingService _matchingService
+        -Dictionary~int, (string Username, string FacebookAccount)~ _demoAccounts
+        -int _activeUserId
+        -List~int~ _loggedAccountIds
+        +string PageTitle
+        +string StatusMessage
         +bool IsLoading
-        +ICommand LoadMatchesCommand
+        +bool ShowNoMatch
+        +bool HasMatches
+        +bool IsAccountPanelOpen
+        +string CurrentUsername
+        +string CurrentFacebookAccount
+        +ObservableCollection~MatchResult~ MatchResults
+        +ObservableCollection~MatchResult~ FallbackUsers
+        +ObservableCollection~UserAccountModel~ OtherAccounts
+        +event Action~MatchResult~? NavigateToDetail
+        +event Action~UserAccountModel~? NavigateToCurrentUserDetail
+        +LoadMatchesCommand
+        +ViewUserDetailCommand
+        +ToggleAccountPanelCommand
+        +SwitchAccountCommand
+        +ViewCurrentAccountDetailCommand
+        +AddAccount(UserAccountModel account) void
+        +GetAvailableAccountsToAdd() IReadOnlyList~UserAccountModel~
+        -RefreshAccountCollections() void
     }
 
     class MatchedUserDetailViewModel {
-        +UserProfileModel MatchedUserProfile
-        +List~UserMoviePreferenceModel~ TopPreferences
-        +float CompatibilityScore
+        -IPersonalityMatchRepository _repository
+        +string MatchedUsername
+        +double MatchScore
+        +string FacebookAccount
+        +UserProfileModel? UserProfile
+        +bool IsLoading
+        +string? ErrorMessage
+        +bool HasProfile
+        +bool ShowCompatibility
+        +ObservableCollection~MoviePreferenceDisplayModel~ TopPreferences
+        +MatchedUserDetailViewModel(IPersonalityMatchRepository repository)
+        +LoadUserDetailAsync(int userId, double matchScore, string facebookAccount, string username, bool isSelfView) Task
     }
 
     %% ── Views ──
-    class MatchListView {
-        <<View>>
+    class PersonalityMatchPage {
+        <<Page>>
+        +PersonalityMatchViewModel ViewModel
+        +PersonalityMatchPage()
+        -Page_Loaded(object sender, RoutedEventArgs e) void
+        -MatchListView_ItemClick(object sender, ItemClickEventArgs e) void
+        -FallbackListView_ItemClick(object sender, ItemClickEventArgs e) void
+        -OtherAccountsList_ItemClick(object sender, ItemClickEventArgs e) void
+        -AddAccount_Click(object sender, RoutedEventArgs e) void
+        -OnNavigateToDetail(MatchResult match) void
+        -OnNavigateToCurrentUserDetail(UserAccountModel account) void
     }
 
-    class MatchedUserDetailView {
-        <<View>>
+    class MatchedUserDetailPage {
+        <<Page>>
+        +MatchedUserDetailViewModel ViewModel
+        +MatchedUserDetailPage()
+        #OnNavigatedTo(NavigationEventArgs e) void
+        -BackButton_Click(object sender, RoutedEventArgs e) void
     }
 
     %% ── Relationships ──
-    MatchListView --> MatchListViewModel : DataContext
-    MatchedUserDetailView --> MatchedUserDetailViewModel : DataContext
+    PersonalityMatchRepository ..|> IPersonalityMatchRepository : implements
+    PersonalityMatchingService ..|> IPersonalityMatchingService : implements
+    
+    PersonalityMatchingService --> IPersonalityMatchRepository : uses
+    PersonalityMatchingService --> MatchResult : manages
 
-    MatchListViewModel --> IPersonalityMatchingService : uses
-    IPersonalityMatchingService --> PreferenceRepository : reads all preferences
-    IPersonalityMatchingService --> MatchResult : returns
-    MatchedUserDetailViewModel --> ProfileRepository : fetches profile
-    MatchedUserDetailViewModel --> PreferenceRepository : fetches top prefs
-    MatchedUserDetailViewModel --> UserProfileModel : displays
-    MatchedUserDetailViewModel --> UserMoviePreferenceModel : displays
+    PersonalityMatchViewModel --> IPersonalityMatchingService : uses
+    PersonalityMatchViewModel --> MatchResult : manages
+    PersonalityMatchViewModel --> UserAccountModel : manages
+
+    MatchedUserDetailViewModel --> IPersonalityMatchRepository : uses
+    MatchedUserDetailViewModel --> MoviePreferenceDisplayModel : manages
+    MatchedUserDetailViewModel --> UserProfileModel : manages
+
+    PersonalityMatchPage --> PersonalityMatchViewModel : DataContext
+    MatchedUserDetailPage --> MatchedUserDetailViewModel : DataContext
 ```

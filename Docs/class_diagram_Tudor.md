@@ -6,128 +6,219 @@ classDiagram
 
     %% ── Models ──
     class ReelModel {
-        +int ReelId
-        +int? MovieId
-        +int? CreatorUserId
-        +string VideoUrl
-        +string ThumbnailUrl
-        +string Title
-        +string Caption
-        +int DurationSeconds
-        +string Source
-        +DateTime CreatedAt
+        <<Core Model>>
     }
 
     class UserReelInteractionModel {
-        +int InteractionId
-        +int UserId
-        +int ReelId
-        +bool IsLiked
-        +int? WatchDurationSec
-        +float? WatchPercentage
-        +DateTime ViewedAt
+        <<Core Model>>
     }
 
     class UserProfileModel {
-        +int UserProfileId
-        +int UserId
-        +int TotalLikes
-        +long TotalWatchTimeSec
-        +float AvgWatchTimeSec
-        +int TotalClipsViewed
-        +float LikeToViewRatio
-        +DateTime LastUpdated
+        <<Core Model>>
     }
 
-    class UserMoviePreferenceModel {
-        +int UserMoviePreferenceId
-        +int UserId
-        +int MovieId
-        +float Score
-        +DateTime LastModified
+    %% ── Repositories ──
+    class IInteractionRepository {
+        <<interface>>
+        +InsertInteractionAsync(UserReelInteractionModel interaction) Task
+        +UpsertInteractionAsync(int userId, int reelId) Task
+        +ToggleLikeAsync(int userId, int reelId) Task
+        +UpdateViewDataAsync(int userId, int reelId, double watchDurationSec, double watchPercentage) Task
+        +GetInteractionAsync(int userId, int reelId) Task~UserReelInteractionModel?~
+        +GetLikeCountAsync(int reelId) Task~int~
+        +GetReelMovieIdAsync(int reelId) Task~int?~
+    }
+
+    class InteractionRepository {
+        -ISqlConnectionFactory _connectionFactory
+    }
+
+    class IPreferenceRepository {
+        <<interface>>
+        +BoostPreferenceOnLikeAsync(int userId, int movieId) Task
+    }
+
+    class PreferenceRepository {
+        -ISqlConnectionFactory _connectionFactory
+        -double LikeBoostAmount
+    }
+
+    class IProfileRepository {
+        <<interface>>
+        +GetProfileAsync(int userId) Task~UserProfileModel?~
+        +UpsertProfileAsync(UserProfileModel profile) Task
+    }
+
+    class ProfileRepository {
+        -ISqlConnectionFactory _connectionFactory
     }
 
     %% ── Services ──
-    class IReelInteractionService {
+    class IClipPlaybackService {
         <<interface>>
-        +RecordViewAsync(int userId, int reelId, int watchDuration, float watchPct) void
-        +ToggleLikeAsync(int userId, int reelId) void
-        +GetInteractionAsync(int userId, int reelId) UserReelInteractionModel
+        +bool IsPlaying
+        +PlayAsync(string videoUrl) Task
+        +PauseAsync() Task
+        +ResumeAsync() Task
+        +SeekAsync(double positionSeconds) Task
+        +GetElapsedSeconds() double
+        +PrefetchClipAsync(string videoUrl) Task
+    }
+
+    class ClipPlaybackService {
+        -Dictionary~string, MediaSource~ _prefetchedSources
+        -Stopwatch _elapsed
+        +GetMediaSource(string videoUrl) MediaSource
+        +Dispose() void
     }
 
     class IEngagementProfileService {
         <<interface>>
-        +RecalculateProfileAsync(int userId) void
-        +GetProfileAsync(int userId) UserProfileModel
+        +GetProfileAsync(int userId) Task~UserProfileModel?~
+        +RefreshProfileAsync(int userId) Task
+    }
+
+    class EngagementProfileService {
+        -IProfileRepository _profileRepository
+        -ISqlConnectionFactory _connectionFactory
+        -AggregateInteractionStatsAsync(int userId) Task~UserProfileModel~
     }
 
     class IRecommendationService {
         <<interface>>
-        +GetRecommendedReelsAsync(int userId, int count) List~ReelModel~
+        +GetRecommendedReelsAsync(int userId, int count) Task~IList~ReelModel~~
     }
 
-    class IClipPlaybackService {
+    class RecommendationService {
+        -ISqlConnectionFactory _connectionFactory
+        -UserHasPreferencesAsync(int userId) Task~bool~
+        -GetPersonalizedReelsAsync(int userId, int count) Task~IList~ReelModel~~
+        -GetColdStartReelsAsync(int userId, int count) Task~IList~ReelModel~~
+        -ExecuteReelQueryAsync(string sql, Action~SqlCommand~ configureParameters) Task~IList~ReelModel~~
+    }
+
+    class IReelInteractionService {
         <<interface>>
-        +PlayClip(string videoUrl) void
-        +PauseClip() void
-        +ResumeClip() void
-        +GetElapsedSeconds() int
-        +PrefetchClip(string videoUrl) void
+        +ToggleLikeAsync(int userId, int reelId) Task
+        +RecordViewAsync(int userId, int reelId, double watchDurationSec, double watchPercentage) Task
+        +GetInteractionAsync(int userId, int reelId) Task~UserReelInteractionModel?~
+        +GetLikeCountAsync(int reelId) Task~int~
     }
 
-    class InteractionRepository {
-        +InsertInteractionAsync(UserReelInteractionModel) void
-        +UpsertInteractionAsync(int userId, int reelId) void
-    }
-
-    class ProfileRepository {
-        +UpsertProfileAsync(UserProfileModel) void
-    }
-
-    class PreferenceRepository {
-        +BoostPreferenceOnLikeAsync(int userId, int movieId) void
+    class ReelInteractionService {
+        -IInteractionRepository _interactionRepository
+        -IPreferenceRepository _preferenceRepository
     }
 
     %% ── ViewModels ──
+    class ObservableObject {
+        <<abstract>>
+        +event PropertyChanged
+        #OnPropertyChanged() void
+    }
+
     class ReelsFeedViewModel {
-        +ReelModel CurrentReel
-        +ObservableCollection~ReelModel~ ReelQueue
+        -int MockUserId = 1$
+        -IRecommendationService _recommendationService
+        -IClipPlaybackService _clipPlaybackService
+        -IReelInteractionService _reelInteractionService
+        -Stopwatch _watchStopwatch
+        -ReelModel? _previousReel
+        +string PageTitle
+        +string StatusMessage
         +bool IsLoading
-        +bool IsCurrentReelLiked
         +string? ErrorMessage
-        +ICommand LoadFeedCommand
-        +ICommand ScrollNextCommand
-        +ICommand ScrollPreviousCommand
-        +ICommand ToggleLikeCommand
+        +bool HasError
+        +bool IsEmpty
+        +ReelModel? CurrentReel
+        +ObservableCollection~ReelModel~ ReelQueue
+        +LoadFeedCommand
+        +ScrollNextCommand
+        +ScrollPreviousCommand
+        -PrefetchNearby(int currentIndex) void
+        -FlushWatchData() void
+        +OnNavigatingAway() void
+        -LoadLikeDataAsync(IList~ReelModel~ reels) Task
     }
 
     class UserProfileViewModel {
-        +UserProfileModel Profile
+        -IEngagementProfileService _profileService
+        +UserProfileModel? Profile
+        +bool IsLoading
+        +string? ErrorMessage
+        +LoadProfileCommand
     }
 
     %% ── Views ──
-    class ReelsFeedView {
-        <<View>>
+    class ReelsFeedPage {
+        <<Page>>
+        +ReelsFeedViewModel ViewModel
+        +ReelsFeedPage()
+        -ReelsFeedPage_Loaded(object sender, RoutedEventArgs e) void
+        -ReelsFeedPage_Unloaded(object sender, RoutedEventArgs e) void
+        -RetryButton_Click(object sender, RoutedEventArgs e) void
+        -FlipView_SelectionChanged(object sender, SelectionChangedEventArgs e) void
+        -TriggerPlaybackForCurrent() void
+        -FindVisualChild~T~(DependencyObject parent) T?
     }
 
     class ReelItemView {
-        <<View>>
+        <<UserControl>>
+        +ReelModel Reel
+        +static bool IsAppClosing
+        -IClipPlaybackService _playbackService
+        -IReelInteractionService _interactionService
+        -DispatcherTimer? _progressTimer
+        -volatile bool _disposed
+        -ReelModel? _subscribedReel
+        +ReelItemView()
+        -OnReelChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) void$
+        -OnReelPropertyChanged(object sender, PropertyChangedEventArgs args) void
+        -UnsubscribeFromReel() void
+        +PlayVideo() void
+        +PauseVideo() void
+        +DisposeMediaPlayer() void
+        -UpdateGenreBadge(string? genre) void
+        -UpdateLikeVisuals(bool isLiked, int likeCount) void
+        -LikeButton_Click(object sender, RoutedEventArgs e) void
+        -ReelItemView_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e) void
+        -ToggleLikeWithAnimationAsync() Task
+        -PlayHeartBounceAnimation() void
+        -PlayHeartBurstAnimation() void
+        -StartProgressTimer() void
+        -StopProgressTimer() void
+        -ProgressTimer_Tick(object sender, object e) void
+        -DisposeCurrentPlayer() void
+        -GetParentFlipView(DependencyObject element) FlipView?
+        -MediaPlayer_MediaEnded(MediaPlayer sender, object args) void
     }
 
     %% ── Relationships ──
-    ReelsFeedView --> ReelsFeedViewModel : DataContext
-    ReelItemView --> ReelsFeedViewModel : DataContext
+    InteractionRepository ..|> IInteractionRepository : implements
+    PreferenceRepository ..|> IPreferenceRepository : implements
+    ProfileRepository ..|> IProfileRepository : implements
 
-    ReelsFeedViewModel --> IRecommendationService : fetches feed
-    ReelsFeedViewModel --> IReelInteractionService : records views & likes
-    ReelsFeedViewModel --> IClipPlaybackService : controls playback
-    UserProfileViewModel --> IEngagementProfileService : reads profile
+    ClipPlaybackService ..|> IClipPlaybackService : implements
+    ClipPlaybackService ..|> IDisposable : implements
 
-    IReelInteractionService --> InteractionRepository : persists interactions
-    IReelInteractionService --> PreferenceRepository : boosts on like
-    IReelInteractionService --> UserReelInteractionModel : creates
-    IEngagementProfileService --> ProfileRepository : updates profile
-    IEngagementProfileService --> UserProfileModel : computes
-    IRecommendationService --> ReelModel : returns
-    PreferenceRepository --> UserMoviePreferenceModel : upserts
+    EngagementProfileService ..|> IEngagementProfileService : implements
+    EngagementProfileService --> IProfileRepository : uses
+
+    RecommendationService ..|> IRecommendationService : implements
+    ReelInteractionService ..|> IReelInteractionService : implements
+    ReelInteractionService --> IInteractionRepository : uses
+    ReelInteractionService --> IPreferenceRepository : uses
+
+    ReelsFeedViewModel --|> ObservableObject : inherits
+    UserProfileViewModel --|> ObservableObject : inherits
+
+    ReelsFeedViewModel --> IRecommendationService : uses
+    ReelsFeedViewModel --> IClipPlaybackService : uses
+    ReelsFeedViewModel --> IReelInteractionService : uses
+
+    UserProfileViewModel --> IEngagementProfileService : uses
+
+    ReelsFeedPage --> ReelsFeedViewModel : DataContext
+    ReelItemView --> IClipPlaybackService : uses
+    ReelItemView --> IReelInteractionService : uses
 ```

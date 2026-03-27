@@ -5,94 +5,196 @@ classDiagram
     direction TB
 
     %% ── Models ──
-    class MovieModel {
-        +int MovieId
-        +string Title
-        +string PosterUrl
-    }
-
-    class UserMoviePreferenceModel {
-        +int UserMoviePreferenceId
-        +int UserId
-        +int MovieId
-        +float Score
-        +DateTime LastModified
+    class MatchPair {
+        +MovieCardModel MovieA
+        +MovieCardModel MovieB
+        +int? WinnerId
+        +MatchPair(MovieCardModel movieA, MovieCardModel movieB)
+        +IsCompleted() bool
+        +IsBye() bool
     }
 
     class TournamentState {
-        
-        +List~Matchup~ PendingMatches
-        +List~Matchup~ CompletedMatches
+        +List~MatchPair~ PendingMatches
+        +List~MatchPair~ CompletedMatches
         +int CurrentRound
+        +List~MovieCardModel~ CurrentRoundWinners
+        +TournamentState()
     }
 
-    class Matchup {
-        +MovieModel MovieA
-        +MovieModel MovieB
-        +int WinnerId
+    class MovieCardModel {
+        <<Core Model>>
     }
 
-    TournamentState -->  Matchup : contains multiple
-    Matchup -->  MovieModel : has two
+    %% ── Repositories ──
+    class IMovieTournamentRepository {
+        <<interface>>
+        +GetTournamentPoolSizeAsync(int userId) Task~int~
+        +GetTournamentPoolAsync(int userId, int poolSize) Task~List~MovieCardModel~~
+        +BoostMovieScoreAsync(int userId, int movieId, double scoreBoost) Task
+    }
+
+    class MovieTournamentRepository {
+        -ISqlConnectionFactory _connectionFactory
+        +MovieTournamentRepository(ISqlConnectionFactory connectionFactory)
+        +GetTournamentPoolSizeAsync(int userId) Task~int~
+        +GetTournamentPoolAsync(int userId, int poolSize) Task~List~MovieCardModel~~
+        +BoostMovieScoreAsync(int userId, int movieId, double scoreBoost) Task
+    }
 
     %% ── Services ──
+    class ITournamentLogicService {
+        <<interface>>
+        +TournamentState CurrentState
+        +bool IsTournamentActive
+        +StartTournamentAsync(int userId, int poolSize) Task
+        +AdvanceWinnerAsync(int userId, int winnerId) Task
+        +ResetTournament() void
+        +GetCurrentMatch() MatchPair?
+        +IsTournamentComplete() bool
+        +GetFinalWinner() MovieCardModel
+    }
+
     class TournamentLogicService {
-        +GenerateBracket(List~MovieModel~) TournamentState
-        +AdvanceWinner(TournamentState, int winnerId) TournamentState
+        -IMovieTournamentRepository _repository
+        -Random _random
+        -TournamentState? _state
+        +TournamentLogicService(IMovieTournamentRepository repository)
+        +StartTournamentAsync(int userId, int poolSize) Task
+        +AdvanceWinnerAsync(int userId, int winnerId) Task
+        +ResetTournament() void
+        +GetCurrentMatch() MatchPair?
+        +IsTournamentComplete() bool
+        +GetFinalWinner() MovieCardModel
+        -GenerateNextRound() void
     }
-
-    class MovieRepository {
-        +GetMoviesAsync(int count) List~MovieModel~
-    }
-
-    class WinnerService {
-        +BoostWinnerScoreAsync(int userId, int movieId) void
-        +bool ScoreBoosted
-    }    
 
     %% ── ViewModels ──
-    class TournamentSetupViewModel {
+    class ObservableObject {
+        <<abstract>>
+        +event PropertyChanged
+        #OnPropertyChanged() void
+    }
+
+    class MovieTournamentViewModel {
+        -ITournamentLogicService _tournamentService
+        -IMovieTournamentRepository _repository
+        -int _currentUserId
+        +string PageTitle
+        +int CurrentViewState
         +int PoolSize
-        +int totalNumberOfMovies
-        
+        +int MaxPoolSize
+        +string SetupErrorMessage
+        +string? Bg1
+        +string? Bg2
+        +string? Bg3
+        +string? Bg4
+        +MovieCardModel? MovieOptionA
+        +MovieCardModel? MovieOptionB
+        +int RoundNumber
+        +string RoundDisplay
+        +MovieCardModel? WinnerMovie
+        +StartTournamentCommand
+        +SelectMovieCommand
+        +ResetTournamentCommand
+        -LoadMaxPoolSizeAsync() void
+        -UpdateCurrentMatchDisplay() void
+        +GetImageSource(string? url) ImageSource?
+    }
+
+    class TournamentSetupViewModel {
+        -ITournamentLogicService _tournamentService
+        -IMovieTournamentRepository _repository
+        -int _currentUserId
+        +int PoolSize
+        +int MaxPoolSize
+        +string SetupErrorMessage
+        +string? Bg1
+        +string? Bg2
+        +string? Bg3
+        +string? Bg4
+        +event EventHandler? TournamentStarted
+        +StartTournamentCommand
+        -LoadDataAsync() void
+        +GetImageSource(string? url) ImageSource?
     }
 
     class TournamentMatchViewModel {
-        +MovieModel MovieOptionA
-        +MovieModel MovieOptionB
-        +int choice
-        +choose() int
+        -ITournamentLogicService _tournamentService
+        -int _currentUserId
+        +MovieCardModel? MovieOptionA
+        +MovieCardModel? MovieOptionB
+        +int RoundNumber
+        +string RoundDisplay
+        +event EventHandler? TournamentComplete
+        +event EventHandler? NavigateBack
+        +SelectMovieCommand
+        +GoBackCommand
+        +RefreshCurrentMatch() void
+        +GetImageSource(string? url) ImageSource?
     }
 
-    class TournamentResultViewModel {
-        +MovieModel Winner
-        
+    class TournamentWinnerViewModel {
+        -ITournamentLogicService _tournamentService
+        +MovieCardModel? WinnerMovie
+        +event EventHandler? NavigateToSetup
+        +StartAnotherTournamentCommand
+        +GetImageSource(string? url) ImageSource?
     }
 
     %% ── Views ──
-    class TournamentSetupView {
-        
+    class MovieTournamentPage {
+        <<Page>>
+        +MovieTournamentPage()
+        -OnLoaded(object, RoutedEventArgs) void
     }
 
-    class TournamentMatchView {
-      
+    class TournamentSetupPage {
+        <<Page>>
+        +TournamentSetupViewModel ViewModel
+        +TournamentSetupPage()
     }
 
-    class TournamentResultView {
-    
+    class TournamentMatchPage {
+        <<Page>>
+        +TournamentMatchViewModel ViewModel
+        +TournamentMatchPage()
+        -MoviePointerEntered(object, PointerRoutedEventArgs) void
+        -MoviePointerExited(object, PointerRoutedEventArgs) void
+        -AnimateScale(ScaleTransform, double) void
+    }
+
+    class TournamentWinnerPage {
+        <<Page>>
+        +TournamentWinnerViewModel ViewModel
+        +TournamentWinnerPage()
     }
 
     %% ── Relationships ──
-    TournamentSetupView --> TournamentSetupViewModel 
-    TournamentMatchView --> TournamentMatchViewModel 
-    TournamentResultView --> TournamentResultViewModel 
-    TournamentResultViewModel -->MovieModel
-    TournamentSetupViewModel --> MovieRepository 
-    TournamentMatchViewModel --> TournamentLogicService 
-     
-    TournamentResultViewModel --> WinnerService 
-    TournamentLogicService --> TournamentState 
-    MovieRepository -->MovieModel
-    WinnerService --> UserMoviePreferenceModel 
+    MovieTournamentRepository ..|> IMovieTournamentRepository : implements
+    TournamentLogicService ..|> ITournamentLogicService : implements
     
+    MovieTournamentViewModel --|> ObservableObject : inherits
+    TournamentSetupViewModel --|> ObservableObject : inherits
+    TournamentMatchViewModel --|> ObservableObject : inherits
+    TournamentWinnerViewModel --|> ObservableObject : inherits
+    
+    TournamentLogicService --> IMovieTournamentRepository : uses
+    TournamentLogicService --> TournamentState : manages
+    TournamentLogicService --> MatchPair : manages
+    TournamentLogicService --> MovieCardModel : manages
+
+    MovieTournamentViewModel --> ITournamentLogicService : uses
+    MovieTournamentViewModel --> IMovieTournamentRepository : uses
+
+    TournamentSetupViewModel --> ITournamentLogicService : uses
+    TournamentSetupViewModel --> IMovieTournamentRepository : uses
+
+    TournamentMatchViewModel --> ITournamentLogicService : uses
+
+    TournamentWinnerViewModel --> ITournamentLogicService : uses
+
+    TournamentSetupPage --> TournamentSetupViewModel : DataContext
+    TournamentMatchPage --> TournamentMatchViewModel : DataContext
+    TournamentWinnerPage --> TournamentWinnerViewModel : DataContext
 ```
