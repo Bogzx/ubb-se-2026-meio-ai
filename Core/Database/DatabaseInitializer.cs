@@ -189,14 +189,14 @@ BEGIN
     ('Inception', 'https://media.themoviedb.org/t/p/w600_and_h900_face/vr6ouTojPp0zlSpJvCbODPp19nd.jpg', 'Sci-Fi', 2010),
     ('The Dark Knight', 'https://media.themoviedb.org/t/p/w600_and_h900_face/a1UL3FTJDgQikYIebnMDhTPFVfm.jpg', 'Action', 2008),
     ('Interstellar', 'https://media.themoviedb.org/t/p/w600_and_h900_face/wbnrYkn59cdFuu0LNAZ2BWh2i37.jpg', 'Adventure', 2014),
-    ('The Matrix', 'https://media.themoviedb.org/t/p/w600_and_h900_face/p96dm7sCMn4VYAStA6siNz30G1r.jpg', 'Sci-Fi', 1999),
+    ('The Matrix1', 'https://media.themoviedb.org/t/p/w600_and_h900_face/p96dm7sCMn4VYAStA6siNz30G1r.jpg', 'Sci-Fi', 1999),
     ('Parasite', 'https://media.themoviedb.org/t/p/w600_and_h900_face/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg', 'Thriller', 2019),
     ('La La Land', 'https://media.themoviedb.org/t/p/w600_and_h900_face/uDO8zWDhfWwoFdKS4fzkUJt0Rf0.jpg', 'Musical', 2016),
     ('Whiplash', 'https://media.themoviedb.org/t/p/w600_and_h900_face/7fn624j5lj3xTme2SgiLCeuedmO.jpg', 'Drama', 2014),
     ('The Grand Budapest Hotel', 'https://media.themoviedb.org/t/p/w600_and_h900_face/eWdyYQreja6JGCzqHWXpWHDrrPo.jpg', 'Comedy', 2014);
 END
 
-IF (SELECT COUNT(*) FROM Movie) < 50
+IF (SELECT COUNT(*) FROM Movie) < 38
 BEGIN
     INSERT INTO Movie (Title, PosterUrl, PrimaryGenre, ReleaseYear)
     VALUES

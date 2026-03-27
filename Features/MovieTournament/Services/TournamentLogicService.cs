@@ -30,7 +30,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
 
             _state = new TournamentState();
 
-            
+ 
             for (int i = movies.Count - 1; i > 0; i--)
             {
                 int j = _random.Next(i + 1);
