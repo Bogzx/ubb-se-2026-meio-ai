@@ -1,8 +1,6 @@
 namespace ubb_se_2026_meio_ai.Core.Models
 {
-    /// <summary>
-    /// Represents a single scraping job executed by the admin.
-    /// </summary>
+    
     public class ScrapeJobModel
     {
         public int ScrapeJobId { get; set; }

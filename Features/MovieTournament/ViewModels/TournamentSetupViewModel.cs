@@ -27,7 +27,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
         [ObservableProperty] private string? _bg3;
         [ObservableProperty] private string? _bg4;
 
-        /// <summary>Raised when the tournament starts — nav to Match page.</summary>
+
         public event EventHandler? TournamentStarted;
 
         public TournamentSetupViewModel(
@@ -55,7 +55,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
                 }
                 else
                 {
-                    // Fallback posters
+                  
                     Bg1 = "https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg";
                     Bg2 = "https://media.themoviedb.org/t/p/w600_and_h900_face/qJ2tW6WMUDux911r6m7haRef0WH.jpg";
                     Bg3 = "https://media.themoviedb.org/t/p/w600_and_h900_face/q2qXg4OmJgm0qGaBYLdXzP8nHPy.jpg";

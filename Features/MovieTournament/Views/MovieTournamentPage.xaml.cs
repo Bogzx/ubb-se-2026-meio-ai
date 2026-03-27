@@ -16,7 +16,6 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.Views
         {
             var tournamentService = App.Services.GetRequiredService<ITournamentLogicService>();
 
-            // Restore the correct sub-page based on the current tournament state
             if (tournamentService.IsTournamentActive)
                 TournamentFrame.Navigate(typeof(TournamentMatchPage));
             else if (tournamentService.IsTournamentComplete())
