@@ -9,7 +9,6 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <Grid>
-        <!-- ── Loading Spinner ── -->
         <ProgressRing
             x:Name="LoadingRing"
             IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
@@ -17,7 +16,6 @@
             HorizontalAlignment="Center"
             VerticalAlignment="Center" />
 
-        <!-- ── "All caught up!" Empty State ── -->
         <StackPanel
             x:Name="EmptyStatePanel"
             Visibility="{x:Bind ViewModel.IsAllCaughtUp, Mode=OneWay}"
@@ -36,13 +34,11 @@
                        Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
         </StackPanel>
 
-        <!-- ── Card Stack Area ── -->
         <Grid x:Name="CardContainer"
               HorizontalAlignment="Center"
               VerticalAlignment="Center"
               Width="340" Height="500">
 
-            <!-- The swipeable movie card -->
             <Border x:Name="MovieCard"
                     CornerRadius="16"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
@@ -60,7 +56,6 @@
                 </Border.RenderTransform>
 
                 <Grid>
-                    <!-- Poster Image (top 70%) -->
                     <Grid.RowDefinitions>
                         <RowDefinition Height="7*" />
                         <RowDefinition Height="3*" />
@@ -72,7 +67,6 @@
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center" />
 
-                    <!-- Fallback text when no poster -->
                     <Border Grid.Row="0"
                             Background="{ThemeResource SystemControlBackgroundBaseLowBrush}">
                         <FontIcon Glyph="&#xE8B9;" FontSize="48"
@@ -81,7 +75,6 @@
                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Border>
 
-                    <!-- Title / Genre bar (bottom 30%) -->
                     <StackPanel Grid.Row="1"
                                 VerticalAlignment="Center"
                                 Padding="20,12">
@@ -97,7 +90,6 @@
                                    Margin="0,4,0,0" />
                     </StackPanel>
 
-                    <!-- ── "LIKE" Overlay (green) ── -->
                     <Border x:Name="LikeOverlay"
                             Grid.Row="0" Grid.RowSpan="2"
                             CornerRadius="16"
@@ -112,7 +104,6 @@
                                    CharacterSpacing="200" />
                     </Border>
 
-                    <!-- ── "NOPE" Overlay (red) ── -->
                     <Border x:Name="NopeOverlay"
                             Grid.Row="0" Grid.RowSpan="2"
                             CornerRadius="16"
@@ -130,7 +121,6 @@
             </Border>
         </Grid>
 
-        <!-- ── Status bar at the bottom ── -->
         <TextBlock Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Bottom"

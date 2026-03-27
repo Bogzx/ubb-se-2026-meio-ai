@@ -36,7 +36,7 @@ classDiagram
         <<interface>>
         +GetPreferenceAsync(int userId, int movieId) Task~UserMoviePreferenceModel?~
         +UpsertPreferenceAsync(UserMoviePreferenceModel preference) Task
-        +GetUnswipedMoviesAsync(int userId, int count) Task~List~MovieCardModel~~
+        +GetMovieFeedAsync(int userId, int count) Task~List~MovieCardModel~~
         +GetAllPreferencesExceptUserAsync(int excludeUserId) Task~Dictionary~int, List~UserMoviePreferenceModel~~~
         +GetUnswipedMovieIdsAsync(int userId) Task~List~int~~
     }
@@ -46,7 +46,7 @@ classDiagram
         +PreferenceRepository(ISqlConnectionFactory connectionFactory)
         +GetPreferenceAsync(int userId, int movieId) Task~UserMoviePreferenceModel?~
         +UpsertPreferenceAsync(UserMoviePreferenceModel preference) Task
-        +GetUnswipedMoviesAsync(int userId, int count) Task~List~MovieCardModel~~
+        +GetMovieFeedAsync(int userId, int count) Task~List~MovieCardModel~~
         +GetAllPreferencesExceptUserAsync(int excludeUserId) Task~Dictionary~int, List~UserMoviePreferenceModel~~~
         +GetUnswipedMovieIdsAsync(int userId) Task~List~int~~
     }
@@ -78,13 +78,13 @@ classDiagram
 
     class IMovieCardFeedService {
         <<interface>>
-        +FetchUnswipedMovieAsync(int userId, int count) Task~List~MovieCardModel~~
+        +FetchMovieFeedAsync(int userId, int count) Task~List~MovieCardModel~~
     }
 
     class MovieCardFeedService {
         -IPreferenceRepository _repository
         +MovieCardFeedService(IPreferenceRepository repository)
-        +FetchUnswipedMovieAsync(int userId, int count) Task~List~MovieCardModel~~
+        +FetchMovieFeedAsync(int userId, int count) Task~List~MovieCardModel~~
     }
 
     %% ══════════════════════════════════════

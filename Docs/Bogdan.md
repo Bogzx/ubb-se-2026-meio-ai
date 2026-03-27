@@ -1,17 +1,11 @@
 ### 1. Formal Requirements (Movie tinder)
 
 *   **Requirement 1:** The system must show the authenticated user a stack of movie cards (poster + title + genre), sourced from the external `Movie` table, prioritising unswiped movies, and then previously swiped movies.
-    *   **Verified by:** Unit test confirming the card queue correctly prioritizes unswiped movies.
 *   **Requirement 2:** The user can swipe right to "like" or left to "skip" a movie card.
-    *   **Verified by:** UI test confirming a drag beyond 30 % of card width triggers the correct action.
 *   **Requirement 3:** Each swipe updates the user's score in `UserMoviePreference`: **right-swipe → +1.0**, **left-swipe → −0.5**. If no row exists, one is created at **0.0** before applying the delta (atomic `MERGE` statement).
-    *   **Verified by:** Unit test asserting exact delta values; integration test confirming upsert for first-time swipes.
 *   **Requirement 4:** All score changes are persisted immediately after each swipe. Persistence runs concurrently with the card-advance animation so the UI stays responsive.
-    *   **Verified by:** Integration test confirming the DB write completes within the same request cycle.
 *   **Requirement 5 (User Flow):** The logged-in user navigates to the "Discover Movies" screen, where a stack of movie cards is loaded automatically. The top card shows the movie's poster and title. The user drags the card right to like or left to skip — a green "LIKE" or red "NOPE" overlay fades in proportionally to the drag distance. Once the drag passes 30 % of the card width and the user releases, the swipe is confirmed: the card animates off-screen (fly-off + fade-out, 250 ms, cubic ease-in), the preference score is updated in the background, and the next card rises to the top. When the queue drops to ≤ 2 cards, an infinite stream of movies is fetched automatically (buffer size = 5). The user can continue swiping infinitely unless the database is entirely empty, at which point a "No movies found" message is displayed.
-    *   **Verified by:** End-to-end UI walkthrough test covering: card load → drag → overlay opacity → release → card animation → score persistence → queue refill.
 *   **Requirement 6:** If the user closes the application mid-swipe (before releasing the card), the in-progress swipe is discarded — only fully completed swipes are persisted. No data is lost for previously completed swipes. If the pointer capture is lost during a drag, the card snaps back to center.
-    *   **Verified by:** Test confirming that killing the app during a drag does not create a partial `UserMoviePreference` row.
 *   **Owner:** Bogdan
 *   **Cross-Team Dependencies:**
     *   **External Group:** Reads from the other group's `Movie` table for card data.
