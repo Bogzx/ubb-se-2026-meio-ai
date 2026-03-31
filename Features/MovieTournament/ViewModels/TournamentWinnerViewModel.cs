@@ -14,7 +14,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
         [ObservableProperty]
         private MovieCardModel? _winnerMovie;
 
-        /// <summary>Raised when user wants to start a new tournament — nav back to Setup.</summary>
+        
         public event EventHandler? NavigateToSetup;
 
         public TournamentWinnerViewModel(ITournamentLogicService tournamentService)

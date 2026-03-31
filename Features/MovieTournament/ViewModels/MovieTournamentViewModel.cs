@@ -82,7 +82,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
         {
             try
             {
-                await Task.Yield(); // Ensure we don't throw synchronously from the constructor
+                await Task.Yield(); 
                 MaxPoolSize = await _repository.GetTournamentPoolSizeAsync(_currentUserId);
                 
                 

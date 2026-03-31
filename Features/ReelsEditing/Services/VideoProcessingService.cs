@@ -4,11 +4,7 @@ using System.Text.Json;
 
 namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Services
 {
-    /// <summary>
-    /// Implements IVideoProcessingService using ffmpeg.
-    /// Requires ffmpeg.exe to be present in PATH or the app's working directory.
-    /// Owner: Beatrice
-    /// </summary>
+
     public class VideoProcessingService : IVideoProcessingService
     {
         private readonly IAudioLibraryService _audioLibrary;

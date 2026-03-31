@@ -3,11 +3,7 @@ using ubb_se_2026_meio_ai.Core.Database;
 
 namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
 {
-    /// <summary>
-    /// Raw SQL data access for Tudor's writes to the UserMoviePreference table.
-    /// Implements the +1.5 score boost on reel like (per Tudor.md cross-team spec).
-    /// Owner: Tudor
-    /// </summary>
+
     public class PreferenceRepository : IPreferenceRepository
     {
         private const double LikeBoostAmount = 1.5;

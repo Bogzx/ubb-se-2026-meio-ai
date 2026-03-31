@@ -24,10 +24,8 @@ namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
         [ObservableProperty]
         private string _roundDisplay = string.Empty;
 
-        /// <summary>Raised when the user picks a winner and tournament is complete — nav to Winner page.</summary>
         public event EventHandler? TournamentComplete;
 
-        /// <summary>Raised when the user clicks Back — nav back to Setup page.</summary>
         public event EventHandler? NavigateBack;
 
         public TournamentMatchViewModel(ITournamentLogicService tournamentService)

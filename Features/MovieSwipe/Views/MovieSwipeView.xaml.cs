@@ -11,20 +11,15 @@ using Windows.Foundation;
 
 namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Views
 {
-    /// <summary>
-    /// Code-behind for the Movie Swipe page.
-    /// Handles drag gestures, overlay opacity, and card fly-off animations.
-    /// Owner: Bogdan
-    /// </summary>
+
     public sealed partial class MovieSwipeView : Page
     {
-        /// <summary>Fraction of card width the drag must exceed to confirm a swipe.</summary>
+
         private const double SwipeThresholdFraction = 0.30;
 
-        /// <summary>Distance in pixels the card flies off-screen.</summary>
+
         private const double FlyOffDistance = 600;
 
-        /// <summary>Duration of the fly-off animation in milliseconds.</summary>
         private const int FlyOffDurationMs = 250;
 
         private bool _isDragging;
@@ -177,10 +172,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Views
             }
         }
 
-        /// <summary>
-        /// Determines whether the drag exceeded the threshold and triggers the swipe command
-        /// or snaps the card back to center.
-        /// </summary>
+
         private void FinalizeSwipe()
         {
             double deltaX = CardTransform.TranslateX;
@@ -201,9 +193,6 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Views
             _isDragging = false;
         }
 
-        /// <summary>
-        /// Animates the card flying off to the left or right, then triggers the swipe command.
-        /// </summary>
         private void AnimateCardOffScreen(bool isLiked)
         {
             double targetX = isLiked ? FlyOffDistance : -FlyOffDistance;
@@ -251,9 +240,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Views
             storyboard.Begin();
         }
 
-        /// <summary>
-        /// Snaps the card back to its original position with a short animation.
-        /// </summary>
+
         private void ResetCardPosition()
         {
             CardTransform.TranslateX = 0;

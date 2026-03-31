@@ -6,12 +6,7 @@ using ubb_se_2026_meio_ai.Features.PersonalityMatch.Services;
 
 namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels
 {
-    /// <summary>
-    /// ViewModel for the Matched User Detail page.
-    /// Displays the selected user's engagement stats, top preferences (with movie titles),
-    /// compatibility score, and Facebook nickname.
-    /// Owner: Madi
-    /// </summary>
+   
     public partial class MatchedUserDetailViewModel : ObservableObject
     {
         private readonly IPersonalityMatchRepository _repository;
@@ -37,14 +32,11 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels
         [ObservableProperty]
         private bool _hasProfile;
 
-        /// <summary>
-        /// False when viewing your own account (self-view).
-        /// Hides the compatibility bar since 100% match with yourself is obvious.
-        /// </summary>
+     
         [ObservableProperty]
         private bool _showCompatibility = true;
 
-        /// <summary>The selected user's top 5 movie preferences with resolved titles.</summary>
+
         public ObservableCollection<MoviePreferenceDisplayModel> TopPreferences { get; } = new();
 
         public MatchedUserDetailViewModel(IPersonalityMatchRepository repository)

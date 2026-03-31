@@ -8,10 +8,7 @@ using ubb_se_2026_meio_ai.Features.ReelsEditing.Services;
 
 namespace ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
 {
-    /// <summary>
-    /// ViewModel for the main Reel Editor workspace.
-    /// Owner: Beatrice
-    /// </summary>
+
     public partial class ReelsEditingViewModel : ObservableObject
     {
         private readonly ReelRepository _reelRepository;

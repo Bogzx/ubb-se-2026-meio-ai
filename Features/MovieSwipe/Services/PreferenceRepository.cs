@@ -74,11 +74,10 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
             await command.ExecuteNonQueryAsync();
         }
 
-        /// <inheritdoc />
+
         public async Task<List<MovieCardModel>> GetMovieFeedAsync(int userId, int count)
         {
-            // Reads from the external Movie table, prioritizing unswiped movies (NULL preference).
-            // If all are swiped, returns previously swiped movies ordered by oldest LastModified.
+            
             const string sql = @"
                 SELECT TOP (@Count) m.MovieId, m.Title, m.PosterUrl, m.PrimaryGenre
                 FROM   Movie m
@@ -111,7 +110,7 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
             return results;
         }
 
-        /// <inheritdoc />
+ 
         public async Task<Dictionary<int, List<UserMoviePreferenceModel>>> GetAllPreferencesExceptUserAsync(int excludeUserId)
         {
             const string sql = @"
@@ -148,10 +147,9 @@ namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
             return result;
         }
 
-        /// <inheritdoc />
         public async Task<List<int>> GetUnswipedMovieIdsAsync(int userId)
         {
-            // Returns MovieIds from the Movie table that the user has NOT swiped on.
+            
             const string sql = @"
                 SELECT m.MovieId
                 FROM   Movie m
