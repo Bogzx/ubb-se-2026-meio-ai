@@ -1,4 +1,4 @@
-{
+﻿{
 	"_type": "Project",
 	"_id": "AAAAAAFF+h6SjaM2Hec=",
 	"name": "Untitled",
@@ -285,7 +285,7 @@
 											"top": 815,
 											"width": 152.62646484375,
 											"height": 13,
-											"text": "+DurationSeconds: int",
+											"text": "+FeatureDurationSeconds: double",
 											"horizontalAlignment": 0
 										},
 										{
@@ -1559,7 +1559,7 @@
 											"top": 1163,
 											"width": 129.2734375,
 											"height": 13,
-											"text": "+DurationSeconds: int",
+											"text": "+FeatureDurationSeconds: double",
 											"horizontalAlignment": 0
 										}
 									],
@@ -2993,7 +2993,7 @@
 											"top": 398,
 											"width": 153.57861328125,
 											"height": 13,
-											"text": "+VideoFileStream: Stream",
+											"text": "+LocalFilePath: string",
 											"horizontalAlignment": 0
 										},
 										{
@@ -5420,7 +5420,7 @@
 											"top": 388,
 											"width": 312.5810546875,
 											"height": 13,
-											"text": "+ValidateVideoAsync(Stream): ValidationResult",
+											"text": "+ValidateVideoAsync(localFilePath: string): bool",
 											"horizontalAlignment": 0
 										}
 									],
@@ -8439,7 +8439,7 @@
 											"top": 559,
 											"width": 221.01611328125,
 											"height": 13,
-											"text": "ReelUploadViewModel"
+											"text": "ReelsUploadViewModel"
 										},
 										{
 											"_type": "LabelView",
@@ -12274,7 +12274,7 @@
 											"top": 588,
 											"width": 101.90234375,
 											"height": 13,
-											"text": "ReelUploadView"
+											"text": "ReelsUploadPage"
 										},
 										{
 											"_type": "LabelView",
@@ -32097,7 +32097,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGc46M55O7F2mA="
 							},
-							"name": "DurationSeconds",
+							"name": "FeatureDurationSeconds",
 							"type": "int"
 						},
 						{
@@ -32398,7 +32398,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGc46M56O8SXUo="
 							},
-							"name": "DurationSeconds",
+							"name": "FeatureDurationSeconds",
 							"type": "int"
 						}
 					]
@@ -32731,7 +32731,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGc46M58O9oTcs="
 							},
-							"name": "VideoFileStream",
+							"name": "LocalFilePath",
 							"type": "Stream"
 						},
 						{
@@ -35136,7 +35136,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGc46M54+7D1No="
 					},
-					"name": "ReelUploadViewModel",
+					"name": "ReelsUploadViewModel",
 					"ownedElements": [
 						{
 							"_type": "UMLGeneralization",
@@ -37423,7 +37423,7 @@
 					"_parent": {
 						"$ref": "AAAAAAGc46M54+7D1No="
 					},
-					"name": "ReelUploadView",
+					"name": "ReelsUploadPage",
 					"ownedElements": [
 						{
 							"_type": "UMLAssociation",

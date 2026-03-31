@@ -1,4 +1,4 @@
-﻿# dbdiagram.io — DBML Code
+# dbdiagram.io — DBML Code
 
 Copy-paste the code block below into [dbdiagram.io](https://dbdiagram.io/d) to render the diagram.
 
@@ -60,7 +60,6 @@ Table UserMoviePreference {
   MovieId int [ref: > Movie.MovieId, not null]
   Score float [not null]
   LastModified datetime
-  ChangeFromPreviousValue int 
 
   indexes {
     (UserId, MovieId) [unique]

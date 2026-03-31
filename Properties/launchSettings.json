@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "ubb-se-2026-meio-ai (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "ubb-se-2026-meio-ai (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
