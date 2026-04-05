@@ -54,7 +54,8 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
         private async Task SelectVideoFileAsync()
         {
             var filePicker = new Windows.Storage.Pickers.FileOpenPicker();
-            filePicker.FileTypeFilter.Add(".mp4");
+            string videoFileExtension = ".mp4";
+            filePicker.FileTypeFilter.Add(videoFileExtension);
 
             // In WinUI 3 Desktop apps, the file picker needs to know WHICH window it belongs to!
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
@@ -159,8 +160,8 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
             {
                 await using var connection = await _connectionFactory.CreateConnectionAsync();
                 
-                string sql = "SELECT TOP 10 MovieId, Title, PosterUrl, PrimaryGenre, ReleaseYear, Description FROM Movie WHERE Title LIKE @SearchTerm";
-                await using var command = new SqlCommand(sql, connection);
+                string sqlInstruction = "SELECT TOP 10 MovieId, Title, PosterUrl, PrimaryGenre, ReleaseYear, Description FROM Movie WHERE Title LIKE @SearchTerm";
+                await using var command = new SqlCommand(sqlInstruction, connection);
                 command.Parameters.AddWithValue("@SearchTerm", $"%{partialMovieName}%");
 
                 await using var reader = await command.ExecuteReaderAsync();
@@ -201,8 +202,5 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
                 });
             }
         }
-
-        
-
     }
 }

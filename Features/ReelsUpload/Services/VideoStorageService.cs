@@ -39,9 +39,12 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
             if (string.IsNullOrWhiteSpace(localFilePath) || !File.Exists(localFilePath))
                 return false;
 
-            var ext = Path.GetExtension(localFilePath).ToLowerInvariant();
-            if (ext != ".mp4")
+            string videoFileExtension = ".mp4";
+            var fileExtension = Path.GetExtension(localFilePath).ToLowerInvariant();
+            if (fileExtension != videoFileExtension)
+            {
                 return false;
+            }
 
             // Real video parsing using Native Windows 10/11 APIs!
             try
