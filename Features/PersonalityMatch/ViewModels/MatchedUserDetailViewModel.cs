@@ -1,10 +1,10 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
-using ubb_se_2026_meio_ai.Core.Models;
-using ubb_se_2026_meio_ai.Features.PersonalityMatch.Models;
-using ubb_se_2026_meio_ai.Features.PersonalityMatch.Services;
+using Ubb_se_2026_meio_ai.Core.Models;
+using Ubb_se_2026_meio_ai.Features.PersonalityMatch.Models;
+using Ubb_se_2026_meio_ai.Features.PersonalityMatch.Services;
 
-namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels
+namespace Ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels
 {
    
     public partial class MatchedUserDetailViewModel : ObservableObject

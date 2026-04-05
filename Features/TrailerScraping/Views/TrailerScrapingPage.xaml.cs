@@ -1,10 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using ubb_se_2026_meio_ai.Core.Models;
-using ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels;
+using Ubb_se_2026_meio_ai.Core.Models;
+using Ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels;
 
-namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Views
+namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Views
 {
     public sealed partial class TrailerScrapingPage : Page
     {

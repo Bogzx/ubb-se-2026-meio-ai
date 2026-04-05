@@ -1,4 +1,4 @@
-namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Services
+namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
 {
 
     public interface IVideoProcessingService

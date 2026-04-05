@@ -2,7 +2,7 @@ using System.Diagnostics;
 using Windows.Media.Core;
 using Windows.Media.Playback;
 
-namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
+namespace Ubb_se_2026_meio_ai.Features.ReelsFeed.Services
 {
     /// <summary>
     /// Tracks playback state and prefetches clip media sources.

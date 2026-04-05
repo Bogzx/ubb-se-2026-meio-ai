@@ -1,10 +1,10 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using ubb_se_2026_meio_ai.Core.Models;
-using ubb_se_2026_meio_ai.Features.MovieSwipe.Services;
+using Ubb_se_2026_meio_ai.Core.Models;
+using Ubb_se_2026_meio_ai.Features.MovieSwipe.Services;
 
-namespace ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels
+namespace Ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels
 {
 
     public partial class MovieSwipeViewModel : ObservableObject

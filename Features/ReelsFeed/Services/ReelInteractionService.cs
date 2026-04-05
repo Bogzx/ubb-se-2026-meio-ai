@@ -1,7 +1,7 @@
-using ubb_se_2026_meio_ai.Core.Models;
-using ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories;
+using Ubb_se_2026_meio_ai.Core.Models;
+using Ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories;
 
-namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
+namespace Ubb_se_2026_meio_ai.Features.ReelsFeed.Services
 {
     /// <summary>
     /// Orchestrates user–reel interactions by delegating persistence to

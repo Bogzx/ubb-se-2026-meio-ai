@@ -2,11 +2,11 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
-using ubb_se_2026_meio_ai.Core.Database;
-using ubb_se_2026_meio_ai.Core.Models;
-using ubb_se_2026_meio_ai.Features.ReelsUpload.Models;
+using Ubb_se_2026_meio_ai.Core.Database;
+using Ubb_se_2026_meio_ai.Core.Models;
+using Ubb_se_2026_meio_ai.Features.ReelsUpload.Models;
 
-namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
+namespace Ubb_se_2026_meio_ai.Features.ReelsUpload.Services
 {
     /// <summary>
     /// Concrete implementation of IVideoStorageService.

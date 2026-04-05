@@ -1,9 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels;
+using Ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels;
 
-namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
+namespace Ubb_se_2026_meio_ai.Features.ReelsFeed.Views
 {
     public sealed partial class ReelsFeedPage : Page
     {
@@ -54,7 +54,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
 
         private void FlipView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (e.AddedItems.Count > 0 && e.AddedItems[0] is ubb_se_2026_meio_ai.Core.Models.ReelModel newReel)
+            if (e.AddedItems.Count > 0 && e.AddedItems[0] is Ubb_se_2026_meio_ai.Core.Models.ReelModel newReel)
             {
                 ViewModel.ScrollNext(newReel);
             }

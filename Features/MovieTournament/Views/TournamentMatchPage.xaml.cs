@@ -3,9 +3,9 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
-using ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels;
+using Ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels;
 
-namespace ubb_se_2026_meio_ai.Features.MovieTournament.Views
+namespace Ubb_se_2026_meio_ai.Features.MovieTournament.Views
 {
     public sealed partial class TournamentMatchPage : Page
     {

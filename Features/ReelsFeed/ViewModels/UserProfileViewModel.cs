@@ -1,8 +1,8 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using ubb_se_2026_meio_ai.Core.Models;
-using ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
+using Ubb_se_2026_meio_ai.Core.Models;
+using Ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
 
-namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
+namespace Ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
 {
     /// <summary>
     /// Exposes the user's engagement metrics from <see cref="IEngagementProfileService"/>.

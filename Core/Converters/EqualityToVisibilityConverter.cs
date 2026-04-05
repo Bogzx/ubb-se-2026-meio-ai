@@ -1,7 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
 
-namespace ubb_se_2026_meio_ai.Core.Converters
+namespace Ubb_se_2026_meio_ai.Core.Converters
 {
     public class EqualityToVisibilityConverter : IValueConverter
     {

@@ -1,7 +1,7 @@
-using ubb_se_2026_meio_ai.Core.Models;
-using ubb_se_2026_meio_ai.Features.MovieTournament.Models;
+using Ubb_se_2026_meio_ai.Core.Models;
+using Ubb_se_2026_meio_ai.Features.MovieTournament.Models;
 
-namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
+namespace Ubb_se_2026_meio_ai.Features.MovieTournament.Services
 {
 
     public interface ITournamentLogicService

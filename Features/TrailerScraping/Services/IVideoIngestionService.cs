@@ -1,4 +1,4 @@
-namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
+namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
 {
     /// <summary>
     /// Downloads and ingests scraped trailer videos into the local system.

@@ -4,13 +4,13 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
-using ubb_se_2026_meio_ai.Core.Models;
-using ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
+using Ubb_se_2026_meio_ai.Core.Models;
+using Ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
 using Windows.Media.Core;
 using System;
 using System.ComponentModel;
 
-namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
+namespace Ubb_se_2026_meio_ai.Features.ReelsFeed.Views
 {
     /// <summary>
     /// Single reel card with video player, like button, genre badge, progress bar,

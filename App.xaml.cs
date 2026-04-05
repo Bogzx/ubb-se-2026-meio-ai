@@ -1,23 +1,23 @@
 using Microsoft.Extensions.DependencyInjection;
-using ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
-using ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories;
+using Ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
+using Ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories;
 using Microsoft.UI.Xaml;
-using ubb_se_2026_meio_ai.Core.Database;
-using ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels;
-using ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels;
-using ubb_se_2026_meio_ai.Features.TrailerScraping.Services;
-using ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels;
-using ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels;
-using ubb_se_2026_meio_ai.Features.MovieSwipe.Services;
-using ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels;
-using ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels;
-using ubb_se_2026_meio_ai.Features.PersonalityMatch.Services;
-using ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels;
-using ubb_se_2026_meio_ai.Features.MovieTournament.Services;
+using Ubb_se_2026_meio_ai.Core.Database;
+using Ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels;
+using Ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels;
+using Ubb_se_2026_meio_ai.Features.TrailerScraping.Services;
+using Ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels;
+using Ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels;
+using Ubb_se_2026_meio_ai.Features.MovieSwipe.Services;
+using Ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels;
+using Ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels;
+using Ubb_se_2026_meio_ai.Features.PersonalityMatch.Services;
+using Ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels;
+using Ubb_se_2026_meio_ai.Features.MovieTournament.Services;
 using System.Diagnostics;
 using System.IO;
 
-namespace ubb_se_2026_meio_ai
+namespace Ubb_se_2026_meio_ai
 {
     /// <summary>
     /// Application entry point. Configures the DI container and initialises the database.

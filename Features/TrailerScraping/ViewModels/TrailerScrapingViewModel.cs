@@ -1,10 +1,10 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using ubb_se_2026_meio_ai.Core.Models;
-using ubb_se_2026_meio_ai.Features.TrailerScraping.Services;
+using Ubb_se_2026_meio_ai.Core.Models;
+using Ubb_se_2026_meio_ai.Features.TrailerScraping.Services;
 
-namespace ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels
+namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels
 {
     /// <summary>
     /// ViewModel for the Trailer Scraping admin dashboard.

@@ -2,11 +2,11 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
-using ubb_se_2026_meio_ai.Features.MovieTournament.Services;
-using ubb_se_2026_meio_ai.Core.Models;
+using Ubb_se_2026_meio_ai.Features.MovieTournament.Services;
+using Ubb_se_2026_meio_ai.Core.Models;
 using static System.Net.WebRequestMethods;
 
-namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
+namespace Ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
 {
 
     public partial class MovieTournamentViewModel : ObservableObject

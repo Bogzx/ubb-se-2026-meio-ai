@@ -1,8 +1,8 @@
 using Microsoft.UI.Xaml.Controls;
-using ubb_se_2026_meio_ai.Features.MovieTournament.Services;
+using Ubb_se_2026_meio_ai.Features.MovieTournament.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace ubb_se_2026_meio_ai.Features.MovieTournament.Views
+namespace Ubb_se_2026_meio_ai.Features.MovieTournament.Views
 {
     public sealed partial class MovieTournamentPage : Page
     {

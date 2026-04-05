@@ -1,4 +1,4 @@
-namespace ubb_se_2026_meio_ai.Core.Services
+namespace Ubb_se_2026_meio_ai.Core.Services
 {
     /// <summary>
     /// Provides a UI-agnostic way for ViewModels to show dialogs.

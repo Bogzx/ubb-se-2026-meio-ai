@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using ubb_se_2026_meio_ai.Core.Models;
+using Ubb_se_2026_meio_ai.Core.Models;
 
-namespace ubb_se_2026_meio_ai.Features.MovieTournament.Models
+namespace Ubb_se_2026_meio_ai.Features.MovieTournament.Models
 {
     public class MatchPair
     {

@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Data.SqlClient;
-using ubb_se_2026_meio_ai.Core.Database;
-using ubb_se_2026_meio_ai.Core.Models;
+using Ubb_se_2026_meio_ai.Core.Database;
+using Ubb_se_2026_meio_ai.Core.Models;
 
-namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
+namespace Ubb_se_2026_meio_ai.Features.ReelsFeed.Services
 {
     /// <summary>
     /// Provides personalized reel recommendations by scoring unwatched reels

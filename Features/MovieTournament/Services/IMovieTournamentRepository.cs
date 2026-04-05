@@ -1,5 +1,5 @@
-using ubb_se_2026_meio_ai.Core.Models;
-namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
+using Ubb_se_2026_meio_ai.Core.Models;
+namespace Ubb_se_2026_meio_ai.Features.MovieTournament.Services
 {
 
     public interface IMovieTournamentRepository

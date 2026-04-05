@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json;
 
-namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Services
+namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
 {
 
     public class VideoProcessingService : IVideoProcessingService

@@ -1,6 +1,6 @@
-using ubb_se_2026_meio_ai.Core.Models;
+using Ubb_se_2026_meio_ai.Core.Models;
 
-namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
+namespace Ubb_se_2026_meio_ai.Features.MovieSwipe.Services
 {
 
     public interface IPreferenceRepository

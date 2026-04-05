@@ -1,8 +1,8 @@
 using Microsoft.Data.SqlClient;
-using ubb_se_2026_meio_ai.Core.Database;
-using ubb_se_2026_meio_ai.Core.Models;
+using Ubb_se_2026_meio_ai.Core.Database;
+using Ubb_se_2026_meio_ai.Core.Models;
 
-namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
+namespace Ubb_se_2026_meio_ai.Features.MovieSwipe.Services
 {
     /// <summary>
     /// SQL Server implementation of <see cref="IPreferenceRepository"/>.

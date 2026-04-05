@@ -2,11 +2,11 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.Text.Json;
-using ubb_se_2026_meio_ai.Core.Models;
-using ubb_se_2026_meio_ai.Features.ReelsEditing.Models;
-using ubb_se_2026_meio_ai.Features.ReelsEditing.Services;
+using Ubb_se_2026_meio_ai.Core.Models;
+using Ubb_se_2026_meio_ai.Features.ReelsEditing.Models;
+using Ubb_se_2026_meio_ai.Features.ReelsEditing.Services;
 
-namespace ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
+namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
 {
 
     public partial class ReelsEditingViewModel : ObservableObject

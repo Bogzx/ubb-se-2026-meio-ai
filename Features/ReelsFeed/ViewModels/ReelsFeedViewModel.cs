@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
-using ubb_se_2026_meio_ai.Core.Models;
-using ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
+using Ubb_se_2026_meio_ai.Core.Models;
+using Ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
 
-namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
+namespace Ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
 {
     /// <summary>
     /// ViewModel for the Reels Feed page.

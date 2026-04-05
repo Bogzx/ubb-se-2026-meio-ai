@@ -3,10 +3,10 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Data.SqlClient;
-using ubb_se_2026_meio_ai.Core.Database;
-using ubb_se_2026_meio_ai.Core.Models;
+using Ubb_se_2026_meio_ai.Core.Database;
+using Ubb_se_2026_meio_ai.Core.Models;
 
-namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
+namespace Ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
 {
     /// <summary>
     /// ViewModel for the Reels Upload page.
@@ -15,11 +15,11 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
     public partial class ReelsUploadViewModel : ObservableObject
     {
         private readonly ISqlConnectionFactory _connectionFactory;
-        private readonly ubb_se_2026_meio_ai.Features.ReelsUpload.Services.IVideoStorageService _videoStorageService;
+        private readonly Ubb_se_2026_meio_ai.Features.ReelsUpload.Services.IVideoStorageService _videoStorageService;
 
         public ReelsUploadViewModel(
             ISqlConnectionFactory connectionFactory, 
-            ubb_se_2026_meio_ai.Features.ReelsUpload.Services.IVideoStorageService videoStorageService)
+            Ubb_se_2026_meio_ai.Features.ReelsUpload.Services.IVideoStorageService videoStorageService)
         {
             _connectionFactory = connectionFactory;
             _videoStorageService = videoStorageService;
@@ -104,7 +104,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
 
                 dispatcherQueue.TryEnqueue(() => StatusMessage = "Uploading to Blob Storage & saving metadata...");
 
-                var request = new ubb_se_2026_meio_ai.Features.ReelsUpload.Models.ReelUploadRequest
+                var request = new Ubb_se_2026_meio_ai.Features.ReelsUpload.Models.ReelUploadRequest
                 {
                     LocalFilePath = LocalVideoFilePath,
                     Title = string.IsNullOrWhiteSpace(ReelTitle) ? "Untitled Reel" : ReelTitle,

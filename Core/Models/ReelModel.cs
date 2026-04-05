@@ -1,6 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace ubb_se_2026_meio_ai.Core.Models
+namespace Ubb_se_2026_meio_ai.Core.Models
 {
     public partial class ReelModel : ObservableObject
     {

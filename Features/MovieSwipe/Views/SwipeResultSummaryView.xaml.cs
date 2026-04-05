@@ -1,8 +1,8 @@
 using Microsoft.UI.Xaml.Controls;
-using ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels;
+using Ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Views
+namespace Ubb_se_2026_meio_ai.Features.MovieSwipe.Views
 {
 
     public sealed partial class SwipeResultSummaryView : Page

@@ -1,7 +1,7 @@
 using Microsoft.Data.SqlClient;
-using ubb_se_2026_meio_ai.Core.Database;
+using Ubb_se_2026_meio_ai.Core.Database;
 
-namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
+namespace Ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
 {
 
     public class PreferenceRepository : IPreferenceRepository

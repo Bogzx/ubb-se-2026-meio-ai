@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
+namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
 {
     /// <summary>
     /// Downloads YouTube videos as MP4 files using yt-dlp.

@@ -2,26 +2,47 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
-using ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels;
+using Ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels;
 using Windows.Media.Core;
 using Windows.Media.Playback;
 
-namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Views
+namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Views
 {
     public sealed partial class ReelsEditingPage : Page
     {
+        private const int VideoProgressIntervalMilliseconds = 250;
+        private const double SliderValueTolerance = 0.001;
+        private const double PercentageDivisor = 100.0;
+        private const double MinimumCropPadding = 20.0;
+        private const int MusicDialogHeight = 300;
+
+        private const string DefaultTimeDisplay = "0:00";
+        private const string TimeFormatHours = @"h\:mm\:ss";
+        private const string TimeFormatMinutes = @"m\:ss";
+        private const string ErrorNoMusicSelected = "No music track selected. Choose a track first.";
+        private const string ErrorInvalidMusicUrl = "Music URL is not valid.";
+        private const string MessagePlayingPreviewFormat = "Playing preview from {0:mm\\:ss}…";
+        private const string MessagePreviewFailedFormat = "Preview failed: {0}";
+        private const string DialogTitleChooseMusic = "Choose Background Music";
+        private const string DialogButtonCancel = "Cancel";
+        private const string DialogButtonConfirm = "Confirm";
+        private const string TrackItemDataTemplateXml =
+            "<DataTemplate xmlns=\"http://schemas.microsoft.com/winfx/2006/xaml/presentation\">" +
+            "<TextBlock Text=\"{Binding TrackName}\" Padding=\"8,4\"/>" +
+            "</DataTemplate>";
+
         public ReelsEditingViewModel ViewModel { get; }
         public ReelGalleryViewModel GalleryViewModel { get; }
         public MusicSelectionDialogViewModel MusicDialogViewModel { get; }
 
         // Audio-only player for music preview (no MediaPlayerElement needed)
-        private readonly MediaPlayer _musicPreviewPlayer = new();
-        private readonly DispatcherTimer _videoProgressTimer = new()
+        private readonly MediaPlayer musicPreviewPlayer = new ();
+        private readonly DispatcherTimer videoProgressTimer = new ()
         {
-            Interval = TimeSpan.FromMilliseconds(250)
+            Interval = TimeSpan.FromMilliseconds(VideoProgressIntervalMilliseconds)
         };
-        private MediaPlayer? _subscribedVideoPlayer;
-        private bool _isSyncingVideoControls;
+        private MediaPlayer? subscribedVideoPlayer;
+        private bool isSyncingVideoControls;
 
         public ReelsEditingPage()
         {
@@ -29,7 +50,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Views
             GalleryViewModel = App.Services.GetRequiredService<ReelGalleryViewModel>();
             MusicDialogViewModel = App.Services.GetRequiredService<MusicSelectionDialogViewModel>();
             this.InitializeComponent();
-            _videoProgressTimer.Tick += VideoProgressTimer_Tick;
+            videoProgressTimer.Tick += VideoProgressTimer_Tick;
             this.Unloaded += Page_Unloaded;
             ResetVideoTransportUi();
 
@@ -39,9 +60,9 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Views
             ViewModel.CropVideoUpdated += OnCropVideoUpdated;
 
             // Listen for IsEditing changes to toggle panels
-            ViewModel.PropertyChanged += async (s, e) =>
+            ViewModel.PropertyChanged += async (sender, eventArguments) =>
             {
-                if (e.PropertyName == nameof(ViewModel.IsEditing))
+                if (eventArguments.PropertyName == nameof(ViewModel.IsEditing))
                 {
                     UpdatePanelVisibility();
                     // Reload gallery when returning from editor (e.g., after deletion)
@@ -54,19 +75,21 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Views
             };
         }
 
-        private async void Page_Loaded(object sender, RoutedEventArgs e)
+        private async void Page_Loaded(object sender, RoutedEventArgs eventArguments)
         {
             await GalleryViewModel.EnsureLoadedAsync();
-            if (!_videoProgressTimer.IsEnabled)
-                _videoProgressTimer.Start();
+            if (!videoProgressTimer.IsEnabled)
+            {
+                videoProgressTimer.Start();
+            }
             AttachVideoPlayerEvents();
             UpdateVideoTransportUi();
             UpdatePanelVisibility();
         }
 
-        private void Page_Unloaded(object sender, RoutedEventArgs e)
+        private void Page_Unloaded(object sender, RoutedEventArgs eventArguments)
         {
-            _videoProgressTimer.Stop();
+            videoProgressTimer.Stop();
             DetachVideoPlayerEvents();
             StopMusicPreview();
         }
@@ -86,14 +109,14 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Views
             }
         }
 
-        private void ReelGridView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void ReelGridView_SelectionChanged(object sender, SelectionChangedEventArgs eventArguments)
         {
             // Selection tracked by TwoWay binding
         }
 
-        private async void ReelGridView_ItemClick(object sender, ItemClickEventArgs e)
+        private async void ReelGridView_ItemClick(object sender, ItemClickEventArgs eventArguments)
         {
-            if (e.ClickedItem is ubb_se_2026_meio_ai.Core.Models.ReelModel reel)
+            if (eventArguments.ClickedItem is Ubb_se_2026_meio_ai.Core.Models.ReelModel reel)
             {
                 GalleryViewModel.SelectedReel = reel;
                 await ViewModel.LoadReelAsync(reel);
@@ -127,7 +150,9 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Views
                 DetachVideoPlayerEvents();
                 ReelPlayer.Source = null;
             }
-            catch { }
+            catch
+            {
+            }
 
             ResetVideoTransportUi();
         }
@@ -138,102 +163,130 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Views
         private void AttachVideoPlayerEvents()
         {
             var mediaPlayer = ReelPlayer.MediaPlayer;
-            if (mediaPlayer == null || ReferenceEquals(mediaPlayer, _subscribedVideoPlayer))
+            if (mediaPlayer == null || ReferenceEquals(mediaPlayer, subscribedVideoPlayer))
+            {
                 return;
+            }
 
             DetachVideoPlayerEvents();
-            _subscribedVideoPlayer = mediaPlayer;
-            _subscribedVideoPlayer.MediaOpened += ReelPlayer_MediaOpened;
-            _subscribedVideoPlayer.MediaEnded += ReelPlayer_MediaEnded;
+            subscribedVideoPlayer = mediaPlayer;
+            subscribedVideoPlayer.MediaOpened += ReelPlayer_MediaOpened;
+            subscribedVideoPlayer.MediaEnded += ReelPlayer_MediaEnded;
         }
 
         private void DetachVideoPlayerEvents()
         {
-            if (_subscribedVideoPlayer == null)
+            if (subscribedVideoPlayer == null)
+            {
                 return;
+            }
 
-            _subscribedVideoPlayer.MediaOpened -= ReelPlayer_MediaOpened;
-            _subscribedVideoPlayer.MediaEnded -= ReelPlayer_MediaEnded;
-            _subscribedVideoPlayer = null;
+            subscribedVideoPlayer.MediaOpened -= ReelPlayer_MediaOpened;
+            subscribedVideoPlayer.MediaEnded -= ReelPlayer_MediaEnded;
+            subscribedVideoPlayer = null;
         }
 
-        private void ReelPlayer_MediaOpened(MediaPlayer sender, object args)
+        private void ReelPlayer_MediaOpened(MediaPlayer sender, object eventArguments)
             => DispatcherQueue.TryEnqueue(UpdateVideoTransportUi);
 
-        private void ReelPlayer_MediaEnded(MediaPlayer sender, object args)
+        private void ReelPlayer_MediaEnded(MediaPlayer sender, object eventArguments)
             => DispatcherQueue.TryEnqueue(UpdateVideoTransportUi);
 
-        private void VideoProgressTimer_Tick(object? sender, object e)
+        private void VideoProgressTimer_Tick(object? sender, object eventArguments)
             => UpdateVideoTransportUi();
 
-        private void VideoPlayPauseButton_Click(object sender, RoutedEventArgs e)
+        private void VideoPlayPauseButton_Click(object sender, RoutedEventArgs eventArguments)
         {
             var mediaPlayer = ReelPlayer.MediaPlayer;
             if (mediaPlayer == null)
+            {
                 return;
+            }
 
             if (mediaPlayer.PlaybackSession.PlaybackState == MediaPlaybackState.Playing)
+            {
                 mediaPlayer.Pause();
+            }
             else
+            {
                 mediaPlayer.Play();
+            }
 
             UpdateVideoTransportUi();
         }
 
-        private void VideoSeekSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        private void VideoSeekSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs eventArguments)
         {
-            if (_isSyncingVideoControls || Math.Abs(e.NewValue - e.OldValue) < 0.001)
+            if (isSyncingVideoControls || Math.Abs(eventArguments.NewValue - eventArguments.OldValue) < SliderValueTolerance)
+            {
                 return;
+            }
 
             var mediaPlayer = ReelPlayer.MediaPlayer;
             var session = mediaPlayer?.PlaybackSession;
             if (session == null)
+            {
                 return;
+            }
 
             var durationSeconds = session.NaturalDuration.TotalSeconds;
             if (durationSeconds <= 0)
+            {
                 return;
+            }
 
-            var clampedSeconds = Math.Clamp(e.NewValue, 0, durationSeconds);
+            var clampedSeconds = Math.Clamp(eventArguments.NewValue, 0, durationSeconds);
             session.Position = TimeSpan.FromSeconds(clampedSeconds);
             UpdateVideoTransportUi();
         }
 
-        private void VideoMuteButton_Checked(object sender, RoutedEventArgs e)
+        private void VideoMuteButton_Checked(object sender, RoutedEventArgs eventArguments)
         {
-            if (_isSyncingVideoControls)
+            if (isSyncingVideoControls)
+            {
                 return;
+            }
 
             if (ReelPlayer.MediaPlayer != null)
+            {
                 ReelPlayer.MediaPlayer.IsMuted = true;
+            }
 
             UpdateVideoTransportUi();
         }
 
-        private void VideoMuteButton_Unchecked(object sender, RoutedEventArgs e)
+        private void VideoMuteButton_Unchecked(object sender, RoutedEventArgs eventArguments)
         {
-            if (_isSyncingVideoControls)
+            if (isSyncingVideoControls)
+            {
                 return;
+            }
 
             if (ReelPlayer.MediaPlayer != null)
+            {
                 ReelPlayer.MediaPlayer.IsMuted = false;
+            }
 
             UpdateVideoTransportUi();
         }
 
-        private void VideoFullscreenButton_Checked(object sender, RoutedEventArgs e)
+        private void VideoFullscreenButton_Checked(object sender, RoutedEventArgs eventArguments)
         {
-            if (_isSyncingVideoControls)
+            if (isSyncingVideoControls)
+            {
                 return;
+            }
 
             ReelPlayer.IsFullWindow = true;
             UpdateVideoTransportUi();
         }
 
-        private void VideoFullscreenButton_Unchecked(object sender, RoutedEventArgs e)
+        private void VideoFullscreenButton_Unchecked(object sender, RoutedEventArgs eventArguments)
         {
-            if (_isSyncingVideoControls)
+            if (isSyncingVideoControls)
+            {
                 return;
+            }
 
             ReelPlayer.IsFullWindow = false;
             UpdateVideoTransportUi();
@@ -257,7 +310,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Views
                 ? Math.Min(currentSeconds, durationSeconds)
                 : 0;
 
-            _isSyncingVideoControls = true;
+            isSyncingVideoControls = true;
             try
             {
                 VideoSeekSlider.Maximum = durationSeconds;
@@ -273,19 +326,19 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Views
             }
             finally
             {
-                _isSyncingVideoControls = false;
+                isSyncingVideoControls = false;
             }
         }
 
         private void ResetVideoTransportUi()
         {
-            _isSyncingVideoControls = true;
+            isSyncingVideoControls = true;
             try
             {
                 VideoSeekSlider.Maximum = 0;
                 VideoSeekSlider.Value = 0;
-                VideoCurrentTimeText.Text = "0:00";
-                VideoDurationText.Text = "0:00";
+                VideoCurrentTimeText.Text = DefaultTimeDisplay;
+                VideoDurationText.Text = DefaultTimeDisplay;
                 VideoPlayPauseIcon.Symbol = Symbol.Play;
                 VideoMuteButton.IsChecked = false;
                 VideoMuteIcon.Symbol = Symbol.Volume;
@@ -293,24 +346,30 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Views
             }
             finally
             {
-                _isSyncingVideoControls = false;
+                isSyncingVideoControls = false;
             }
         }
 
         private static string FormatPlaybackTime(TimeSpan time)
         {
             if (time.TotalHours >= 1)
-                return time.ToString(@"h\:mm\:ss");
+            {
+                return time.ToString(TimeFormatHours);
+            }
 
-            return time.ToString(@"m\:ss");
+            return time.ToString(TimeFormatMinutes);
         }
 
         // ── Crop mode ────────────────────────────────────────────────────────
-
         private void OnCropModeEntered()
         {
-            try { ReelPlayer.MediaPlayer?.Pause(); }
-            catch { }
+            try
+            {
+                ReelPlayer.MediaPlayer?.Pause();
+            }
+            catch
+            {
+            }
 
             CropOverlayRoot.Visibility = Visibility.Visible;
             UpdateCropOverlay();
@@ -327,7 +386,9 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Views
             {
                 ReelPlayer.MediaPlayer?.Pause();
             }
-            catch { }
+            catch
+            {
+            }
 
             StopVideo();
         }
@@ -335,42 +396,51 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Views
         private void OnCropVideoUpdated(string videoUrl)
             => LoadVideo(videoUrl);
 
-        private void CropResumePreview_Click(object sender, RoutedEventArgs e)
+        private void CropResumePreview_Click(object sender, RoutedEventArgs eventArguments)
         {
             ReelPlayer.MediaPlayer?.Play();
             UpdateVideoTransportUi();
         }
 
-        private void CropPausePreview_Click(object sender, RoutedEventArgs e)
+        private void CropPausePreview_Click(object sender, RoutedEventArgs eventArguments)
         {
             ReelPlayer.MediaPlayer?.Pause();
             UpdateVideoTransportUi();
         }
 
-        private void CropMarginSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        private void CropMarginSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs eventArguments)
             => UpdateCropOverlay();
 
-        private void CropOverlayRoot_SizeChanged(object sender, SizeChangedEventArgs e)
+        private void CropOverlayRoot_SizeChanged(object sender, SizeChangedEventArgs eventArguments)
             => UpdateCropOverlay();
 
         private void UpdateCropOverlay()
         {
             if (CropOverlayRoot.Visibility != Visibility.Visible)
+            {
                 return;
+            }
 
             var width = CropOverlayRoot.ActualWidth;
             var height = CropOverlayRoot.ActualHeight;
-            if (width <= 0 || height <= 0) return;
+            if (width <= 0 || height <= 0)
+            {
+                return;
+            }
 
-            var left = width * (ViewModel.CropMarginLeft / 100.0);
-            var top = height * (ViewModel.CropMarginTop / 100.0);
-            var right = width * (ViewModel.CropMarginRight / 100.0);
-            var bottom = height * (ViewModel.CropMarginBottom / 100.0);
+            var left = width * (ViewModel.CropMarginLeft / PercentageDivisor);
+            var top = height * (ViewModel.CropMarginTop / PercentageDivisor);
+            var right = width * (ViewModel.CropMarginRight / PercentageDivisor);
+            var bottom = height * (ViewModel.CropMarginBottom / PercentageDivisor);
 
-            if (left + right > width - 20)
-                right = Math.Max(0, width - left - 20);
-            if (top + bottom > height - 20)
-                bottom = Math.Max(0, height - top - 20);
+            if (left + right > width - MinimumCropPadding)
+            {
+                right = Math.Max(0, width - left - MinimumCropPadding);
+            }
+            if (top + bottom > height - MinimumCropPadding)
+            {
+                bottom = Math.Max(0, height - top - MinimumCropPadding);
+            }
 
             CropRectangleBorder.Margin = new Thickness(left, top, right, bottom);
         }
@@ -380,12 +450,12 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Views
         /// <summary>
         /// Plays the selected music track starting from the chosen MusicStartTime.
         /// </summary>
-        private void PlayMusicPreview_Click(object sender, RoutedEventArgs e)
+        private void PlayMusicPreview_Click(object sender, RoutedEventArgs eventArguments)
         {
             var track = ViewModel.SelectedMusicTrack;
             if (track == null || string.IsNullOrWhiteSpace(track.AudioUrl))
             {
-                ViewModel.StatusMessage = "No music track selected. Choose a track first.";
+                ViewModel.StatusMessage = ErrorNoMusicSelected;
                 ViewModel.IsStatusSuccess = false;
                 return;
             }
@@ -394,58 +464,59 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Views
             {
                 if (!Uri.TryCreate(track.AudioUrl, UriKind.Absolute, out var uri))
                 {
-                    ViewModel.StatusMessage = "Music URL is not valid.";
+                    ViewModel.StatusMessage = ErrorInvalidMusicUrl;
                     ViewModel.IsStatusSuccess = false;
                     return;
                 }
 
-                _musicPreviewPlayer.Source = MediaSource.CreateFromUri(uri);
-                _musicPreviewPlayer.Volume = ViewModel.MusicVolume / 100.0;
+                musicPreviewPlayer.Source = MediaSource.CreateFromUri(uri);
+                musicPreviewPlayer.Volume = ViewModel.MusicVolume / PercentageDivisor;
 
                 // Seek to the saved start time once the media is opened
                 var startOffset = TimeSpan.FromSeconds(ViewModel.MusicStartTime);
-                _musicPreviewPlayer.MediaOpened += OnMusicMediaOpened;
-                void OnMusicMediaOpened(MediaPlayer mp, object? _)
+                musicPreviewPlayer.MediaOpened += OnMusicMediaOpened;
+                void OnMusicMediaOpened(MediaPlayer mediaPlayer, object? mediaEventArguments)
                 {
-                    mp.MediaOpened -= OnMusicMediaOpened;
-                    mp.PlaybackSession.Position = startOffset;
-                    mp.Play();
+                    mediaPlayer.MediaOpened -= OnMusicMediaOpened;
+                    mediaPlayer.PlaybackSession.Position = startOffset;
+                    mediaPlayer.Play();
                 }
 
-                ViewModel.StatusMessage = $"Playing preview from {startOffset:mm\\:ss}…";
+                ViewModel.StatusMessage = string.Format(MessagePlayingPreviewFormat, startOffset);
                 ViewModel.IsStatusSuccess = true;
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                ViewModel.StatusMessage = $"Preview failed: {ex.Message}";
+                ViewModel.StatusMessage = string.Format(MessagePreviewFailedFormat, exception.Message);
                 ViewModel.IsStatusSuccess = false;
             }
         }
 
-        private void StopMusicPreview_Click(object sender, RoutedEventArgs e)
+        private void StopMusicPreview_Click(object sender, RoutedEventArgs eventArguments)
             => StopMusicPreview();
 
         private void StopMusicPreview()
         {
             try
             {
-                _musicPreviewPlayer.Pause();
-                _musicPreviewPlayer.Source = null;
+                musicPreviewPlayer.Pause();
+                musicPreviewPlayer.Source = null;
             }
-            catch { }
+            catch
+            {
+            }
         }
 
         // ── Music selection dialog ────────────────────────────────────────────
-
-        private async void ChooseMusicButton_Click(object sender, RoutedEventArgs e)
+        private async void ChooseMusicButton_Click(object sender, RoutedEventArgs eventArguments)
         {
             await MusicDialogViewModel.LoadTracksCommand.ExecuteAsync(null);
 
             var dialog = new ContentDialog
             {
-                Title = "Choose Background Music",
-                CloseButtonText = "Cancel",
-                PrimaryButtonText = "Confirm",
+                Title = DialogTitleChooseMusic,
+                CloseButtonText = DialogButtonCancel,
+                PrimaryButtonText = DialogButtonConfirm,
                 DefaultButton = ContentDialogButton.Primary,
                 XamlRoot = this.XamlRoot,
             };
@@ -453,24 +524,25 @@ namespace ubb_se_2026_meio_ai.Features.ReelsEditing.Views
             var listView = new ListView
             {
                 ItemsSource = MusicDialogViewModel.AvailableTracks,
-                Height = 300,
+                Height = MusicDialogHeight,
             };
-            listView.ItemTemplate = (DataTemplate)Microsoft.UI.Xaml.Markup.XamlReader.Load(
-                "<DataTemplate xmlns=\"http://schemas.microsoft.com/winfx/2006/xaml/presentation\">" +
-                "<TextBlock Text=\"{Binding TrackName}\" Padding=\"8,4\"/>" +
-                "</DataTemplate>");
+            listView.ItemTemplate = (DataTemplate)Microsoft.UI.Xaml.Markup.XamlReader.Load(TrackItemDataTemplateXml);
 
-            listView.SelectionChanged += (s, args) =>
+            listView.SelectionChanged += (listSender, listEventArguments) =>
             {
-                if (listView.SelectedItem is ubb_se_2026_meio_ai.Core.Models.MusicTrackModel track)
+                if (listView.SelectedItem is Ubb_se_2026_meio_ai.Core.Models.MusicTrackModel track)
+                {
                     MusicDialogViewModel.SelectedTrack = track;
+                }
             };
 
             dialog.Content = listView;
 
             var result = await dialog.ShowAsync();
             if (result == ContentDialogResult.Primary && MusicDialogViewModel.SelectedTrack != null)
+            {
                 ViewModel.ApplyMusicSelection(MusicDialogViewModel.SelectedTrack);
+            }
         }
     }
 }

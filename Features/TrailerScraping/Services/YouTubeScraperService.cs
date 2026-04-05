@@ -1,19 +1,21 @@
 using Google.Apis.Services;
 using Google.Apis.YouTube.v3;
 
-namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
+namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
 {
     /// <summary>
     /// Result returned by the YouTube scraper for each video found.
     /// </summary>
     public class ScrapedVideoResult
     {
+        private const string YouTubeBaseUrl = "https://www.youtube.com/watch?v=";
+
         public string VideoId { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
         public string ThumbnailUrl { get; set; } = string.Empty;
         public string ChannelTitle { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public string VideoUrl => $"https://www.youtube.com/watch?v={VideoId}";
+        public string VideoUrl => $"{YouTubeBaseUrl}{VideoId}";
     }
 
     /// <summary>
@@ -23,18 +25,24 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
     /// </summary>
     public class YouTubeScraperService : IWebScraperService
     {
-        private readonly string _apiKey;
+        private const int DefaultMaxResults = 5;
+        private const string YouTubeAppName = "MeioAI-TrailerScraper";
+        private const string SearchPartSnippet = "snippet";
+        private const string SearchTypeVideo = "video";
+        private const string FilmAndAnimationCategoryId = "1";
+
+        private readonly string apiKey;
 
         public YouTubeScraperService(string apiKey)
         {
-            _apiKey = apiKey;
+            this.apiKey = apiKey;
         }
 
         /// <inheritdoc />
         public async Task<IList<string>> ScrapeTrailerUrlsAsync(string movieTitle)
         {
-            var results = await SearchVideosAsync(movieTitle, 5);
-            return results.Select(r => r.VideoUrl).ToList();
+            var results = await SearchVideosAsync(movieTitle, DefaultMaxResults);
+            return results.Select(result => result.VideoUrl).ToList();
         }
 
         /// <summary>
@@ -44,15 +52,15 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
         {
             var youtubeService = new YouTubeService(new BaseClientService.Initializer
             {
-                ApiKey = _apiKey,
-                ApplicationName = "MeioAI-TrailerScraper"
+                ApiKey = apiKey,
+                ApplicationName = YouTubeAppName
             });
 
-            var searchRequest = youtubeService.Search.List("snippet");
+            var searchRequest = youtubeService.Search.List(SearchPartSnippet);
             searchRequest.Q = query;
             searchRequest.MaxResults = maxResults;
-            searchRequest.Type = "video";
-            searchRequest.VideoCategoryId = "1"; // Film & Animation
+            searchRequest.Type = SearchTypeVideo;
+            searchRequest.VideoCategoryId = FilmAndAnimationCategoryId;
             searchRequest.Order = SearchResource.ListRequest.OrderEnum.Relevance;
             searchRequest.SafeSearch = SearchResource.ListRequest.SafeSearchEnum.Moderate;
 

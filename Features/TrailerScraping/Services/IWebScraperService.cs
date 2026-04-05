@@ -1,4 +1,4 @@
-namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
+namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
 {
     /// <summary>
     /// Scrapes trailer metadata and URLs from external sources.

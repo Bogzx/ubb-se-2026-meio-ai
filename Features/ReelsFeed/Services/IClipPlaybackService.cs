@@ -1,4 +1,4 @@
-namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
+namespace Ubb_se_2026_meio_ai.Features.ReelsFeed.Services
 {
     /// <summary>
     /// Controls video playback state for the auto-playing feed.

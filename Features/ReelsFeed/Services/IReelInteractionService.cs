@@ -1,6 +1,6 @@
-using ubb_se_2026_meio_ai.Core.Models;
+using Ubb_se_2026_meio_ai.Core.Models;
 
-namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
+namespace Ubb_se_2026_meio_ai.Features.ReelsFeed.Services
 {
     /// <summary>
     /// Records user interactions (likes, views) with reels.
