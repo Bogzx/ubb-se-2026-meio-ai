@@ -6,8 +6,8 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
 {
     public class ReelRepository
     {
-        private readonly ISqlConnectionFactory _db;
-        public ReelRepository(ISqlConnectionFactory db) => _db = db;
+        private readonly ISqlConnectionFactory db;
+        public ReelRepository(ISqlConnectionFactory db) => this.db = db;
 
         // Returns all reels where CreatorUserId = userId
         public async Task<IList<ReelModel>> GetUserReelsAsync(int userId)
@@ -20,7 +20,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
                 WHERE CreatorUserId = @UserId
                 ORDER BY CreatedAt DESC";
             var result = new List<ReelModel>();
-            await using var conn = await _db.CreateConnectionAsync();
+            await using var conn = await db.CreateConnectionAsync();
             await using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@UserId", userId);
             await using var reader = await cmd.ExecuteReaderAsync();
@@ -57,7 +57,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
                     VideoUrl = COALESCE(@VideoUrl, VideoUrl),
                     LastEditedAt = SYSUTCDATETIME()
                 WHERE ReelId = @ReelId";
-            await using var conn = await _db.CreateConnectionAsync();
+            await using var conn = await db.CreateConnectionAsync();
             await using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@Crop", cropDataJson);
             cmd.Parameters.AddWithValue("@MusicId", (object?)musicId ?? DBNull.Value);
@@ -75,13 +75,15 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
                 FROM Reel
                 WHERE ReelId = @ReelId";
 
-            await using var conn = await _db.CreateConnectionAsync();
+            await using var conn = await db.CreateConnectionAsync();
             await using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@ReelId", reelId);
             await using var reader = await cmd.ExecuteReaderAsync();
 
             if (!await reader.ReadAsync())
+            {
                 return null;
+            }
 
             return new ReelModel
             {
@@ -107,7 +109,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
             const string sql = @"
                 DELETE FROM UserReelInteraction WHERE ReelId = @ReelId;
                 DELETE FROM Reel WHERE ReelId = @ReelId;";
-            await using var conn = await _db.CreateConnectionAsync();
+            await using var conn = await db.CreateConnectionAsync();
             await using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@ReelId", reelId);
             await cmd.ExecuteNonQueryAsync();
