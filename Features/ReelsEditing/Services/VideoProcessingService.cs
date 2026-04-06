@@ -4,59 +4,102 @@ using System.Text.Json;
 
 namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
 {
-
     public class VideoProcessingService : IVideoProcessingService
     {
-        private readonly IAudioLibraryService _audioLibrary;
+        private readonly IAudioLibraryService audioLibrary;
 
         private const int BaseWidth = 1920;
         private const int BaseHeight = 1080;
+        private const int MinimumCropDimension = 1;
+        private const int EmptyCoordinate = 0;
+        private const double MaxStartOffsetSeconds = 300.0;
+        private const double VolumePercentageDivisor = 100.0;
+        private const double MaxVolumeMultiplier = 2.0;
+        private const double MinimumVolumeMultiplier = 0.0;
+        private const double DefaultAudioDurationSeconds = 30.0;
+        private const double MinimumAudioDurationSeconds = 1.0;
+        private const double AudioStartOffsetMarginSeconds = 0.25;
+        private const int SuccessExitCode = 0;
+
+        private const string FfmpegExecutableName = "ffmpeg.exe";
+        private const string FfprobeExecutableName = "ffprobe.exe";
+        private const string FfmpegFallbackName = "ffmpeg";
+        private const string FfprobeFallbackName = "ffprobe";
+        private const string TempCropFileSuffix = "_crop_tmp_";
+        private const string TempMusicFileSuffix = "_music_tmp_";
+        private const string FinalCroppedSuffix = "_cropped_";
+        private const string FinalWithMusicSuffix = "_withmusic_";
+        private const string TimestampFormat = "yyyyMMddHHmmssfff";
+
+        private const string CropFilterFormat = "crop=iw*{0:0.######}:ih*{1:0.######}:iw*{2:0.######}:ih*{3:0.######}";
+        private const string FfmpegCropArgumentsFormat = "-hide_banner -loglevel error -i \"{0}\" -vf \"{1}\" -c:v libx264 -preset veryfast -crf 20 -c:a copy -movflags +faststart -y \"{2}\"";
+        private const string DurationFilterFormat = ",atrim=duration={0}";
+        private const string VolumeFilterFormat = ",volume={0}";
+        private const string AudioFilterComplexFormat = "[1:a]aresample=async=1:first_pts=0{0}{1},apad[aout]";
+        private const string FfmpegMusicArgumentsFormat = "-hide_banner -loglevel error -i \"{0}\" -stream_loop -1 -ss {1} -i \"{2}\" -filter_complex \"{3}\" -map 0:v:0 -map \"[aout]\" -c:v copy -c:a aac -b:a 192k -movflags +faststart -shortest -y \"{4}\"";
+        private const string FfprobeDurationArgumentsFormat = "-v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 \"{0}\"";
+
+        private const string ErrorCropOutputMissing = "FFmpeg did not produce the cropped output file.";
+        private const string ErrorMusicOutputMissing = "FFmpeg did not produce the merged-audio output file.";
+        private const string ErrorMusicFileNotFoundFormat = "Music file not found: {0}";
+        private const string ErrorFfmpegStartFailed = "Failed to start ffmpeg. Ensure ffmpeg is installed and available.";
+        private const string ErrorFfmpegTimeout = "ffmpeg timed out after 5 minutes.";
+        private const string ErrorFfmpegExitCodeFormat = "ffmpeg exited with code {0}:{1}{2}{1}{3}";
+
+        private const string JsonKeyX = "x";
+        private const string JsonKeyY = "y";
+        private const string JsonKeyWidth = "width";
+        private const string JsonKeyHeight = "height";
+        private const string InvariantNumberFormat = "0.###";
+
         private static readonly TimeSpan FfmpegTimeout = TimeSpan.FromMinutes(5);
-        private static readonly string LocalFfmpegPath = Path.Combine(AppContext.BaseDirectory, "ffmpeg.exe");
-        private static readonly string LocalFfprobePath = Path.Combine(AppContext.BaseDirectory, "ffprobe.exe");
+        private static readonly string LocalFfmpegPath = Path.Combine(AppContext.BaseDirectory, FfmpegExecutableName);
+        private static readonly string LocalFfprobePath = Path.Combine(AppContext.BaseDirectory, FfprobeExecutableName);
 
         public VideoProcessingService(IAudioLibraryService audioLibrary)
         {
-            _audioLibrary = audioLibrary;
+            this.audioLibrary = audioLibrary;
         }
 
         public async Task<string> ApplyCropAsync(string videoPath, string cropDataJson)
         {
             string sourcePath = ResolveMediaInput(videoPath);
             if (string.IsNullOrWhiteSpace(sourcePath) || !File.Exists(sourcePath))
+            {
                 return videoPath;
+            }
 
-            var (x, y, w, h) = ReadCropData(cropDataJson);
+            var (cropX, cropY, cropWidth, cropHeight) = ReadCropData(cropDataJson);
 
-            // No-op crop (full frame)
-            if (x == 0 && y == 0 && w == BaseWidth && h == BaseHeight)
+            if (cropX == EmptyCoordinate && cropY == EmptyCoordinate && cropWidth == BaseWidth && cropHeight == BaseHeight)
+            {
                 return videoPath;
+            }
 
-            double xRatio = (double)x / BaseWidth;
-            double yRatio = (double)y / BaseHeight;
-            double wRatio = (double)w / BaseWidth;
-            double hRatio = (double)h / BaseHeight;
+            double widthRatio = (double)cropWidth / BaseWidth;
+            double heightRatio = (double)cropHeight / BaseHeight;
+            double xRatio = (double)cropX / BaseWidth;
+            double yRatio = (double)cropY / BaseHeight;
 
             string cropFilter = string.Format(
                 CultureInfo.InvariantCulture,
-                "crop=iw*{0:0.######}:ih*{1:0.######}:iw*{2:0.######}:ih*{3:0.######}",
-                wRatio, hRatio, xRatio, yRatio);
+                CropFilterFormat,
+                widthRatio, heightRatio, xRatio, yRatio);
 
             string directory = Path.GetDirectoryName(sourcePath)!;
             string fileNameWithoutExt = Path.GetFileNameWithoutExtension(sourcePath);
             string extension = Path.GetExtension(sourcePath);
-            string tempPath = Path.Combine(directory, $"{fileNameWithoutExt}_crop_tmp_{Guid.NewGuid():N}{extension}");
+            string tempPath = Path.Combine(directory, $"{fileNameWithoutExt}{TempCropFileSuffix}{Guid.NewGuid():N}{extension}");
 
-            string ffmpegArgs =
-                $"-hide_banner -loglevel error -i \"{sourcePath}\" -vf \"{cropFilter}\" " +
-                $"-c:v libx264 -preset veryfast -crf 20 -c:a copy -movflags +faststart -y \"{tempPath}\"";
+            string ffmpegArguments = string.Format(FfmpegCropArgumentsFormat, sourcePath, cropFilter, tempPath);
 
-            await RunFfmpegAsync(ffmpegArgs, directory);
+            await RunFfmpegAsync(ffmpegArguments, directory);
 
             if (!File.Exists(tempPath))
-                throw new InvalidOperationException("FFmpeg did not produce the cropped output file.");
-
-            return FinalizeProcessedFile(sourcePath, tempPath, "_cropped_");
+            {
+                throw new InvalidOperationException(ErrorCropOutputMissing);
+            }
+            return FinalizeProcessedFile(sourcePath, tempPath, FinalCroppedSuffix);
         }
 
         public async Task<string> MergeAudioAsync(
@@ -68,76 +111,81 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
         {
             string sourcePath = ResolveMediaInput(videoPath);
             if (string.IsNullOrWhiteSpace(sourcePath) || !File.Exists(sourcePath))
+            {
                 return videoPath;
-
-            var track = await _audioLibrary.GetTrackByIdAsync(musicTrackId);
+            }
+            var track = await audioLibrary.GetTrackByIdAsync(musicTrackId);
             if (track == null || string.IsNullOrWhiteSpace(track.AudioUrl))
+            {
                 return videoPath;
-
+            }
             string audioInput = ResolveMediaInput(track.AudioUrl);
             if (!IsHttpUrl(audioInput) && !File.Exists(audioInput))
-                throw new FileNotFoundException($"Music file not found: {audioInput}");
+            {
+                throw new FileNotFoundException(string.Format(ErrorMusicFileNotFoundFormat, audioInput));
+            }
 
-            double safeStart = Math.Clamp(startOffsetSec, 0, 300);
-            double safeVolume = Math.Clamp(musicVolumePercent / 100.0, 0.0, 2.0);
+            double safeStart = Math.Clamp(startOffsetSec, EmptyCoordinate, MaxStartOffsetSeconds);
+            double safeVolume = Math.Clamp(musicVolumePercent / VolumePercentageDivisor, MinimumVolumeMultiplier, MaxVolumeMultiplier);
 
             string directory = Path.GetDirectoryName(sourcePath)!;
 
-            // Probe the video duration so the music covers the entire reel
             double? videoDuration = await TryGetMediaDurationSecondsAsync(sourcePath, directory: directory);
             double targetDuration = videoDuration.HasValue && videoDuration.Value > 0
                 ? videoDuration.Value
-                : (musicDurationSec > 0 ? musicDurationSec : 30.0);
+                : (musicDurationSec > 0 ? musicDurationSec : DefaultAudioDurationSeconds);
 
             double? probedAudioDuration = await TryGetMediaDurationSecondsAsync(audioInput, directory: directory);
-            if (!probedAudioDuration.HasValue && track.DurationSeconds > 1.0)
+            if (!probedAudioDuration.HasValue && track.DurationSeconds > MinimumAudioDurationSeconds)
+            {
                 probedAudioDuration = track.DurationSeconds;
-
+            }
             if (probedAudioDuration.HasValue && probedAudioDuration.Value > 0)
             {
                 double audioDuration = probedAudioDuration.Value;
-                if (safeStart >= audioDuration - 0.25)
-                    safeStart = 0;
-
-                double availableAfterStart = audioDuration - safeStart;
-                if (availableAfterStart < 1.0)
+                if (safeStart >= audioDuration - AudioStartOffsetMarginSeconds)
                 {
-                    safeStart = 0;
+                    safeStart = EmptyCoordinate;
+                }
+                double availableAfterStart = audioDuration - safeStart;
+                if (availableAfterStart < MinimumAudioDurationSeconds)
+                {
+                    safeStart = EmptyCoordinate;
                 }
             }
 
-            string durationFilter = $",atrim=duration={ToInvariantNumber(targetDuration)}";
-            string volumeFilter = $",volume={ToInvariantNumber(safeVolume)}";
+            string durationFilter = string.Format(DurationFilterFormat, ToInvariantNumber(targetDuration));
+            string volumeFilter = string.Format(VolumeFilterFormat, ToInvariantNumber(safeVolume));
 
             string fileNameWithoutExt = Path.GetFileNameWithoutExtension(sourcePath);
             string extension = Path.GetExtension(sourcePath);
-            string tempPath = Path.Combine(directory, $"{fileNameWithoutExt}_music_tmp_{Guid.NewGuid():N}{extension}");
+            string tempPath = Path.Combine(directory, $"{fileNameWithoutExt}{TempMusicFileSuffix}{Guid.NewGuid():N}{extension}");
 
-            string filterComplex =
-                $"[1:a]aresample=async=1:first_pts=0{durationFilter}{volumeFilter},apad[aout]";
+            string filterComplex = string.Format(AudioFilterComplexFormat, durationFilter, volumeFilter);
 
-            // -stream_loop -1 loops the audio infinitely so short tracks cover the full video
-            string ffmpegArgs =
-                $"-hide_banner -loglevel error -i \"{sourcePath}\" " +
-                $"-stream_loop -1 -ss {ToInvariantNumber(safeStart)} -i \"{audioInput}\" " +
-                $"-filter_complex \"{filterComplex}\" " +
-                "-map 0:v:0 -map \"[aout]\" -c:v copy -c:a aac -b:a 192k " +
-                $"-movflags +faststart -shortest -y \"{tempPath}\"";
+            string ffmpegArguments = string.Format(
+                FfmpegMusicArgumentsFormat,
+                sourcePath,
+                ToInvariantNumber(safeStart),
+                audioInput,
+                filterComplex,
+                tempPath);
 
-            await RunFfmpegAsync(ffmpegArgs, directory);
+            await RunFfmpegAsync(ffmpegArguments, directory);
 
             if (!File.Exists(tempPath))
-                throw new InvalidOperationException("FFmpeg did not produce the merged-audio output file.");
-
-            return FinalizeProcessedFile(sourcePath, tempPath, "_withmusic_");
+            {
+                throw new InvalidOperationException(ErrorMusicOutputMissing);
+            }
+            return FinalizeProcessedFile(sourcePath, tempPath, FinalWithMusicSuffix);
         }
 
         private static async Task<double?> TryGetMediaDurationSecondsAsync(string mediaInput, string directory)
         {
-            var psi = new ProcessStartInfo
+            var processStartInfo = new ProcessStartInfo
             {
                 FileName = ResolveFfprobePath(),
-                Arguments = $"-v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 \"{mediaInput}\"",
+                Arguments = string.Format(FfprobeDurationArgumentsFormat, mediaInput),
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -145,31 +193,39 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
                 WorkingDirectory = directory,
             };
 
-            using var process = Process.Start(psi);
+            using var process = Process.Start(processStartInfo);
             if (process == null)
+            {
                 return null;
+            }
+            var standardOutputTask = process.StandardOutput.ReadToEndAsync();
+            var standardErrorTask = process.StandardError.ReadToEndAsync();
 
-            var stdoutTask = process.StandardOutput.ReadToEndAsync();
-            var stderrTask = process.StandardError.ReadToEndAsync();
-
-            using var cts = new CancellationTokenSource(FfmpegTimeout);
+            using var cancellationTokenSource = new CancellationTokenSource(FfmpegTimeout);
             try
             {
-                await process.WaitForExitAsync(cts.Token);
+                await process.WaitForExitAsync(cancellationTokenSource.Token);
             }
             catch (OperationCanceledException)
             {
-                try { process.Kill(entireProcessTree: true); } catch { }
+                try
+                {
+                    process.Kill(entireProcessTree: true);
+                }
+                catch
+                {
+                }
                 return null;
             }
 
-            string stdout = (await stdoutTask).Trim();
-            _ = await stderrTask;
+            string standardOutput = (await standardOutputTask).Trim();
+            _ = await standardErrorTask;
 
-            if (process.ExitCode != 0 || string.IsNullOrWhiteSpace(stdout))
+            if (process.ExitCode != SuccessExitCode || string.IsNullOrWhiteSpace(standardOutput))
+            {
                 return null;
-
-            if (double.TryParse(stdout, NumberStyles.Float, CultureInfo.InvariantCulture, out var duration) &&
+            }
+            if (double.TryParse(standardOutput, NumberStyles.Float, CultureInfo.InvariantCulture, out var duration) &&
                 duration > 0)
             {
                 return duration;
@@ -185,7 +241,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
             string extension = Path.GetExtension(sourcePath);
             string fallbackPath = Path.Combine(
                 directory,
-                $"{fileNameWithoutExt}{fallbackSuffix}{DateTime.UtcNow:yyyyMMddHHmmssfff}{extension}");
+                $"{fileNameWithoutExt}{fallbackSuffix}{DateTime.UtcNow.ToString(TimestampFormat)}{extension}");
 
             try
             {
@@ -194,7 +250,6 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
             }
             catch (IOException)
             {
-                // The current video can be locked by the media player; keep output under a new file.
                 File.Move(tempPath, fallbackPath, overwrite: true);
                 return fallbackPath;
             }
@@ -207,15 +262,20 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
             {
                 if (File.Exists(tempPath))
                 {
-                    try { File.Delete(tempPath); }
-                    catch { }
+                    try
+                    {
+                        File.Delete(tempPath);
+                    }
+                    catch
+                    {
+                    }
                 }
             }
         }
 
         private static async Task RunFfmpegAsync(string arguments, string workingDirectory)
         {
-            var psi = new ProcessStartInfo
+            var processStartInfo = new ProcessStartInfo
             {
                 FileName = ResolveFfmpegPath(),
                 Arguments = arguments,
@@ -226,103 +286,122 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
                 WorkingDirectory = workingDirectory,
             };
 
-            using var process = Process.Start(psi)
-                ?? throw new InvalidOperationException("Failed to start ffmpeg. Ensure ffmpeg is installed and available.");
+            using var process = Process.Start(processStartInfo)
+                ?? throw new InvalidOperationException(ErrorFfmpegStartFailed);
 
-            var stdoutTask = process.StandardOutput.ReadToEndAsync();
-            var stderrTask = process.StandardError.ReadToEndAsync();
+            var standardOutputTask = process.StandardOutput.ReadToEndAsync();
+            var standardErrorTask = process.StandardError.ReadToEndAsync();
 
-            using var cts = new CancellationTokenSource(FfmpegTimeout);
+            using var cancellationTokenSource = new CancellationTokenSource(FfmpegTimeout);
             try
             {
-                await process.WaitForExitAsync(cts.Token);
+                await process.WaitForExitAsync(cancellationTokenSource.Token);
             }
             catch (OperationCanceledException)
             {
-                try { process.Kill(entireProcessTree: true); } catch { }
-                throw new InvalidOperationException("ffmpeg timed out after 5 minutes.");
+                try
+                {
+                    process.Kill(entireProcessTree: true);
+                }
+                catch
+                {
+                }
+                throw new InvalidOperationException(ErrorFfmpegTimeout);
             }
 
-            string stdout = await stdoutTask;
-            string stderr = await stderrTask;
+            string standardOutput = await standardOutputTask;
+            string standardError = await standardErrorTask;
 
-            if (process.ExitCode != 0)
+            if (process.ExitCode != SuccessExitCode)
             {
-                throw new InvalidOperationException(
-                    $"ffmpeg exited with code {process.ExitCode}:{Environment.NewLine}{stderr}{Environment.NewLine}{stdout}");
+                throw new InvalidOperationException(string.Format(
+                    ErrorFfmpegExitCodeFormat,
+                    process.ExitCode,
+                    Environment.NewLine,
+                    standardError,
+                    standardOutput));
             }
         }
 
         private static string ResolveFfmpegPath()
         {
             if (File.Exists(LocalFfmpegPath))
+            {
                 return LocalFfmpegPath;
-
-            return "ffmpeg";
+            }
+            return FfmpegFallbackName;
         }
 
         private static string ResolveFfprobePath()
         {
             if (File.Exists(LocalFfprobePath))
+            {
                 return LocalFfprobePath;
-
-            return "ffprobe";
+            }
+            return FfprobeFallbackName;
         }
 
         private static string ResolveMediaInput(string value)
         {
             if (Uri.TryCreate(value, UriKind.Absolute, out var uri) && uri.IsFile)
+            {
                 return uri.LocalPath;
-
+            }
             return value;
         }
 
         private static bool IsHttpUrl(string value)
         {
             if (!Uri.TryCreate(value, UriKind.Absolute, out var uri))
+            {
                 return false;
-
+            }
             return string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase);
         }
 
         private static string ToInvariantNumber(double value)
-            => value.ToString("0.###", CultureInfo.InvariantCulture);
+            => value.ToString(InvariantNumberFormat, CultureInfo.InvariantCulture);
 
-        private static (int X, int Y, int Width, int Height) ReadCropData(string cropDataJson)
+        private static (int CropX, int CropY, int CropWidth, int CropHeight) ReadCropData(string cropDataJson)
         {
             if (string.IsNullOrWhiteSpace(cropDataJson))
-                return (0, 0, BaseWidth, BaseHeight);
-
-            using var doc = JsonDocument.Parse(cropDataJson);
-            var root = doc.RootElement;
-
-            int x = ReadInt(root, "x", 0);
-            int y = ReadInt(root, "y", 0);
-            int w = ReadInt(root, "width", BaseWidth);
-            int h = ReadInt(root, "height", BaseHeight);
-
-            x = Math.Clamp(x, 0, BaseWidth - 1);
-            y = Math.Clamp(y, 0, BaseHeight - 1);
-            w = Math.Clamp(w, 1, BaseWidth - x);
-            h = Math.Clamp(h, 1, BaseHeight - y);
-
-            return (x, y, w, h);
-        }
-
-        private static int ReadInt(JsonElement root, string name, int fallback)
-        {
-            if (root.TryGetProperty(name, out var value))
             {
-                if (value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var i))
-                    return i;
-
-                if (value.ValueKind == JsonValueKind.String &&
-                    int.TryParse(value.GetString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed))
-                    return parsed;
+                return (EmptyCoordinate, EmptyCoordinate, BaseWidth, BaseHeight);
             }
 
-            return fallback;
+            using var jsonDocument = JsonDocument.Parse(cropDataJson);
+            var rootElement = jsonDocument.RootElement;
+
+            int cropX = ReadInt(rootElement, JsonKeyX, EmptyCoordinate);
+            int cropY = ReadInt(rootElement, JsonKeyY, EmptyCoordinate);
+            int cropWidth = ReadInt(rootElement, JsonKeyWidth, BaseWidth);
+            int cropHeight = ReadInt(rootElement, JsonKeyHeight, BaseHeight);
+
+            cropX = Math.Clamp(cropX, EmptyCoordinate, BaseWidth - MinimumCropDimension);
+            cropY = Math.Clamp(cropY, EmptyCoordinate, BaseHeight - MinimumCropDimension);
+            cropWidth = Math.Clamp(cropWidth, MinimumCropDimension, BaseWidth - cropX);
+            cropHeight = Math.Clamp(cropHeight, MinimumCropDimension, BaseHeight - cropY);
+
+            return (cropX, cropY, cropWidth, cropHeight);
+        }
+
+        private static int ReadInt(JsonElement rootElement, string propertyName, int fallbackValue)
+        {
+            if (rootElement.TryGetProperty(propertyName, out var jsonValue))
+            {
+                if (jsonValue.ValueKind == JsonValueKind.Number && jsonValue.TryGetInt32(out var parsedInteger))
+                {
+                    return parsedInteger;
+                }
+                if (jsonValue.ValueKind == JsonValueKind.String &&
+                    int.TryParse(jsonValue.GetString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedFromString))
+                {
+                    return parsedFromString;
+                }
+            }
+
+            return fallbackValue;
         }
     }
 }
