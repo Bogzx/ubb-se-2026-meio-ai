@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 using Ubb_se_2026_meio_ai.Core.Database;
 using Ubb_se_2026_meio_ai.Core.Models;
@@ -6,113 +9,146 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
 {
     public class ReelRepository
     {
-        private readonly ISqlConnectionFactory db;
-        public ReelRepository(ISqlConnectionFactory db) => this.db = db;
-
-        // Returns all reels where CreatorUserId = userId
-        public async Task<IList<ReelModel>> GetUserReelsAsync(int userId)
-        {
-            const string sql = @"
+        private const string SqlSelectUserReels = @"
                 SELECT ReelId, MovieId, CreatorUserId, VideoUrl, ThumbnailUrl,
                        Title, Caption, FeatureDurationSeconds, BackgroundMusicId,
                        CropDataJson, Source, CreatedAt, LastEditedAt
                 FROM Reel
                 WHERE CreatorUserId = @UserId
                 ORDER BY CreatedAt DESC";
-            var result = new List<ReelModel>();
-            await using var conn = await db.CreateConnectionAsync();
-            await using var cmd = new SqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@UserId", userId);
-            await using var reader = await cmd.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
-            {
-                result.Add(new ReelModel
-                {
-                    ReelId = reader.GetInt32(0),
-                    MovieId = reader.GetInt32(1),
-                    CreatorUserId = reader.GetInt32(2),
-                    VideoUrl = reader.GetString(3),
-                    ThumbnailUrl = reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
-                    Title = reader.GetString(5),
-                    Caption = reader.IsDBNull(6) ? string.Empty : reader.GetString(6),
-                    FeatureDurationSeconds = reader.IsDBNull(7) ? 0 : reader.GetDouble(7),
-                    BackgroundMusicId = reader.IsDBNull(8) ? null : reader.GetInt32(8),
-                    CropDataJson = reader.IsDBNull(9) ? null : reader.GetString(9),
-                    Source = reader.IsDBNull(10) ? string.Empty : reader.GetString(10),
-                    CreatedAt = reader.GetDateTime(11),
-                    LastEditedAt = reader.IsDBNull(12) ? null : reader.GetDateTime(12),
-                });
-            }
-            return result;
-        }
 
-        // Updates CropDataJson, BackgroundMusicId, LastEditedAt and optionally VideoUrl for a reel.
-        // Returns the number of rows affected (should be 1).
-        public async Task<int> UpdateReelEditsAsync(int reelId, string cropDataJson, int? musicId, string? videoUrl = null)
-        {
-            const string sql = @"
+        private const string SqlUpdateReelEdits = @"
                 UPDATE Reel
                 SET CropDataJson = @Crop,
                     BackgroundMusicId = @MusicId,
                     VideoUrl = COALESCE(@VideoUrl, VideoUrl),
                     LastEditedAt = SYSUTCDATETIME()
                 WHERE ReelId = @ReelId";
-            await using var conn = await db.CreateConnectionAsync();
-            await using var cmd = new SqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@Crop", cropDataJson);
-            cmd.Parameters.AddWithValue("@MusicId", (object?)musicId ?? DBNull.Value);
-            cmd.Parameters.AddWithValue("@VideoUrl", (object?)videoUrl ?? DBNull.Value);
-            cmd.Parameters.AddWithValue("@ReelId", reelId);
-            return await cmd.ExecuteNonQueryAsync();
-        }
 
-        public async Task<ReelModel?> GetReelByIdAsync(int reelId)
-        {
-            const string sql = @"
+        private const string SqlSelectReelById = @"
                 SELECT ReelId, MovieId, CreatorUserId, VideoUrl, ThumbnailUrl,
                        Title, Caption, FeatureDurationSeconds, BackgroundMusicId,
                        CropDataJson, Source, CreatedAt, LastEditedAt
                 FROM Reel
                 WHERE ReelId = @ReelId";
 
-            await using var conn = await db.CreateConnectionAsync();
-            await using var cmd = new SqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@ReelId", reelId);
-            await using var reader = await cmd.ExecuteReaderAsync();
+        private const string SqlDeleteReel = @"
+                DELETE FROM UserReelInteraction WHERE ReelId = @ReelId;
+                DELETE FROM Reel WHERE ReelId = @ReelId;";
 
-            if (!await reader.ReadAsync())
+        private const string ParameterUserId = "@UserId";
+        private const string ParameterCropData = "@Crop";
+        private const string ParameterMusicId = "@MusicId";
+        private const string ParameterVideoUrl = "@VideoUrl";
+        private const string ParameterReelId = "@ReelId";
+
+        private const int ColumnIndexReelId = 0;
+        private const int ColumnIndexMovieId = 1;
+        private const int ColumnIndexCreatorUserId = 2;
+        private const int ColumnIndexVideoUrl = 3;
+        private const int ColumnIndexThumbnailUrl = 4;
+        private const int ColumnIndexTitle = 5;
+        private const int ColumnIndexCaption = 6;
+        private const int ColumnIndexFeatureDurationSeconds = 7;
+        private const int ColumnIndexBackgroundMusicId = 8;
+        private const int ColumnIndexCropDataJson = 9;
+        private const int ColumnIndexSource = 10;
+        private const int ColumnIndexCreatedAt = 11;
+        private const int ColumnIndexLastEditedAt = 12;
+
+        private readonly ISqlConnectionFactory sqlConnectionFactory;
+
+        public ReelRepository(ISqlConnectionFactory sqlConnectionFactory)
+        {
+            this.sqlConnectionFactory = sqlConnectionFactory;
+        }
+
+        // Returns all reels where CreatorUserId = userId
+        public async Task<IList<ReelModel>> GetUserReelsAsync(int userId)
+        {
+            var resultList = new List<ReelModel>();
+
+            await using var sqlConnection = await sqlConnectionFactory.CreateConnectionAsync();
+            await using var sqlCommand = new SqlCommand(SqlSelectUserReels, sqlConnection);
+            sqlCommand.Parameters.AddWithValue(ParameterUserId, userId);
+
+            await using var dataReader = await sqlCommand.ExecuteReaderAsync();
+
+            while (await dataReader.ReadAsync())
+            {
+                resultList.Add(new ReelModel
+                {
+                    ReelId = dataReader.GetInt32(ColumnIndexReelId),
+                    MovieId = dataReader.GetInt32(ColumnIndexMovieId),
+                    CreatorUserId = dataReader.GetInt32(ColumnIndexCreatorUserId),
+                    VideoUrl = dataReader.GetString(ColumnIndexVideoUrl),
+                    ThumbnailUrl = dataReader.IsDBNull(ColumnIndexThumbnailUrl) ? string.Empty : dataReader.GetString(ColumnIndexThumbnailUrl),
+                    Title = dataReader.GetString(ColumnIndexTitle),
+                    Caption = dataReader.IsDBNull(ColumnIndexCaption) ? string.Empty : dataReader.GetString(ColumnIndexCaption),
+                    FeatureDurationSeconds = dataReader.IsDBNull(ColumnIndexFeatureDurationSeconds) ? 0 : dataReader.GetDouble(ColumnIndexFeatureDurationSeconds),
+                    BackgroundMusicId = dataReader.IsDBNull(ColumnIndexBackgroundMusicId) ? null : dataReader.GetInt32(ColumnIndexBackgroundMusicId),
+                    CropDataJson = dataReader.IsDBNull(ColumnIndexCropDataJson) ? null : dataReader.GetString(ColumnIndexCropDataJson),
+                    Source = dataReader.IsDBNull(ColumnIndexSource) ? string.Empty : dataReader.GetString(ColumnIndexSource),
+                    CreatedAt = dataReader.GetDateTime(ColumnIndexCreatedAt),
+                    LastEditedAt = dataReader.IsDBNull(ColumnIndexLastEditedAt) ? null : dataReader.GetDateTime(ColumnIndexLastEditedAt),
+                });
+            }
+            return resultList;
+        }
+
+        // Updates CropDataJson, BackgroundMusicId, LastEditedAt and optionally VideoUrl for a reel.
+        // Returns the number of rows affected (should be 1).
+        public async Task<int> UpdateReelEditsAsync(int reelId, string cropDataJson, int? musicId, string? videoUrl = null)
+        {
+            await using var sqlConnection = await sqlConnectionFactory.CreateConnectionAsync();
+            await using var sqlCommand = new SqlCommand(SqlUpdateReelEdits, sqlConnection);
+
+            sqlCommand.Parameters.AddWithValue(ParameterCropData, cropDataJson);
+            sqlCommand.Parameters.AddWithValue(ParameterMusicId, (object?)musicId ?? DBNull.Value);
+            sqlCommand.Parameters.AddWithValue(ParameterVideoUrl, (object?)videoUrl ?? DBNull.Value);
+            sqlCommand.Parameters.AddWithValue(ParameterReelId, reelId);
+
+            return await sqlCommand.ExecuteNonQueryAsync();
+        }
+
+        public async Task<ReelModel?> GetReelByIdAsync(int reelId)
+        {
+            await using var sqlConnection = await sqlConnectionFactory.CreateConnectionAsync();
+            await using var sqlCommand = new SqlCommand(SqlSelectReelById, sqlConnection);
+            sqlCommand.Parameters.AddWithValue(ParameterReelId, reelId);
+
+            await using var dataReader = await sqlCommand.ExecuteReaderAsync();
+
+            if (!await dataReader.ReadAsync())
             {
                 return null;
             }
 
             return new ReelModel
             {
-                ReelId = reader.GetInt32(0),
-                MovieId = reader.GetInt32(1),
-                CreatorUserId = reader.GetInt32(2),
-                VideoUrl = reader.GetString(3),
-                ThumbnailUrl = reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
-                Title = reader.GetString(5),
-                Caption = reader.IsDBNull(6) ? string.Empty : reader.GetString(6),
-                FeatureDurationSeconds = reader.IsDBNull(7) ? 0 : reader.GetDouble(7),
-                BackgroundMusicId = reader.IsDBNull(8) ? null : reader.GetInt32(8),
-                CropDataJson = reader.IsDBNull(9) ? null : reader.GetString(9),
-                Source = reader.IsDBNull(10) ? string.Empty : reader.GetString(10),
-                CreatedAt = reader.GetDateTime(11),
-                LastEditedAt = reader.IsDBNull(12) ? null : reader.GetDateTime(12),
+                ReelId = dataReader.GetInt32(ColumnIndexReelId),
+                MovieId = dataReader.GetInt32(ColumnIndexMovieId),
+                CreatorUserId = dataReader.GetInt32(ColumnIndexCreatorUserId),
+                VideoUrl = dataReader.GetString(ColumnIndexVideoUrl),
+                ThumbnailUrl = dataReader.IsDBNull(ColumnIndexThumbnailUrl) ? string.Empty : dataReader.GetString(ColumnIndexThumbnailUrl),
+                Title = dataReader.GetString(ColumnIndexTitle),
+                Caption = dataReader.IsDBNull(ColumnIndexCaption) ? string.Empty : dataReader.GetString(ColumnIndexCaption),
+                FeatureDurationSeconds = dataReader.IsDBNull(ColumnIndexFeatureDurationSeconds) ? 0 : dataReader.GetDouble(ColumnIndexFeatureDurationSeconds),
+                BackgroundMusicId = dataReader.IsDBNull(ColumnIndexBackgroundMusicId) ? null : dataReader.GetInt32(ColumnIndexBackgroundMusicId),
+                CropDataJson = dataReader.IsDBNull(ColumnIndexCropDataJson) ? null : dataReader.GetString(ColumnIndexCropDataJson),
+                Source = dataReader.IsDBNull(ColumnIndexSource) ? string.Empty : dataReader.GetString(ColumnIndexSource),
+                CreatedAt = dataReader.GetDateTime(ColumnIndexCreatedAt),
+                LastEditedAt = dataReader.IsDBNull(ColumnIndexLastEditedAt) ? null : dataReader.GetDateTime(ColumnIndexLastEditedAt),
             };
         }
 
         // Deletes a reel from the database
         public async Task DeleteReelAsync(int reelId)
         {
-            const string sql = @"
-                DELETE FROM UserReelInteraction WHERE ReelId = @ReelId;
-                DELETE FROM Reel WHERE ReelId = @ReelId;";
-            await using var conn = await db.CreateConnectionAsync();
-            await using var cmd = new SqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@ReelId", reelId);
-            await cmd.ExecuteNonQueryAsync();
+            await using var sqlConnection = await sqlConnectionFactory.CreateConnectionAsync();
+            await using var sqlCommand = new SqlCommand(SqlDeleteReel, sqlConnection);
+            sqlCommand.Parameters.AddWithValue(ParameterReelId, reelId);
+            await sqlCommand.ExecuteNonQueryAsync();
         }
     }
 }
