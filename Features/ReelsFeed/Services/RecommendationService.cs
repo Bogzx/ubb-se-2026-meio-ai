@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Data.SqlClient;
 using ubb_se_2026_meio_ai.Core.Database;
 using ubb_se_2026_meio_ai.Core.Models;
@@ -9,35 +10,51 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
     /// <summary>
     /// Provides personalized reel recommendations by scoring unwatched reels
     /// against the user's movie preferences, with a cold-start fallback for new users.
-    /// Owner: Tudor
+    /// Owner: Tudor.
     /// </summary>
     public class RecommendationService : IRecommendationService
     {
+        private const int ReelModel_ReelId_Index = 0;
+        private const int ReelModel_MovieId_Index = 1;
+        private const int ReelModel_CreatorUserId_Index = 2;
+        private const int ReelModel_VideoUrl_Index = 3;
+        private const int ReelModel_ThumbnailUrl_Index = 4;
+        private const int ReelModel_Title_Index = 5;
+        private const int ReelModel_Caption_Index = 6;
+        private const int ReelModel_FeatureDurationSeconds_Index = 7;
+        private const int ReelModel_CropDataJson_Index = 8;
+        private const int ReelModel_BackgroundMusicId_Index = 9;
+        private const int ReelModel_Source_Index = 10;
+        private const int ReelModel_CreatedAt_Index = 11;
+        private const int ReelModel_LastEditedAt_Index = 12;
+        private const int ReelModel_PrimaryGenre_Index = 13;
+
+        private const int UserMoviePreference_MovieId_Index = 0;
+        private const int UserMoviePreference_Score_Index = 1;
+
+        private const int UserReelInteraction_ReelId_Index = 0;
+        private const int UserReelInteraction_LikeCount_Index = 1;
+
         private readonly ISqlConnectionFactory _connectionFactory;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RecommendationService"/> class.
+        /// </summary>
+        /// <param name="connectionFactory">Factory used to create SQL connections.</param>
         public RecommendationService(ISqlConnectionFactory connectionFactory)
         {
-            _connectionFactory = connectionFactory;
+            this._connectionFactory = connectionFactory;
         }
 
-        /// <summary>
-        /// Returns the top <paramref name="count"/> recommended reels for the user.
-        ///
-        /// Algorithm (per docs Task 6):
-        /// 1. Check if the user has any UserMoviePreference rows (indicates engagement history).
-        /// 2a. If YES (warm user): query Reel LEFT JOIN UserMoviePreference on MovieId,
-        ///     excluding already-viewed reels, and order by preference score descending
-        ///     (highest-affinity movies first), with recency as tiebreaker.
-        /// 2b. If NO (cold-start): serve globally popular reels — most-liked in the last 7 days,
-        ///     excluding already-viewed, with recency as tiebreaker.
-        /// </summary>
+        /// <inheritdoc />
         public async Task<IList<ReelModel>> GetRecommendedReelsAsync(int userId, int count)
         {
-            bool hasPreferences = await UserHasPreferencesAsync(userId);
+            // Choose recommendation strategy based on whether user preference history exists.
+            bool userHasPreferences = await this.UserHasPreferencesAsync(userId);
 
-            return hasPreferences
-                ? await GetPersonalizedReelsAsync(userId, count)
-                : await GetColdStartReelsAsync(userId, count);
+            return userHasPreferences
+                ? await this.GetPersonalizedReelsAsync(userId, count)
+                : await this.GetColdStartReelsAsync(userId, count);
         }
 
         /// <summary>
@@ -46,118 +63,160 @@ namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
         /// </summary>
         private async Task<bool> UserHasPreferencesAsync(int userId)
         {
-            const string sql = @"
-                SELECT CASE WHEN EXISTS (
-                    SELECT 1 FROM UserMoviePreference WHERE UserId = @UserId
-                ) THEN 1 ELSE 0 END
+            const string checkUserHasPreferencesSql = @"
+                SELECT TOP 1 1
+                FROM UserMoviePreference
+                WHERE UserId = @UserId
             ";
 
-            await using var connection = await _connectionFactory.CreateConnectionAsync();
-            await using var command = new SqlCommand(sql, connection);
-            command.Parameters.AddWithValue("@UserId", userId);
-            var result = await command.ExecuteScalarAsync();
-            return Convert.ToInt32(result) == 1;
+            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var checkUserHasPreferencesCommand = new SqlCommand(checkUserHasPreferencesSql, connection);
+            checkUserHasPreferencesCommand.Parameters.AddWithValue("@UserId", userId);
+            var hasPreferencesResult = await checkUserHasPreferencesCommand.ExecuteScalarAsync();
+            return hasPreferencesResult != null;
         }
 
         /// <summary>
-        /// Warm-user path: scores unwatched reels by matching their MovieId against
-        /// the user's UserMoviePreference scores. Higher-preference movies surface first.
-        /// Reels whose MovieId has no preference row get a neutral score of 0.
-        /// Recency (CreatedAt DESC) breaks ties.
+        /// Warm-user path: ranks reels by user movie preference score in C#,
+        /// using recency as a tiebreaker.
         /// </summary>
         private async Task<IList<ReelModel>> GetPersonalizedReelsAsync(int userId, int count)
         {
-            const string sql = @"
-                SELECT TOP (@Count)
-                    r.ReelId, r.MovieId, r.CreatorUserId, r.VideoUrl, r.ThumbnailUrl,
-                    r.Title, r.Caption, r.FeatureDurationSeconds, r.CropDataJson,
-                    r.BackgroundMusicId, r.Source, r.CreatedAt, r.LastEditedAt,
-                    m.PrimaryGenre
-                FROM Reel r
-                LEFT JOIN Movie m ON m.MovieId = r.MovieId
-                LEFT JOIN UserMoviePreference p
-                    ON p.MovieId = r.MovieId AND p.UserId = @UserId
-                ORDER BY
-                    ISNULL(p.Score, 0) DESC,
-                    r.CreatedAt DESC
-            ";
+            var allReels = await this.GetAllReelsAsync();
+            var userPreferenceScores = await this.GetUserPreferenceScoresAsync(userId);
 
-            return await ExecuteReelQueryAsync(sql, cmd =>
-            {
-                cmd.Parameters.AddWithValue("@UserId", userId);
-                cmd.Parameters.AddWithValue("@Count", count);
-            });
+            return allReels
+                .OrderByDescending(reel =>
+                    userPreferenceScores.TryGetValue(reel.MovieId, out var preferenceScore) ? preferenceScore : 0)
+                .ThenByDescending(reel => reel.CreatedAt)
+                .Take(count)
+                .ToList();
         }
 
         /// <summary>
-        /// Cold-start path for new users with no preference data.
-        /// Serves globally trending reels: most-liked in the last 7 days,
-        /// excluding any already-viewed by this user.
-        /// Falls back to most recent reels if nothing was liked recently.
+        /// Cold-start path: ranks reels by recent like count in C#,
+        /// using recency as a tiebreaker.
         /// </summary>
         private async Task<IList<ReelModel>> GetColdStartReelsAsync(int userId, int count)
         {
-            const string sql = @"
-                SELECT TOP (@Count)
+            var allReels = await this.GetAllReelsAsync();
+            var recentLikeCountsByReelId = await this.GetRecentLikeCountsAsync();
+
+            return allReels
+                .OrderByDescending(reel =>
+                    recentLikeCountsByReelId.TryGetValue(reel.ReelId, out var recentLikeCount) ? recentLikeCount : 0)
+                .ThenByDescending(reel => reel.CreatedAt)
+                .Take(count)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Retrieves all reels with associated movie genre metadata.
+        /// </summary>
+        private async Task<IList<ReelModel>> GetAllReelsAsync()
+        {
+            const string getAllReelsSql = @"
+                SELECT
                     r.ReelId, r.MovieId, r.CreatorUserId, r.VideoUrl, r.ThumbnailUrl,
                     r.Title, r.Caption, r.FeatureDurationSeconds, r.CropDataJson,
                     r.BackgroundMusicId, r.Source, r.CreatedAt, r.LastEditedAt,
                     m.PrimaryGenre
                 FROM Reel r
                 LEFT JOIN Movie m ON m.MovieId = r.MovieId
-                LEFT JOIN (
-                    SELECT ReelId, COUNT(*) AS LikeCount
-                    FROM UserReelInteraction
-                    WHERE IsLiked = 1 AND ViewedAt >= DATEADD(DAY, -7, SYSUTCDATETIME())
-                    GROUP BY ReelId
-                ) likes ON likes.ReelId = r.ReelId
-                ORDER BY
-                    ISNULL(likes.LikeCount, 0) DESC,
-                    r.CreatedAt DESC
             ";
 
-            return await ExecuteReelQueryAsync(sql, cmd =>
+            var allReels = new List<ReelModel>();
+
+            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var getAllReelsCommand = new SqlCommand(getAllReelsSql, connection);
+
+            await using var reelReader = await getAllReelsCommand.ExecuteReaderAsync();
+            while (await reelReader.ReadAsync())
             {
-                cmd.Parameters.AddWithValue("@UserId", userId);
-                cmd.Parameters.AddWithValue("@Count", count);
-            });
+                allReels.Add(this.MapReel(reelReader));
+            }
+
+            return allReels;
         }
 
         /// <summary>
-        /// Shared helper that executes a reel query and maps the result set to ReelModel objects.
+        /// Retrieves movie preference scores for a user.
         /// </summary>
-        private async Task<IList<ReelModel>> ExecuteReelQueryAsync(
-            string sql, Action<SqlCommand> configureParameters)
+        private async Task<Dictionary<int, double>> GetUserPreferenceScoresAsync(int userId)
         {
-            var reels = new List<ReelModel>();
+            const string getUserPreferenceScoresSql = @"
+                SELECT MovieId, Score
+                FROM UserMoviePreference
+                WHERE UserId = @UserId
+            ";
 
-            await using var connection = await _connectionFactory.CreateConnectionAsync();
-            await using var command = new SqlCommand(sql, connection);
-            configureParameters(command);
+            var preferenceScoresByMovieId = new Dictionary<int, double>();
 
-            await using var reader = await command.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
+            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var getUserPreferenceScoresCommand = new SqlCommand(getUserPreferenceScoresSql, connection);
+            getUserPreferenceScoresCommand.Parameters.AddWithValue("@UserId", userId);
+
+            await using var preferenceScoreReader = await getUserPreferenceScoresCommand.ExecuteReaderAsync();
+            while (await preferenceScoreReader.ReadAsync())
             {
-                reels.Add(new ReelModel
-                {
-                    ReelId = reader.GetInt32(0),
-                    MovieId = reader.GetInt32(1),
-                    CreatorUserId = reader.GetInt32(2),
-                    VideoUrl = reader.GetString(3),
-                    ThumbnailUrl = reader.GetString(4),
-                    Title = reader.GetString(5),
-                    Caption = reader.GetString(6),
-                    FeatureDurationSeconds = reader.GetDouble(7),
-                    CropDataJson = reader.IsDBNull(8) ? null : reader.GetString(8),
-                    BackgroundMusicId = reader.IsDBNull(9) ? null : reader.GetInt32(9),
-                    Source = reader.GetString(10),
-                    CreatedAt = reader.GetDateTime(11),
-                    LastEditedAt = reader.IsDBNull(12) ? null : reader.GetDateTime(12),
-                    Genre = reader.IsDBNull(13) ? null : reader.GetString(13)
-                });
+                preferenceScoresByMovieId[preferenceScoreReader.GetInt32(UserMoviePreference_MovieId_Index)] =
+                    preferenceScoreReader.GetDouble(UserMoviePreference_Score_Index);
             }
 
-            return reels;
+            return preferenceScoresByMovieId;
+        }
+
+        /// <summary>
+        /// Retrieves recent like counts (last 7 days) grouped by reel.
+        /// </summary>
+        private async Task<Dictionary<int, int>> GetRecentLikeCountsAsync()
+        {
+            const string getRecentLikeCountsSql = @"
+                SELECT ReelId, COUNT(*) AS LikeCount
+                FROM UserReelInteraction
+                WHERE IsLiked = 1 AND ViewedAt >= DATEADD(DAY, -7, SYSUTCDATETIME())
+                GROUP BY ReelId
+            ";
+
+            var recentLikeCountsByReelId = new Dictionary<int, int>();
+
+            await using var connection = await this._connectionFactory.CreateConnectionAsync();
+            await using var getRecentLikeCountsCommand = new SqlCommand(getRecentLikeCountsSql, connection);
+
+            await using var recentLikeCountReader = await getRecentLikeCountsCommand.ExecuteReaderAsync();
+            while (await recentLikeCountReader.ReadAsync())
+            {
+                recentLikeCountsByReelId[recentLikeCountReader.GetInt32(UserReelInteraction_ReelId_Index)] =
+                    recentLikeCountReader.GetInt32(UserReelInteraction_LikeCount_Index);
+            }
+
+            return recentLikeCountsByReelId;
+        }
+
+        /// <summary>
+        /// Maps a reel query result row to a <see cref="ReelModel"/>.
+        /// </summary>
+        /// <param name="reelReader">Reader positioned on a reel row.</param>
+        /// <returns>The mapped reel model.</returns>
+        private ReelModel MapReel(SqlDataReader reelReader)
+        {
+            return new ReelModel
+            {
+                ReelId = reelReader.GetInt32(ReelModel_ReelId_Index),
+                MovieId = reelReader.GetInt32(ReelModel_MovieId_Index),
+                CreatorUserId = reelReader.GetInt32(ReelModel_CreatorUserId_Index),
+                VideoUrl = reelReader.GetString(ReelModel_VideoUrl_Index),
+                ThumbnailUrl = reelReader.GetString(ReelModel_ThumbnailUrl_Index),
+                Title = reelReader.GetString(ReelModel_Title_Index),
+                Caption = reelReader.GetString(ReelModel_Caption_Index),
+                FeatureDurationSeconds = reelReader.GetDouble(ReelModel_FeatureDurationSeconds_Index),
+                CropDataJson = reelReader.IsDBNull(ReelModel_CropDataJson_Index) ? null : reelReader.GetString(ReelModel_CropDataJson_Index),
+                BackgroundMusicId = reelReader.IsDBNull(ReelModel_BackgroundMusicId_Index) ? null : reelReader.GetInt32(ReelModel_BackgroundMusicId_Index),
+                Source = reelReader.GetString(ReelModel_Source_Index),
+                CreatedAt = reelReader.GetDateTime(ReelModel_CreatedAt_Index),
+                LastEditedAt = reelReader.IsDBNull(ReelModel_LastEditedAt_Index) ? null : reelReader.GetDateTime(ReelModel_LastEditedAt_Index),
+                Genre = reelReader.IsDBNull(ReelModel_PrimaryGenre_Index) ? null : reelReader.GetString(ReelModel_PrimaryGenre_Index),
+            };
         }
     }
 }
