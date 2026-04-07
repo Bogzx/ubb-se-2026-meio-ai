@@ -86,7 +86,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
                 CropFilterFormat,
                 widthRatio, heightRatio, xRatio, yRatio);
 
-            string directory = Path.GetDirectoryName(sourcePath)!;
+            string directory = Path.GetDirectoryName(sourcePath) !;
             string fileNameWithoutExt = Path.GetFileNameWithoutExtension(sourcePath);
             string extension = Path.GetExtension(sourcePath);
             string tempPath = Path.Combine(directory, $"{fileNameWithoutExt}{TempCropFileSuffix}{Guid.NewGuid():N}{extension}");
@@ -128,7 +128,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
             double safeStart = Math.Clamp(startOffsetSec, EmptyCoordinate, MaxStartOffsetSeconds);
             double safeVolume = Math.Clamp(musicVolumePercent / VolumePercentageDivisor, MinimumVolumeMultiplier, MaxVolumeMultiplier);
 
-            string directory = Path.GetDirectoryName(sourcePath)!;
+            string directory = Path.GetDirectoryName(sourcePath) !;
 
             double? videoDuration = await TryGetMediaDurationSecondsAsync(sourcePath, directory: directory);
             double targetDuration = videoDuration.HasValue && videoDuration.Value > 0
@@ -236,7 +236,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
 
         private static string FinalizeProcessedFile(string sourcePath, string tempPath, string fallbackSuffix)
         {
-            string directory = Path.GetDirectoryName(sourcePath)!;
+            string directory = Path.GetDirectoryName(sourcePath) !;
             string fileNameWithoutExt = Path.GetFileNameWithoutExtension(sourcePath);
             string extension = Path.GetExtension(sourcePath);
             string fallbackPath = Path.Combine(

@@ -67,8 +67,6 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
         /// </summary>
         Task<int?> FindMovieByTitleAsync(string title);
 
-
-
         /// <summary>
         /// Checks whether a reel with the given VideoUrl already exists.
         /// </summary>
