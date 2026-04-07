@@ -18,19 +18,16 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels
 
         private const int MaxMatches = 10;
 
-
         private static readonly Dictionary<int, (string Username, string FacebookAccount)> _demoAccounts = new()
         {
-            [1] = ("Alex Carter",  "fb_alex_carter"),
+            [1] = ("Alex Carter", "fb_alex_carter"),
             [2] = ("Alice Rivers", "fb_alice_rivers"),
-            [3] = ("Bob Chen",     "fb_bob_chen"),
-            [4] = ("Carol Hayes",  "fb_carol_hayes"),
-            [9] = ("Sam Taylor",   "fb_sam_taylor"),
+            [3] = ("Bob Chen", "fb_bob_chen"),
+            [4] = ("Carol Hayes", "fb_carol_hayes"),
+            [9] = ("Sam Taylor", "fb_sam_taylor"),
         };
 
-
         private int _activeUserId = 1;
-
 
         private readonly List<int> _loggedAccountIds = new() { 1, 2, 9 };
 
@@ -60,15 +57,11 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels
 
         public ObservableCollection<MatchResult> MatchResults { get; } = new();
 
-      
         public ObservableCollection<MatchResult> FallbackUsers { get; } = new();
 
-     
         public ObservableCollection<UserAccountModel> OtherAccounts { get; } = new();
 
-
         public event Action<MatchResult>? NavigateToDetail;
-
 
         public event Action<UserAccountModel>? NavigateToCurrentUserDetail;
 

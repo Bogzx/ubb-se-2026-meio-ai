@@ -13,33 +13,32 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
 
         private static readonly Dictionary<int, string> HardcodedUsernames = new()
         {
-            [1]  = "Alex Carter",
-            [2]  = "Alice Rivers",
-            [3]  = "Bob Chen",
-            [4]  = "Carol Hayes",
-            [5]  = "Dave Morris",
-            [6]  = "Eve Santos",
-            [7]  = "James Park",
-            [8]  = "Luna Kim",
-            [9]  = "Sam Taylor",
+            [1] = "Alex Carter",
+            [2] = "Alice Rivers",
+            [3] = "Bob Chen",
+            [4] = "Carol Hayes",
+            [5] = "Dave Morris",
+            [6] = "Eve Santos",
+            [7] = "James Park",
+            [8] = "Luna Kim",
+            [9] = "Sam Taylor",
             [10] = "Nina Reeves",
             [11] = "Tom Walsh",
             [12] = "Zara Foster",
             [13] = "Kai Rivera",
         };
 
-
         private static readonly Dictionary<int, string> HardcodedFacebookAccounts = new()
         {
-            [1]  = "fb_alex_carter",
-            [2]  = "fb_alice_rivers",
-            [3]  = "fb_bob_chen",
-            [4]  = "fb_carol_hayes",
-            [5]  = "fb_dave_morris",
-            [6]  = "fb_eve_santos",
-            [7]  = "fb_james_park",
-            [8]  = "fb_luna_kim",
-            [9]  = "fb_sam_taylor",
+            [1] = "fb_alex_carter",
+            [2] = "fb_alice_rivers",
+            [3] = "fb_bob_chen",
+            [4] = "fb_carol_hayes",
+            [5] = "fb_dave_morris",
+            [6] = "fb_eve_santos",
+            [7] = "fb_james_park",
+            [8] = "fb_luna_kim",
+            [9] = "fb_sam_taylor",
             [10] = "fb_nina_reeves",
             [11] = "fb_tom_walsh",
             [12] = "fb_zara_foster",
@@ -51,14 +50,15 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
             _repository = repository;
         }
 
-    
         public async Task<List<MatchResult>> GetTopMatchesAsync(int userId, int count)
         {
             List<UserMoviePreferenceModel> currentUserPrefs =
                 await _repository.GetCurrentUserPreferencesAsync(userId);
 
             if (currentUserPrefs.Count == 0)
+            {
                 return new List<MatchResult>();
+            }
 
             Dictionary<int, double> currentVector = currentUserPrefs
                 .ToDictionary(p => p.MovieId, p => p.Score);
@@ -78,7 +78,9 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
                 double percentage = Math.Round(similarity * 100.0, 1);
 
                 if (percentage > 0)
+                {
                     scored.Add((otherUserId, percentage));
+                }
             }
 
             scored.Sort((a, b) => b.Similarity.CompareTo(a.Similarity));
@@ -98,7 +100,6 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
 
             return results;
         }
-
 
         public async Task<List<MatchResult>> GetRandomUsersAsync(int userId, int count)
         {
@@ -120,9 +121,7 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
             return results;
         }
 
-        private static double ComputeCosineSimilarity(
-            Dictionary<int, double> vectorA,
-            Dictionary<int, double> vectorB)
+        private static double ComputeCosineSimilarity(Dictionary<int, double> vectorA, Dictionary<int, double> vectorB)
         {
             double dotProduct = 0;
             double magnitudeA = 0;
@@ -132,14 +131,20 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
             {
                 magnitudeA += kvp.Value * kvp.Value;
                 if (vectorB.TryGetValue(kvp.Key, out double bScore))
+                {
                     dotProduct += kvp.Value * bScore;
+                }
             }
 
             foreach (var kvp in vectorB)
+            {
                 magnitudeB += kvp.Value * kvp.Value;
+            }
 
             if (magnitudeA == 0 || magnitudeB == 0)
+            {
                 return 0;
+            }
 
             return dotProduct / (Math.Sqrt(magnitudeA) * Math.Sqrt(magnitudeB));
         }
@@ -152,7 +157,10 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
         private static string GetFacebookAccount(int userId)
         {
             if (HardcodedFacebookAccounts.TryGetValue(userId, out string? fb))
+            {
                 return fb;
+            }
+
             return $"fb_user_{userId}";
         }
     }
