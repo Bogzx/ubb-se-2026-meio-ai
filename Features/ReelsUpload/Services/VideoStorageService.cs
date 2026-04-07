@@ -19,7 +19,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
         // Simulating a blob storage directory inside the AppData folder for local development
         private readonly string _blobStorageDirectory;
 
-        const string videoFileExtension = ".mp4";
+        const string videoFileExtension = ".mp4",  emptyURL = "", uploadSource = "upload";
 
         const int nullId = 0;
 
@@ -128,8 +128,6 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
             }
 
             // 4. Return the constructed ReelModel
-            string emptyURL = "", uploadSource = "upload";
-
             return new ReelModel
             {
                 ReelId = generatedReelId,
