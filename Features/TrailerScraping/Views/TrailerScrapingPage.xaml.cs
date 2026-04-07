@@ -8,6 +8,10 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Views
 {
     public sealed partial class TrailerScrapingPage : Page
     {
+        private const int SingleMatchCount = 1;
+        private const int FirstItemIndex = 0;
+        private const string SelectedMovieFormat = "Selected: {0} ({1}) — {2}";
+
         public TrailerScrapingViewModel ViewModel { get; }
 
         public TrailerScrapingPage()
@@ -18,16 +22,17 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Views
             // Populate MaxResults ComboBox
             MaxResultsCombo.ItemsSource = ViewModel.MaxResultsOptions;
             MaxResultsCombo.SelectedItem = ViewModel.MaxResults;
-            MaxResultsCombo.SelectionChanged += (s, e) =>
+
+            MaxResultsCombo.SelectionChanged += (comboSender, selectionEventArgs) =>
             {
-                if (MaxResultsCombo.SelectedItem is int val)
+                if (MaxResultsCombo.SelectedItem is int selectedValue)
                 {
-                    ViewModel.MaxResults = val;
+                    ViewModel.MaxResults = selectedValue;
                 }
             };
         }
 
-        private async void Page_Loaded(object sender, RoutedEventArgs e)
+        private async void Page_Loaded(object sender, RoutedEventArgs routedEventArgs)
         {
             await ViewModel.InitializeAsync();
         }
@@ -35,10 +40,10 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Views
         /// <summary>
         /// Fires as the user types — queries the Movie table for matches.
         /// </summary>
-        private async void MovieSearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+        private async void MovieSearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs textChangedEventArgs)
         {
             // Only query if the text was typed by the user (not set programmatically)
-            if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
+            if (textChangedEventArgs.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
             {
                 await ViewModel.SearchMoviesCommand.ExecuteAsync(sender.Text);
 
@@ -58,15 +63,15 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Views
         /// <summary>
         /// Fires when the user picks a suggestion from the dropdown.
         /// </summary>
-        private void MovieSearchBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
+        private void MovieSearchBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs suggestionChosenEventArgs)
         {
-            if (args.SelectedItem is MovieCardModel movie)
+            if (suggestionChosenEventArgs.SelectedItem is MovieCardModel movie)
             {
                 sender.Text = movie.Title;
                 ViewModel.SelectMovie(movie);
 
                 // Show selected movie card
-                SelectedMovieText.Text = $"Selected: {movie.Title} ({movie.ReleaseYear}) — {movie.Genre}";
+                SelectedMovieText.Text = string.Format(SelectedMovieFormat, movie.Title, movie.ReleaseYear, movie.Genre);
                 SelectedMovieCard.Visibility = Visibility.Visible;
                 NoMatchWarning.Visibility = Visibility.Collapsed;
             }
@@ -76,24 +81,24 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Views
         /// Fires when the user presses Enter or clicks the query icon.
         /// If there's exactly one suggestion, select it automatically.
         /// </summary>
-        private void MovieSearchBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+        private void MovieSearchBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs querySubmittedEventArgs)
         {
-            if (args.ChosenSuggestion is MovieCardModel movie)
+            if (querySubmittedEventArgs.ChosenSuggestion is MovieCardModel movie)
             {
                 ViewModel.SelectMovie(movie);
 
-                SelectedMovieText.Text = $"Selected: {movie.Title} ({movie.ReleaseYear}) — {movie.Genre}";
+                SelectedMovieText.Text = string.Format(SelectedMovieFormat, movie.Title, movie.ReleaseYear, movie.Genre);
                 SelectedMovieCard.Visibility = Visibility.Visible;
                 NoMatchWarning.Visibility = Visibility.Collapsed;
             }
-            else if (ViewModel.SuggestedMovies.Count == 1)
+            else if (ViewModel.SuggestedMovies.Count == SingleMatchCount)
             {
                 // Auto-select the only match
-                var onlyMovie = ViewModel.SuggestedMovies[0];
+                var onlyMovie = ViewModel.SuggestedMovies[FirstItemIndex];
                 sender.Text = onlyMovie.Title;
                 ViewModel.SelectMovie(onlyMovie);
 
-                SelectedMovieText.Text = $"Selected: {onlyMovie.Title} ({onlyMovie.ReleaseYear}) — {onlyMovie.Genre}";
+                SelectedMovieText.Text = string.Format(SelectedMovieFormat, onlyMovie.Title, onlyMovie.ReleaseYear, onlyMovie.Genre);
                 SelectedMovieCard.Visibility = Visibility.Visible;
                 NoMatchWarning.Visibility = Visibility.Collapsed;
             }

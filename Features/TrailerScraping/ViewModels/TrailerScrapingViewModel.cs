@@ -13,64 +13,69 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels
     /// </summary>
     public partial class TrailerScrapingViewModel : ObservableObject
     {
-        private readonly VideoIngestionService _ingestionService;
-        private readonly IScrapeJobRepository _repository;
+        private const int DefaultMaxResults = 5;
+        private const int MinimumSearchQueryLength = 2;
+        private const int EmptyCollectionCount = 0;
+        private const int TopLogEntryIndex = 0;
+
+        private const string StatusIdle = "Idle";
+        private const string StatusScraping = "Scraping...";
+
+        private readonly VideoIngestionService ingestionService;
+        private readonly IScrapeJobRepository repository;
 
         public TrailerScrapingViewModel(
             VideoIngestionService ingestionService,
             IScrapeJobRepository repository)
         {
-            _ingestionService = ingestionService;
-            _repository = repository;
+            this.ingestionService = ingestionService;
+            this.repository = repository;
         }
 
         // ── Stats bar ────────────────────────────────────────────────────
+        [ObservableProperty]
+        private int totalMovies;
 
         [ObservableProperty]
-        private int _totalMovies;
+        private int totalReels;
 
         [ObservableProperty]
-        private int _totalReels;
+        private int totalJobs;
 
         [ObservableProperty]
-        private int _totalJobs;
+        private int runningJobs;
 
         [ObservableProperty]
-        private int _runningJobs;
+        private int completedJobs;
 
         [ObservableProperty]
-        private int _completedJobs;
-
-        [ObservableProperty]
-        private int _failedJobs;
+        private int failedJobs;
 
         // ── Movie Autocomplete ──────────────────────────────────────────
+        [ObservableProperty]
+        private string searchText = string.Empty;
 
         [ObservableProperty]
-        private string _searchText = string.Empty;
+        private MovieCardModel? selectedMovie;
 
         [ObservableProperty]
-        private MovieCardModel? _selectedMovie;
+        private bool noMovieFound;
 
         [ObservableProperty]
-        private bool _noMovieFound;
+        private int maxResults = DefaultMaxResults;
 
         [ObservableProperty]
-        private int _maxResults = 5;
+        private bool isScraping;
 
         [ObservableProperty]
-        private bool _isScraping;
+        private string statusText = StatusIdle;
 
-        [ObservableProperty]
-        private string _statusText = "Idle";
+        public ObservableCollection<MovieCardModel> SuggestedMovies { get; } = new ();
 
-        public ObservableCollection<MovieCardModel> SuggestedMovies { get; } = new();
-
-        public List<int> MaxResultsOptions { get; } = new() { 5, 10, 15, 25, 50 };
+        public List<int> MaxResultsOptions { get; } = new () { 5, 10, 15, 25, 50 };
 
         // ── Logs ────────────────────────────────────────────────────────
-
-        public ObservableCollection<ScrapeJobLogModel> LogEntries { get; } = new();
+        public ObservableCollection<ScrapeJobLogModel> LogEntries { get; } = new ();
 
         // ── Commands ────────────────────────────────────────────────────
 
@@ -85,7 +90,7 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels
             SelectedMovie = null;
             NoMovieFound = false;
 
-            if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
+            if (string.IsNullOrWhiteSpace(query) || query.Length < MinimumSearchQueryLength)
             {
                 SuggestedMovies.Clear();
                 return;
@@ -93,14 +98,15 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels
 
             try
             {
-                IList<MovieCardModel> matches = await _repository.SearchMoviesByNameAsync(query);
+                IList<MovieCardModel> matches = await repository.SearchMoviesByNameAsync(query);
                 SuggestedMovies.Clear();
-                foreach (var m in matches)
+
+                foreach (var movieMatch in matches)
                 {
-                    SuggestedMovies.Add(m);
+                    SuggestedMovies.Add(movieMatch);
                 }
 
-                NoMovieFound = SuggestedMovies.Count == 0;
+                NoMovieFound = SuggestedMovies.Count == EmptyCollectionCount;
             }
             catch
             {
@@ -128,12 +134,12 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels
             }
 
             IsScraping = true;
-            StatusText = "Scraping...";
+            StatusText = StatusScraping;
             StartScrapeCommand.NotifyCanExecuteChanged();
 
             try
             {
-                await _ingestionService.RunScrapeJobAsync(
+                await ingestionService.RunScrapeJobAsync(
                     SelectedMovie,
                     MaxResults,
                     onLogEntry: async logEntry =>
@@ -141,7 +147,7 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels
                         // Dispatch to UI thread
                         Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread()?.TryEnqueue(() =>
                         {
-                            LogEntries.Insert(0, logEntry);
+                            LogEntries.Insert(TopLogEntryIndex, logEntry);
                         });
                         await Task.CompletedTask;
                     });
@@ -153,16 +159,15 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels
             finally
             {
                 IsScraping = false;
-                StatusText = "Idle";
+                StatusText = StatusIdle;
                 StartScrapeCommand.NotifyCanExecuteChanged();
                 await RefreshAsync();
             }
         }
 
         // ── Table viewers ────────────────────────────────────────────
-
-        public ObservableCollection<MovieCardModel> MovieTableItems { get; } = new();
-        public ObservableCollection<ReelModel> ReelTableItems { get; } = new();
+        public ObservableCollection<MovieCardModel> MovieTableItems { get; } = new ();
+        public ObservableCollection<ReelModel> ReelTableItems { get; } = new ();
 
         private bool CanStartScrape() => !IsScraping && SelectedMovie is not null;
 
@@ -171,15 +176,15 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels
         {
             try
             {
-                DashboardStatsModel stats = await _repository.GetDashboardStatsAsync();
-                TotalMovies     = stats.TotalMovies;
-                TotalReels      = stats.TotalReels;
-                TotalJobs       = stats.TotalJobs;
-                RunningJobs     = stats.RunningJobs;
-                CompletedJobs   = stats.CompletedJobs;
-                FailedJobs      = stats.FailedJobs;
+                DashboardStatsModel stats = await repository.GetDashboardStatsAsync();
+                TotalMovies = stats.TotalMovies;
+                TotalReels = stats.TotalReels;
+                TotalJobs = stats.TotalJobs;
+                RunningJobs = stats.RunningJobs;
+                CompletedJobs = stats.CompletedJobs;
+                FailedJobs = stats.FailedJobs;
 
-                IList<ScrapeJobLogModel> logs = await _repository.GetAllLogsAsync();
+                IList<ScrapeJobLogModel> logs = await repository.GetAllLogsAsync();
                 LogEntries.Clear();
                 foreach (var log in logs)
                 {
@@ -187,18 +192,20 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels
                 }
 
                 // Table viewers
-                IList<MovieCardModel> movies = await _repository.GetAllMoviesAsync();
+                IList<MovieCardModel> movies = await repository.GetAllMoviesAsync();
                 MovieTableItems.Clear();
-                foreach (var m in movies)
+
+                foreach (var movie in movies)
                 {
-                    MovieTableItems.Add(m);
+                    MovieTableItems.Add(movie);
                 }
 
-                IList<ReelModel> reels = await _repository.GetAllReelsAsync();
+                IList<ReelModel> reels = await repository.GetAllReelsAsync();
                 ReelTableItems.Clear();
-                foreach (var r in reels)
+
+                foreach (var reel in reels)
                 {
-                    ReelTableItems.Add(r);
+                    ReelTableItems.Add(reel);
                 }
             }
             catch
