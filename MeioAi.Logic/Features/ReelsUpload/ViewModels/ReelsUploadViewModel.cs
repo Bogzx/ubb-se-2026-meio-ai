@@ -53,26 +53,21 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
         [ObservableProperty]
         private string _localVideoFilePath = string.Empty;
 
-        // constants
-        const string videoFileExtension = ".mp4";
-
-        const int nullId = 0;
-
         // Button 1 click: let the user browse their PC for a video
         [RelayCommand]
         private async Task SelectVideoFileAsync()
         {
             var filePicker = new Windows.Storage.Pickers.FileOpenPicker();
-            filePicker.FileTypeFilter.Add(videoFileExtension);
+            filePicker.FileTypeFilter.Add(".mp4");
 
             // In WinUI 3 Desktop apps, the file picker needs to know WHICH window it belongs to!
-            var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-            WinRT.Interop.InitializeWithWindow.Initialize(filePicker, windowHandle);
+            var hwnd = _appWindowContext.GetMainWindowHandle();
+            WinRT.Interop.InitializeWithWindow.Initialize(filePicker, hwnd);
 
-            var selectedMovieFile = await filePicker.PickSingleFileAsync();
-            if (selectedMovieFile != null)
+            var file = await filePicker.PickSingleFileAsync();
+            if (file != null)
             {
-                LocalVideoFilePath = selectedMovieFile.Path;
+                LocalVideoFilePath = file.Path;
             }
         }
 
@@ -143,9 +138,9 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
 
         // AutoSuggestBox click: select the movie
         [RelayCommand]
-        private void SelectMovie(MovieCardModel movieToSelect)
+        private void SelectMovie(MovieCardModel movie)
         {
-            LinkedMovie = movieToSelect;
+            LinkedMovie = movie;
         }
 
         // AutoSuggestBox 1 type: search for a movie to link to the reel
@@ -166,29 +161,23 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
             {
                 await using var connection = await _connectionFactory.CreateConnectionAsync();
                 
-                string sqlInstruction = "SELECT TOP 10 MovieId, Title, PosterUrl, PrimaryGenre, ReleaseYear, Description FROM Movie WHERE Title LIKE @SearchTerm";
-                await using var sqlCommand = new SqlCommand(sqlInstruction, connection);
+                string sql = "SELECT TOP 10 MovieId, Title, PosterUrl, PrimaryGenre, ReleaseYear, Description FROM Movie WHERE Title LIKE @SearchTerm";
+                await using var command = new SqlCommand(sql, connection);
+                command.Parameters.AddWithValue("@SearchTerm", $"%{partialMovieName}%");
 
-                string searchParameter = "@SearchTerm";
-                string searchedText = $"%{partialMovieName}%";
-                sqlCommand.Parameters.AddWithValue(searchParameter, searchedText);
-
-                await using var sqlCommandOutputReader = await sqlCommand.ExecuteReaderAsync();
+                await using var reader = await command.ExecuteReaderAsync();
                 
-                var newMovieResults = new System.Collections.Generic.List<MovieCardModel>();
-                string movieIdField = "MovieId", titleField = "Title", posterField = "PosterUrl";
-                string primaryGenreField = "PrimaryGenre", releaseYearField = "ReleaseYear", descriptionField = "Description";
-
-                while (await sqlCommandOutputReader.ReadAsync())
+                var newResults = new System.Collections.Generic.List<MovieCardModel>();
+                while (await reader.ReadAsync())
                 {
-                    newMovieResults.Add(new MovieCardModel
+                    newResults.Add(new MovieCardModel
                     {
-                        MovieId = sqlCommandOutputReader.GetInt32(sqlCommandOutputReader.GetOrdinal(movieIdField)),
-                        Title = sqlCommandOutputReader.GetString(sqlCommandOutputReader.GetOrdinal(titleField)),
-                        PosterUrl = sqlCommandOutputReader.IsDBNull(sqlCommandOutputReader.GetOrdinal(posterField)) ? String.Empty : sqlCommandOutputReader.GetString(sqlCommandOutputReader.GetOrdinal(posterField)),
-                        PrimaryGenre = sqlCommandOutputReader.IsDBNull(sqlCommandOutputReader.GetOrdinal(primaryGenreField)) ? String.Empty : sqlCommandOutputReader.GetString(sqlCommandOutputReader.GetOrdinal(primaryGenreField)),
-                        ReleaseYear = sqlCommandOutputReader.IsDBNull(sqlCommandOutputReader.GetOrdinal(releaseYearField)) ? nullId : sqlCommandOutputReader.GetInt32(sqlCommandOutputReader.GetOrdinal(releaseYearField)),
-                        Synopsis = sqlCommandOutputReader.IsDBNull(sqlCommandOutputReader.GetOrdinal(descriptionField)) ? String.Empty : sqlCommandOutputReader.GetString(sqlCommandOutputReader.GetOrdinal(descriptionField))
+                        MovieId = reader.GetInt32(reader.GetOrdinal("MovieId")),
+                        Title = reader.GetString(reader.GetOrdinal("Title")),
+                        PosterUrl = reader.IsDBNull(reader.GetOrdinal("PosterUrl")) ? "" : reader.GetString(reader.GetOrdinal("PosterUrl")),
+                        PrimaryGenre = reader.IsDBNull(reader.GetOrdinal("PrimaryGenre")) ? "" : reader.GetString(reader.GetOrdinal("PrimaryGenre")),
+                        ReleaseYear = reader.IsDBNull(reader.GetOrdinal("ReleaseYear")) ? 0 : reader.GetInt32(reader.GetOrdinal("ReleaseYear")),
+                        Synopsis = reader.IsDBNull(reader.GetOrdinal("Description")) ? "" : reader.GetString(reader.GetOrdinal("Description"))
                     });
                 }
 
@@ -196,7 +185,7 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
                 _appWindowContext.TryEnqueueOnUiThread(() =>
                 {
                     SuggestedMovies.Clear();
-                    foreach (var movie in newMovieResults)
+                    foreach (var movie in newResults)
                     {
                         SuggestedMovies.Add(movie);
                     }
@@ -214,5 +203,8 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
                 });
             }
         }
+
+        
+
     }
 }
