@@ -23,7 +23,7 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
     /// Implements <see cref="IWebScraperService"/>.
     /// Owner: Andrei
     /// </summary>
-    public class YouTubeScraperService : IWebScraperService
+    public class YouTubeScraperService : IYouTubeScraperService
     {
         private const int DefaultMaxResults = 5;
         private const string YouTubeAppName = "MeioAI-TrailerScraper";

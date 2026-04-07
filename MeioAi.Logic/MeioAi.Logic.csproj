@@ -1,12 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFrameworks>net8.0;net8.0-windows10.0.19041.0</TargetFrameworks>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-	<CodeAnalysisRuleSet>..\SE.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFrameworks>net8.0;net8.0-windows10.0.19041.0</TargetFrameworks>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+
+		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+	</PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />

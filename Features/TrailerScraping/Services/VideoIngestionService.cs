@@ -44,14 +44,14 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
         private const string LogFormatJobCompleted = "Job completed — {0} reel(s) created for \"{1}\"";
         private const string LogFormatJobFailed = "Job failed: {0}";
 
-        private readonly YouTubeScraperService scraper;
+        private readonly IYouTubeScraperService scraper;
         private readonly IScrapeJobRepository repository;
-        private readonly VideoDownloadService downloader;
+        private readonly IVideoDownloadService downloader;
 
         public VideoIngestionService(
-            YouTubeScraperService scraper,
+            IYouTubeScraperService scraper,
             IScrapeJobRepository repository,
-            VideoDownloadService downloader)
+            IVideoDownloadService downloader)
         {
             this.scraper = scraper;
             this.repository = repository;
@@ -100,7 +100,7 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
         /// <param name="maxResults">Maximum number of YouTube results to fetch.</param>
         /// <param name="onLogEntry">Optional callback for live UI log updates.</param>
         /// <returns>The completed <see cref="ScrapeJobModel"/>.</returns>
-        public async Task<ScrapeJobModel> RunScrapeJobAsync(
+        public async virtual Task<ScrapeJobModel> RunScrapeJobAsync(
             MovieCardModel movie,
             int maxResults,
             Func<ScrapeJobLogModel, Task>? onLogEntry = null)

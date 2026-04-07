@@ -21,11 +21,11 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels
         private const string StatusIdle = "Idle";
         private const string StatusScraping = "Scraping...";
 
-        private readonly VideoIngestionService ingestionService;
+        private readonly IVideoIngestionService ingestionService;
         private readonly IScrapeJobRepository repository;
 
         public TrailerScrapingViewModel(
-            VideoIngestionService ingestionService,
+            IVideoIngestionService ingestionService,
             IScrapeJobRepository repository)
         {
             this.ingestionService = ingestionService;
@@ -145,10 +145,14 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels
                     onLogEntry: async logEntry =>
                     {
                         // Dispatch to UI thread
+#if !IS_TEST_PROJECT
                         Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread()?.TryEnqueue(() =>
                         {
                             LogEntries.Insert(TopLogEntryIndex, logEntry);
                         });
+#else
+                        LogEntries.Insert(TopLogEntryIndex, logEntry);
+#endif
                         await Task.CompletedTask;
                     });
             }

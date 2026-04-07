@@ -8,7 +8,7 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
     /// Calls yt-dlp directly via Process to avoid YoutubeDLSharp native crashes.
     /// Owner: Andrei
     /// </summary>
-    public class VideoDownloadService
+    public class VideoDownloadService : IVideoDownloadService
     {
         private const int ProcessTimeoutMinutes = 5;
         private const int DefaultMaxDurationSeconds = 60;

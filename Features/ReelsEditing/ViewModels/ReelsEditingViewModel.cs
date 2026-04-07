@@ -51,7 +51,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
         private const string ErrorCropPersistFailed = "Crop edits were not persisted correctly.";
         private const string ErrorMusicPersistFailed = "Music edits were not persisted correctly.";
 
-        private readonly ReelRepository reelRepository;
+        private readonly IReelRepository reelRepository;
         private readonly IVideoProcessingService videoProcessing;
         private readonly IAudioLibraryService audioLibrary;
 
@@ -114,7 +114,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
         public event Action<string>? CropVideoUpdated;
 
         public ReelsEditingViewModel(
-            ReelRepository reelRepository,
+            IReelRepository reelRepository,
             IVideoProcessingService videoProcessing,
             IAudioLibraryService audioLibrary)
         {

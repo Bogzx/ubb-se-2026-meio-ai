@@ -1,30 +1,42 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-	  <OutputType>Library</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IsPackable>false</IsPackable>
+		<IsTestProject>true</IsTestProject>
+		<DefineConstants>IS_TEST_PROJECT</DefineConstants>
+	</PropertyGroup>
 
-    <IsPackable>false</IsPackable>
-    <IsTestProject>true</IsTestProject>
-  </PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="coverlet.collector" Version="6.0.0" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+		<PackageReference Include="Moq" Version="4.20.72" />
+		<PackageReference Include="NUnit" Version="3.14.0" />
+		<PackageReference Include="NUnit.Analyzers" Version="3.9.0" />
+		<PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
 
-  <ItemGroup>
-    <PackageReference Include="coverlet.collector" Version="6.0.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
-    <PackageReference Include="Moq" Version="4.20.72" />
-    <PackageReference Include="NUnit" Version="3.14.0" />
-    <PackageReference Include="NUnit.Analyzers" Version="3.9.0" />
-    <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
-  </ItemGroup>
+		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />	
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\MeioAi.Logic\MeioAi.Logic.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\MeioAi.Logic\MeioAi.Logic.csproj" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Using Include="NUnit.Framework" />
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Include="..\Features\ReelsEditing\ViewModels\MusicSelectionDialogViewModel.cs" Link="ViewModels\MusicSelectionDialogViewModel.cs" />
+		<Compile Include="..\Features\ReelsEditing\ViewModels\ReelGalleryViewModel.cs" Link="ViewModels\ReelGalleryViewModel.cs" />
+		<Compile Include="..\Features\ReelsEditing\ViewModels\ReelsEditingViewModel.cs" Link="ViewModels\ReelsEditingViewModel.cs" />
+		<Compile Include="..\Features\TrailerScraping\ViewModels\TrailerScrapingViewModel.cs" Link="ViewModels\TrailerScrapingViewModel.cs" />
+		<Compile Include="..\Features\ReelsEditing\Services\AudioLibraryService.cs" Link="Services\AudioLibraryService.cs" />
+		<Compile Include="..\Features\ReelsEditing\Services\VideoProcessingService.cs" Link="Services\VideoProcessingService.cs" />
+		<Compile Include="..\Features\TrailerScraping\Services\VideoDownloadService.cs" Link="Services\VideoDownloadService.cs" />
+		<Compile Include="..\Features\TrailerScraping\Services\VideoIngestionService.cs" Link="Services\VideoIngestionService.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Using Include="NUnit.Framework" />
+	</ItemGroup>
 
 </Project>

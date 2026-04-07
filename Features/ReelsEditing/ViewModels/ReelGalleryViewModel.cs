@@ -17,7 +17,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
         private const string NoReelsMessage = "No reels uploaded yet. Upload a reel first.";
         private const string ErrorLoadingMessageFormat = "Error loading reels: {0}";
 
-        private readonly ReelRepository reelRepository;
+        private readonly IReelRepository reelRepository;
 
         [ObservableProperty]
         private ObservableCollection<ReelModel> userReels = new ();
@@ -31,7 +31,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
         [ObservableProperty]
         private bool isLoaded;
 
-        public ReelGalleryViewModel(ReelRepository reelRepository)
+        public ReelGalleryViewModel(IReelRepository reelRepository)
         {
             this.reelRepository = reelRepository;
         }

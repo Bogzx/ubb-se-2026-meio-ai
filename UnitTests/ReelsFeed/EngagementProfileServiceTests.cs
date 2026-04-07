@@ -1,8 +1,8 @@
 ﻿using Moq;
 using NUnit.Framework;
-using ubb_se_2026_meio_ai.Core.Models;
-using ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories;
-using ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
+using Ubb_se_2026_meio_ai.Core.Models;
+using Ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories;
+using Ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
 
 namespace UnitTests.ReelsFeed
 {

@@ -7,7 +7,7 @@ using Ubb_se_2026_meio_ai.Core.Models;
 
 namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
 {
-    public class ReelRepository
+    public class ReelRepository : IReelRepository
     {
         private const string SqlSelectUserReels = @"
                 SELECT ReelId, MovieId, CreatorUserId, VideoUrl, ThumbnailUrl,
@@ -64,7 +64,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
         }
 
         // Returns all reels where CreatorUserId = userId
-        public async Task<IList<ReelModel>> GetUserReelsAsync(int userId)
+        public async virtual Task<IList<ReelModel>> GetUserReelsAsync(int userId)
         {
             var resultList = new List<ReelModel>();
 
@@ -98,7 +98,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
 
         // Updates CropDataJson, BackgroundMusicId, LastEditedAt and optionally VideoUrl for a reel.
         // Returns the number of rows affected (should be 1).
-        public async Task<int> UpdateReelEditsAsync(int reelId, string cropDataJson, int? musicId, string? videoUrl = null)
+        public async virtual Task<int> UpdateReelEditsAsync(int reelId, string cropDataJson, int? musicId, string? videoUrl = null)
         {
             await using var sqlConnection = await sqlConnectionFactory.CreateConnectionAsync();
             await using var sqlCommand = new SqlCommand(SqlUpdateReelEdits, sqlConnection);
@@ -111,7 +111,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
             return await sqlCommand.ExecuteNonQueryAsync();
         }
 
-        public async Task<ReelModel?> GetReelByIdAsync(int reelId)
+        public async virtual Task<ReelModel?> GetReelByIdAsync(int reelId)
         {
             await using var sqlConnection = await sqlConnectionFactory.CreateConnectionAsync();
             await using var sqlCommand = new SqlCommand(SqlSelectReelById, sqlConnection);
@@ -143,7 +143,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
         }
 
         // Deletes a reel from the database
-        public async Task DeleteReelAsync(int reelId)
+        public async virtual Task DeleteReelAsync(int reelId)
         {
             await using var sqlConnection = await sqlConnectionFactory.CreateConnectionAsync();
             await using var sqlCommand = new SqlCommand(SqlDeleteReel, sqlConnection);

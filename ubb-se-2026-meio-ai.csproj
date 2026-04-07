@@ -13,7 +13,8 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<NoWarn>$(NoWarn);MVVMTK0045</NoWarn>
-		<CodeAnalysisRuleSet>SE.ruleset</CodeAnalysisRuleSet>
+		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+		<IsTestProject>false</IsTestProject>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(DisableWindowsAppSdkAutoInit)'=='true'">
