@@ -20,7 +20,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
         private readonly ReelRepository reelRepository;
 
         [ObservableProperty]
-        private ObservableCollection<ReelModel> userReels = new();
+        private ObservableCollection<ReelModel> userReels = new ();
 
         [ObservableProperty]
         private ReelModel? selectedReel;

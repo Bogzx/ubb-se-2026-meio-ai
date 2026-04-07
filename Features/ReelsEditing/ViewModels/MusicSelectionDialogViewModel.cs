@@ -11,7 +11,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
         private readonly IAudioLibraryService audioLibrary;
 
         [ObservableProperty]
-        private ObservableCollection<MusicTrackModel> availableTracks = new();
+        private ObservableCollection<MusicTrackModel> availableTracks = new ();
 
         [ObservableProperty]
         private MusicTrackModel? selectedTrack;
