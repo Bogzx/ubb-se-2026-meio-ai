@@ -6,7 +6,6 @@ using ubb_se_2026_meio_ai.Features.PersonalityMatch.Services;
 
 namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels
 {
-   
     public partial class MatchedUserDetailViewModel : ObservableObject
     {
         private readonly IPersonalityMatchRepository _repository;
@@ -32,10 +31,8 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels
         [ObservableProperty]
         private bool _hasProfile;
 
-     
         [ObservableProperty]
         private bool _showCompatibility = true;
-
 
         public ObservableCollection<MoviePreferenceDisplayModel> TopPreferences { get; } = new();
 

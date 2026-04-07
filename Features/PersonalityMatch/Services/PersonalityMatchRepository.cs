@@ -5,7 +5,6 @@ using ubb_se_2026_meio_ai.Features.PersonalityMatch.Models;
 
 namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
 {
-  
     public class PersonalityMatchRepository : IPersonalityMatchRepository
     {
         private readonly ISqlConnectionFactory _connectionFactory;
@@ -14,7 +13,6 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
         {
             _connectionFactory = connectionFactory;
         }
-
 
         public async Task<Dictionary<int, List<UserMoviePreferenceModel>>> GetAllPreferencesExceptUserAsync(int excludeUserId)
         {
@@ -51,7 +49,6 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
 
             return result;
         }
-
    
         public async Task<List<UserMoviePreferenceModel>> GetCurrentUserPreferencesAsync(int userId)
         {
