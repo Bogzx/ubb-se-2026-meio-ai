@@ -23,6 +23,8 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
 
         const int nullId = 0;
 
+        const double maximumReelDurationSeconds = 60.0;
+
         public VideoStorageService(ISqlConnectionFactory sqlConnectionFactory)
         {
             _sqlConnectionFactory = sqlConnectionFactory;
@@ -54,7 +56,6 @@ namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
             {
                 var storageFile = await Windows.Storage.StorageFile.GetFileFromPathAsync(localFilePath);
                 var videoProperties = await storageFile.Properties.GetVideoPropertiesAsync();
-                double maximumReelDurationSeconds = 60.0;
 
                 if (videoProperties.Duration.TotalSeconds > maximumReelDurationSeconds)
                 {
