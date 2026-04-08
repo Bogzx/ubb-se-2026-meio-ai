@@ -24,12 +24,12 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
 
         private const string SqlUpdateJob = @"
                 UPDATE ScrapeJob
-                SET Status          = @Status,
-                    MoviesFound     = @MoviesFound,
-                    ReelsCreated    = @ReelsCreated,
-                    CompletedAt     = @CompletedAt,
-                    ErrorMessage    = @ErrorMessage
-                WHERE ScrapeJobId   = @ScrapeJobId;";
+                SET Status = @Status,
+                    MoviesFound = @MoviesFound,
+                    ReelsCreated = @ReelsCreated,
+                    CompletedAt = @CompletedAt,
+                    ErrorMessage = @ErrorMessage
+                WHERE ScrapeJobId = @ScrapeJobId;";
 
         private const string SqlInsertLog = @"
                 INSERT INTO ScrapeJobLog (ScrapeJobId, Level, Message, Timestamp)
@@ -41,12 +41,12 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
 
         private const string SqlSelectDashboardStats = @"
                 SELECT
-                    (SELECT COUNT(*) FROM Movie)                                                    AS TotalMovies,
-                    (SELECT COUNT(*) FROM Reel)                                                     AS TotalReels,
-                    (SELECT COUNT(*) FROM ScrapeJob)                                                AS TotalJobs,
-                    (SELECT COUNT(*) FROM ScrapeJob WHERE Status = 'running')                       AS RunningJobs,
-                    (SELECT COUNT(*) FROM ScrapeJob WHERE Status = 'completed')                     AS CompletedJobs,
-                    (SELECT COUNT(*) FROM ScrapeJob WHERE Status = 'failed')                        AS FailedJobs;";
+                    (SELECT COUNT(*) FROM Movie) AS TotalMovies,
+                    (SELECT COUNT(*) FROM Reel) AS TotalReels,
+                    (SELECT COUNT(*) FROM ScrapeJob) AS TotalJobs,
+                    (SELECT COUNT(*) FROM ScrapeJob WHERE Status = 'running') AS RunningJobs,
+                    (SELECT COUNT(*) FROM ScrapeJob WHERE Status = 'completed') AS CompletedJobs,
+                    (SELECT COUNT(*) FROM ScrapeJob WHERE Status = 'failed') AS FailedJobs;";
 
         private const string SqlSearchMoviesFormat = @"
                 SELECT TOP {0} MovieId, Title, PosterUrl, PrimaryGenre, ReleaseYear, Description
