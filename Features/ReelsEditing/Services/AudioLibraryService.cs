@@ -1,9 +1,18 @@
-using Microsoft.Data.SqlClient;
-using Ubb_se_2026_meio_ai.Core.Database;
-using Ubb_se_2026_meio_ai.Core.Models;
+// <copyright file="AudioLibraryService.cs" company="PlaceholderCompany">
+// Copyright (c) PlaceholderCompany. All rights reserved.
+// </copyright>
 
 namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
 {
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
+    using Microsoft.Data.SqlClient;
+    using Ubb_se_2026_meio_ai.Core.Database;
+    using Ubb_se_2026_meio_ai.Core.Models;
+
+    /// <summary>
+    /// Service responsible for fetching audio track data from the database.
+    /// </summary>
     public class AudioLibraryService : IAudioLibraryService
     {
         private const string SqlSelectAllTracks = "SELECT MusicTrackId, TrackName, Author, AudioUrl, DurationSeconds FROM MusicTrack ORDER BY TrackName";
@@ -18,16 +27,24 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
 
         private readonly ISqlConnectionFactory sqlConnectionFactory;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AudioLibraryService"/> class.
+        /// </summary>
+        /// <param name="sqlConnectionFactory">The SQL connection factory used to access the database.</param>
         public AudioLibraryService(ISqlConnectionFactory sqlConnectionFactory)
         {
             this.sqlConnectionFactory = sqlConnectionFactory;
         }
 
+        /// <summary>
+        /// Retrieves all music tracks available in the library.
+        /// </summary>
+        /// <returns>A list of music tracks.</returns>
         public async Task<IList<MusicTrackModel>> GetAllTracksAsync()
         {
             var resultList = new List<MusicTrackModel>();
 
-            await using var sqlConnection = await sqlConnectionFactory.CreateConnectionAsync();
+            await using var sqlConnection = await this.sqlConnectionFactory.CreateConnectionAsync();
             await using var sqlCommand = new SqlCommand(SqlSelectAllTracks, sqlConnection);
             await using var dataReader = await sqlCommand.ExecuteReaderAsync();
 
@@ -46,9 +63,14 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
             return resultList;
         }
 
+        /// <summary>
+        /// Retrieves a specific music track by its unique identifier.
+        /// </summary>
+        /// <param name="musicTrackId">The unique identifier of the music track.</param>
+        /// <returns>The music track if found; otherwise, null.</returns>
         public async Task<MusicTrackModel?> GetTrackByIdAsync(int musicTrackId)
         {
-            await using var sqlConnection = await sqlConnectionFactory.CreateConnectionAsync();
+            await using var sqlConnection = await this.sqlConnectionFactory.CreateConnectionAsync();
             await using var sqlCommand = new SqlCommand(SqlSelectTrackById, sqlConnection);
             sqlCommand.Parameters.AddWithValue(ParameterTrackId, musicTrackId);
 

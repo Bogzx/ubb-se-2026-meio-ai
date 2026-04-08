@@ -1,16 +1,27 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using Moq;
-using NUnit.Framework;
-using Ubb_se_2026_meio_ai.Core.Models;
-using Ubb_se_2026_meio_ai.Features.ReelsEditing.Services;
-using Ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels;
+﻿// <copyright file="MusicSelectionDialogViewModelTests.cs" company="PlaceholderCompany">
+// Copyright (c) PlaceholderCompany. All rights reserved.
+// </copyright>
 
 namespace UnitTests.ReelsEditing
 {
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
+    using Moq;
+    using NUnit.Framework;
+    using Ubb_se_2026_meio_ai.Core.Models;
+    using Ubb_se_2026_meio_ai.Features.ReelsEditing.Services;
+    using Ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels;
+
+    /// <summary>
+    /// Unit tests for the <see cref="MusicSelectionDialogViewModel"/> class.
+    /// </summary>
     [TestFixture]
     public class MusicSelectionDialogViewModelTests
     {
+        /// <summary>
+        /// Tests that executing the load tracks command populates the available tracks collection.
+        /// </summary>
+        /// <returns>A task that represents the asynchronous test operation.</returns>
         [Test]
         public async Task LoadTracksCommand_TracksExistInLibrary_PopulatesAvailableTracks()
         {
@@ -19,7 +30,7 @@ namespace UnitTests.ReelsEditing
             var expectedTracks = new List<MusicTrackModel>
             {
                 new MusicTrackModel { MusicTrackId = 1, TrackName = "Lofi Chill" },
-                new MusicTrackModel { MusicTrackId = 2, TrackName = "Upbeat Pop" }
+                new MusicTrackModel { MusicTrackId = 2, TrackName = "Upbeat Pop" },
             };
 
             mockedAudioLibrary
@@ -37,6 +48,9 @@ namespace UnitTests.ReelsEditing
             mockedAudioLibrary.Verify(library => library.GetAllTracksAsync(), Times.Once);
         }
 
+        /// <summary>
+        /// Tests that executing the select track command sets the selected track property.
+        /// </summary>
         [Test]
         public void SelectTrackCommand_ValidTrackProvided_SetsSelectedTrackProperty()
         {

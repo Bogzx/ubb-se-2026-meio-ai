@@ -1,96 +1,125 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Moq;
-using NUnit.Framework;
-using Ubb_se_2026_meio_ai.Core.Models;
-using Ubb_se_2026_meio_ai.Features.TrailerScraping.Services;
-using Ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels;
+﻿// <copyright file="TrailerScrapingViewModelTests.cs" company="PlaceholderCompany">
+// Copyright (c) PlaceholderCompany. All rights reserved.
+// </copyright>
 
 namespace UnitTests.TrailerScraping
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
+    using Moq;
+    using NUnit.Framework;
+    using Ubb_se_2026_meio_ai.Core.Models;
+    using Ubb_se_2026_meio_ai.Features.TrailerScraping.Services;
+    using Ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels;
+
+    /// <summary>
+    /// Unit tests for the <see cref="TrailerScrapingViewModel"/> class.
+    /// </summary>
     [TestFixture]
     public class TrailerScrapingViewModelTests
     {
-        private Mock<IScrapeJobRepository> _mockRepo;
-        private Mock<IVideoIngestionService> _mockIngestionService;
-        private TrailerScrapingViewModel _viewModel;
-        
+        private Mock<IScrapeJobRepository> mockRepo;
+        private Mock<IVideoIngestionService> mockIngestionService;
+        private TrailerScrapingViewModel viewModel;
+
+        /// <summary>
+        /// Sets up the test environment before each test runs.
+        /// </summary>
         [SetUp]
         public void SetUp()
         {
-            _mockRepo = new Mock<IScrapeJobRepository>();
-            _mockIngestionService = new Mock<IVideoIngestionService>(); // No constructor args needed!
+            this.mockRepo = new Mock<IScrapeJobRepository>();
+            this.mockIngestionService = new Mock<IVideoIngestionService>();
 
-            _viewModel = new TrailerScrapingViewModel(_mockIngestionService.Object, _mockRepo.Object);
+            this.viewModel = new TrailerScrapingViewModel(this.mockIngestionService.Object, this.mockRepo.Object);
         }
 
+        /// <summary>
+        /// Tests that a search query shorter than the minimum length clears the suggestions.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [Test]
         public async Task SearchMoviesCommand_QueryTooShort_ClearsSuggestions()
         {
-            _viewModel.SuggestedMovies.Add(new MovieCardModel());
+            this.viewModel.SuggestedMovies.Add(new MovieCardModel());
 
-            await _viewModel.SearchMoviesCommand.ExecuteAsync("A");
+            await this.viewModel.SearchMoviesCommand.ExecuteAsync("A");
 
-            Assert.That(_viewModel.SuggestedMovies, Is.Empty);
-            _mockRepo.Verify(r => r.SearchMoviesByNameAsync(It.IsAny<string>()), Times.Never);
+            Assert.That(this.viewModel.SuggestedMovies, Is.Empty);
+            this.mockRepo.Verify(r => r.SearchMoviesByNameAsync(It.IsAny<string>()), Times.Never);
         }
 
+        /// <summary>
+        /// Tests that a valid search query populates the suggested movies collection.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [Test]
         public async Task SearchMoviesCommand_ValidQuery_PopulatesSuggestions()
         {
             var mockResults = new List<MovieCardModel>
             {
                 new MovieCardModel { Title = "Inception" },
-                new MovieCardModel { Title = "Interstellar" }
+                new MovieCardModel { Title = "Interstellar" },
             };
 
-            _mockRepo.Setup(r => r.SearchMoviesByNameAsync("Inc"))
+            this.mockRepo.Setup(r => r.SearchMoviesByNameAsync("Inc"))
                      .ReturnsAsync(mockResults);
 
-            await _viewModel.SearchMoviesCommand.ExecuteAsync("Inc");
+            await this.viewModel.SearchMoviesCommand.ExecuteAsync("Inc");
 
-            Assert.That(_viewModel.SuggestedMovies.Count, Is.EqualTo(2));
-            Assert.That(_viewModel.NoMovieFound, Is.False);
+            Assert.That(this.viewModel.SuggestedMovies.Count, Is.EqualTo(2));
+            Assert.That(this.viewModel.NoMovieFound, Is.False);
         }
 
+        /// <summary>
+        /// Tests that selecting a movie updates the view model properties and commands.
+        /// </summary>
         [Test]
         public void SelectMovie_ValidMovie_UpdatesPropertiesAndCommands()
         {
             var selectedMovie = new MovieCardModel { Title = "The Matrix" };
 
-            _viewModel.SelectMovie(selectedMovie);
+            this.viewModel.SelectMovie(selectedMovie);
 
-            Assert.That(_viewModel.SelectedMovie, Is.EqualTo(selectedMovie));
-            Assert.That(_viewModel.SearchText, Is.EqualTo("The Matrix"));
-            Assert.That(_viewModel.StartScrapeCommand.CanExecute(null), Is.True);
+            Assert.That(this.viewModel.SelectedMovie, Is.EqualTo(selectedMovie));
+            Assert.That(this.viewModel.SearchText, Is.EqualTo("The Matrix"));
+            Assert.That(this.viewModel.StartScrapeCommand.CanExecute(null), Is.True);
         }
 
+        /// <summary>
+        /// Tests that starting a scrape job with a valid movie calls the ingestion service.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [Test]
         public async Task StartScrapeCommand_ValidMovie_CallsIngestionService()
         {
             var selectedMovie = new MovieCardModel { Title = "Dune" };
-            _viewModel.SelectMovie(selectedMovie);
-            _viewModel.MaxResults = 10;
+            this.viewModel.SelectMovie(selectedMovie);
+            this.viewModel.MaxResults = 10;
 
-            _mockIngestionService
+            this.mockIngestionService
                 .Setup(s => s.RunScrapeJobAsync(selectedMovie, 10, It.IsAny<Func<ScrapeJobLogModel, Task>>()))
                 .ReturnsAsync(new ScrapeJobModel());
 
             // Dummy stats to prevent null references during the finally block's RefreshAsync
-            _mockRepo.Setup(r => r.GetDashboardStatsAsync()).ReturnsAsync(new DashboardStatsModel());
+            this.mockRepo.Setup(r => r.GetDashboardStatsAsync()).ReturnsAsync(new DashboardStatsModel());
 
-            await _viewModel.StartScrapeCommand.ExecuteAsync(null);
+            await this.viewModel.StartScrapeCommand.ExecuteAsync(null);
 
-            _mockIngestionService.Verify(
+            this.mockIngestionService.Verify(
                 s => s.RunScrapeJobAsync(selectedMovie, 10, It.IsAny<Func<ScrapeJobLogModel, Task>>()),
                 Times.Once);
 
             // Verify state is reset in 'finally' block
-            Assert.That(_viewModel.IsScraping, Is.False);
-            Assert.That(_viewModel.StatusText, Is.EqualTo("Idle"));
+            Assert.That(this.viewModel.IsScraping, Is.False);
+            Assert.That(this.viewModel.StatusText, Is.EqualTo("Idle"));
         }
 
+        /// <summary>
+        /// Tests that the refresh command updates the dashboard statistics from the repository.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [Test]
         public async Task RefreshCommand_UpdatesDashboardStats()
         {
@@ -101,20 +130,20 @@ namespace UnitTests.TrailerScraping
                 TotalJobs = 10,
                 RunningJobs = 2,
                 CompletedJobs = 7,
-                FailedJobs = 1
+                FailedJobs = 1,
             };
 
-            _mockRepo.Setup(r => r.GetDashboardStatsAsync()).ReturnsAsync(stats);
-            _mockRepo.Setup(r => r.GetAllLogsAsync()).ReturnsAsync(new List<ScrapeJobLogModel>());
-            _mockRepo.Setup(r => r.GetAllMoviesAsync()).ReturnsAsync(new List<MovieCardModel>());
-            _mockRepo.Setup(r => r.GetAllReelsAsync()).ReturnsAsync(new List<ReelModel>());
+            this.mockRepo.Setup(r => r.GetDashboardStatsAsync()).ReturnsAsync(stats);
+            this.mockRepo.Setup(r => r.GetAllLogsAsync()).ReturnsAsync(new List<ScrapeJobLogModel>());
+            this.mockRepo.Setup(r => r.GetAllMoviesAsync()).ReturnsAsync(new List<MovieCardModel>());
+            this.mockRepo.Setup(r => r.GetAllReelsAsync()).ReturnsAsync(new List<ReelModel>());
 
-            await _viewModel.RefreshCommand.ExecuteAsync(null);
+            await this.viewModel.RefreshCommand.ExecuteAsync(null);
 
-            Assert.That(_viewModel.TotalMovies, Is.EqualTo(100));
-            Assert.That(_viewModel.TotalReels, Is.EqualTo(50));
-            Assert.That(_viewModel.RunningJobs, Is.EqualTo(2));
-            Assert.That(_viewModel.FailedJobs, Is.EqualTo(1));
+            Assert.That(this.viewModel.TotalMovies, Is.EqualTo(100));
+            Assert.That(this.viewModel.TotalReels, Is.EqualTo(50));
+            Assert.That(this.viewModel.RunningJobs, Is.EqualTo(2));
+            Assert.That(this.viewModel.FailedJobs, Is.EqualTo(1));
         }
     }
 }

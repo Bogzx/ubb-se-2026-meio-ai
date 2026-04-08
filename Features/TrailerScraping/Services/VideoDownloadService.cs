@@ -1,12 +1,21 @@
-using System.Diagnostics;
+// <copyright file="VideoDownloadService.cs" company="PlaceholderCompany">
+// Copyright (c) PlaceholderCompany. All rights reserved.
+// </copyright>
 
 namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
 {
+    using System;
+    using System.Diagnostics;
+    using System.IO;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
+
     /// <summary>
     /// Downloads YouTube videos as MP4 files using yt-dlp.
     /// Stores them in a local folder and returns the file path.
     /// Calls yt-dlp directly via Process to avoid YoutubeDLSharp native crashes.
-    /// Owner: Andrei
+    /// Owner: Andrei.
     /// </summary>
     public class VideoDownloadService : IVideoDownloadService
     {
@@ -47,22 +56,33 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
         private string ffmpegPath = FfmpegExecutableName;
         private bool isInitialized;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VideoDownloadService"/> class.
+        /// </summary>
+        /// <param name="downloadFolder">The optional explicitly defined download folder path.</param>
         public VideoDownloadService(string? downloadFolder = null)
         {
             this.downloadFolder = downloadFolder
                 ?? Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    AppDataFolderName, VideosFolderName);
+                    AppDataFolderName,
+                    VideosFolderName);
 
             Directory.CreateDirectory(this.downloadFolder);
         }
 
         /// <summary>
+        /// Gets the error message from the last failed download, if any.
+        /// </summary>
+        public string? LastError { get; private set; }
+
+        /// <summary>
         /// Ensures yt-dlp and ffmpeg binaries are available.
         /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         public Task EnsureDependenciesAsync()
         {
-            if (isInitialized)
+            if (this.isInitialized)
             {
                 return Task.CompletedTask;
             }
@@ -70,32 +90,34 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
             // 1. Check WinGet links folder first (winget install yt-dlp / ffmpeg)
             string wingetLinks = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                MicrosoftFolderName, WinGetFolderName, LinksFolderName);
+                MicrosoftFolderName,
+                WinGetFolderName,
+                LinksFolderName);
             string wingetYtDlp = Path.Combine(wingetLinks, YtDlpExecutableName);
             string wingetFfmpeg = Path.Combine(wingetLinks, FfmpegExecutableName);
 
             if (File.Exists(wingetYtDlp) && File.Exists(wingetFfmpeg))
             {
-                ytDlpPath = wingetYtDlp;
-                ffmpegPath = wingetFfmpeg;
-                isInitialized = true;
+                this.ytDlpPath = wingetYtDlp;
+                this.ffmpegPath = wingetFfmpeg;
+                this.isInitialized = true;
                 return Task.CompletedTask;
             }
 
             // 2. Check if binaries exist in the download folder
-            string localYtDlp = Path.Combine(downloadFolder, YtDlpExecutableName);
-            string localFfmpeg = Path.Combine(downloadFolder, FfmpegExecutableName);
+            string localYtDlp = Path.Combine(this.downloadFolder, YtDlpExecutableName);
+            string localFfmpeg = Path.Combine(this.downloadFolder, FfmpegExecutableName);
 
             if (File.Exists(localYtDlp) && File.Exists(localFfmpeg))
             {
-                ytDlpPath = localYtDlp;
-                ffmpegPath = localFfmpeg;
-                isInitialized = true;
+                this.ytDlpPath = localYtDlp;
+                this.ffmpegPath = localFfmpeg;
+                this.isInitialized = true;
                 return Task.CompletedTask;
             }
 
             // 3. Fall back to PATH (set during constructor default)
-            isInitialized = true;
+            this.isInitialized = true;
             return Task.CompletedTask;
         }
 
@@ -103,12 +125,15 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
         /// Downloads a YouTube video as MP4 and returns the local file path.
         /// Returns null if the download fails.
         /// </summary>
+        /// <param name="youtubeUrl">The URL of the YouTube video to download.</param>
+        /// <param name="maxDurationSeconds">The maximum allowed duration for the download.</param>
+        /// <returns>A task containing the file path, or null if it fails.</returns>
         public async Task<string?> DownloadVideoAsMp4Async(string youtubeUrl, int maxDurationSeconds = DefaultMaxDurationSeconds)
         {
-            await EnsureDependenciesAsync();
+            await this.EnsureDependenciesAsync();
 
-            string outputTemplate = Path.Combine(downloadFolder, OutputTemplateFormat);
-            string processArguments = string.Format(YtDlpBaseArgumentsFormat, ffmpegPath, outputTemplate);
+            string outputTemplate = Path.Combine(this.downloadFolder, OutputTemplateFormat);
+            string processArguments = string.Format(YtDlpBaseArgumentsFormat, this.ffmpegPath, outputTemplate);
 
             if (maxDurationSeconds > 0)
             {
@@ -121,7 +146,7 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
             {
                 var processStartInfo = new ProcessStartInfo
                 {
-                    FileName = ytDlpPath,
+                    FileName = this.ytDlpPath,
                     Arguments = processArguments,
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
@@ -132,7 +157,7 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
                 using var downloadProcess = Process.Start(processStartInfo);
                 if (downloadProcess == null)
                 {
-                    LastError = ErrorProcessStartFailed;
+                    this.LastError = ErrorProcessStartFailed;
                     return null;
                 }
 
@@ -152,8 +177,10 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
                     }
                     catch
                     {
+                        // Ignore process kill errors
                     }
-                    LastError = ErrorProcessTimeout;
+
+                    this.LastError = ErrorProcessTimeout;
                     return null;
                 }
 
@@ -162,31 +189,43 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
 
                 if (downloadProcess.ExitCode != SuccessExitCode)
                 {
-                    LastError = string.Format(ErrorExitCodeFormat, downloadProcess.ExitCode, standardError);
+                    this.LastError = string.Format(ErrorExitCodeFormat, downloadProcess.ExitCode, standardError);
                     return null;
                 }
 
-                string? filePath = FindDownloadedFile(standardOutput);
+                string? filePath = this.FindDownloadedFile(standardOutput);
                 if (filePath != null && File.Exists(filePath))
                 {
-                    LastError = null;
+                    this.LastError = null;
                     return filePath;
                 }
 
-                LastError = string.Format(ErrorNoMp4FoundFormat, standardOutput);
+                this.LastError = string.Format(ErrorNoMp4FoundFormat, standardOutput);
                 return null;
             }
             catch (Exception exception)
             {
-                LastError = string.Format(ErrorProcessExceptionFormat, exception.Message);
+                this.LastError = string.Format(ErrorProcessExceptionFormat, exception.Message);
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Gets the path where a video for a given YouTube video ID would be stored.
+        /// </summary>
+        /// <param name="videoId">The YouTube video identifier.</param>
+        /// <returns>The expected local file path.</returns>
+        public string GetExpectedFilePath(string videoId)
+        {
+            return Path.Combine(this.downloadFolder, string.Format(Mp4FileFormat, videoId));
         }
 
         /// <summary>
         /// Parses yt-dlp stdout to find the downloaded file path.
         /// Falls back to the newest .mp4 in the download folder.
         /// </summary>
+        /// <param name="standardOutput">The standard output string from yt-dlp.</param>
+        /// <returns>The path to the downloaded file, or null if not found.</returns>
         private string? FindDownloadedFile(string standardOutput)
         {
             foreach (string line in standardOutput.Split(LineBreakCharacter))
@@ -233,7 +272,7 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
 
             try
             {
-                var newestFile = new DirectoryInfo(downloadFolder)
+                var newestFile = new DirectoryInfo(this.downloadFolder)
                     .GetFiles(Mp4SearchPattern)
                     .OrderByDescending(file => file.LastWriteTimeUtc)
                     .FirstOrDefault();
@@ -243,19 +282,6 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
             {
                 return null;
             }
-        }
-
-        /// <summary>
-        /// Contains the error message from the last failed download, if any.
-        /// </summary>
-        public string? LastError { get; private set; }
-
-        /// <summary>
-        /// Gets the path where a video for a given YouTube video ID would be stored.
-        /// </summary>
-        public string GetExpectedFilePath(string videoId)
-        {
-            return Path.Combine(downloadFolder, string.Format(Mp4FileFormat, videoId));
         }
     }
 }

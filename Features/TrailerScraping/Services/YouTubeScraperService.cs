@@ -1,27 +1,18 @@
-using Google.Apis.Services;
-using Google.Apis.YouTube.v3;
+// <copyright file="YouTubeScraperService.cs" company="PlaceholderCompany">
+// Copyright (c) PlaceholderCompany. All rights reserved.
+// </copyright>
 
 namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
 {
-    /// <summary>
-    /// Result returned by the YouTube scraper for each video found.
-    /// </summary>
-    public class ScrapedVideoResult
-    {
-        private const string YouTubeBaseUrl = "https://www.youtube.com/watch?v=";
-
-        public string VideoId { get; set; } = string.Empty;
-        public string Title { get; set; } = string.Empty;
-        public string ThumbnailUrl { get; set; } = string.Empty;
-        public string ChannelTitle { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-        public string VideoUrl => $"{YouTubeBaseUrl}{VideoId}";
-    }
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using Google.Apis.Services;
+    using Google.Apis.YouTube.v3;
 
     /// <summary>
     /// Searches YouTube using the Data API v3 to find trailer videos.
-    /// Implements <see cref="IWebScraperService"/>.
-    /// Owner: Andrei
+    /// Owner: Andrei.
     /// </summary>
     public class YouTubeScraperService : IYouTubeScraperService
     {
@@ -33,27 +24,38 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
 
         private readonly string apiKey;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="YouTubeScraperService"/> class.
+        /// </summary>
+        /// <param name="apiKey">The YouTube Data API key.</param>
         public YouTubeScraperService(string apiKey)
         {
             this.apiKey = apiKey;
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Scrapes trailer URLs for a given movie title.
+        /// </summary>
+        /// <param name="movieTitle">The title of the movie to search for.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains a list of trailer URLs.</returns>
         public async Task<IList<string>> ScrapeTrailerUrlsAsync(string movieTitle)
         {
-            var results = await SearchVideosAsync(movieTitle, DefaultMaxResults);
+            var results = await this.SearchVideosAsync(movieTitle, DefaultMaxResults);
             return results.Select(result => result.VideoUrl).ToList();
         }
 
         /// <summary>
         /// Performs a YouTube Search.List call and returns rich results.
         /// </summary>
+        /// <param name="query">The search query string.</param>
+        /// <param name="maxResults">The maximum number of results to fetch.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains a list of scraped video results.</returns>
         public async Task<IList<ScrapedVideoResult>> SearchVideosAsync(string query, int maxResults)
         {
             var youtubeService = new YouTubeService(new BaseClientService.Initializer
             {
-                ApiKey = apiKey,
-                ApplicationName = YouTubeAppName
+                ApiKey = this.apiKey,
+                ApplicationName = YouTubeAppName,
             });
 
             var searchRequest = youtubeService.Search.List(SearchPartSnippet);

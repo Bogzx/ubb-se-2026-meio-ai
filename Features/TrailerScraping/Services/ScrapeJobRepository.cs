@@ -1,12 +1,19 @@
-using Microsoft.Data.SqlClient;
-using Ubb_se_2026_meio_ai.Core.Database;
-using Ubb_se_2026_meio_ai.Core.Models;
+// <copyright file="ScrapeJobRepository.cs" company="PlaceholderCompany">
+// Copyright (c) PlaceholderCompany. All rights reserved.
+// </copyright>
 
 namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
+    using Microsoft.Data.SqlClient;
+    using Ubb_se_2026_meio_ai.Core.Database;
+    using Ubb_se_2026_meio_ai.Core.Models;
+
     /// <summary>
     /// Raw SQL implementation of <see cref="IScrapeJobRepository"/>.
-    /// Owner: Andrei
+    /// Owner: Andrei.
     /// </summary>
     public class ScrapeJobRepository : IScrapeJobRepository
     {
@@ -38,12 +45,12 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
 
         private const string SqlSelectDashboardStats = @"
                 SELECT
-                    (SELECT COUNT(*) FROM Movie)                                            AS TotalMovies,
-                    (SELECT COUNT(*) FROM Reel)                                             AS TotalReels,
-                    (SELECT COUNT(*) FROM ScrapeJob)                                        AS TotalJobs,
-                    (SELECT COUNT(*) FROM ScrapeJob WHERE Status = 'running')               AS RunningJobs,
-                    (SELECT COUNT(*) FROM ScrapeJob WHERE Status = 'completed')             AS CompletedJobs,
-                    (SELECT COUNT(*) FROM ScrapeJob WHERE Status = 'failed')                AS FailedJobs;";
+                    (SELECT COUNT(*) FROM Movie)                                                    AS TotalMovies,
+                    (SELECT COUNT(*) FROM Reel)                                                     AS TotalReels,
+                    (SELECT COUNT(*) FROM ScrapeJob)                                                AS TotalJobs,
+                    (SELECT COUNT(*) FROM ScrapeJob WHERE Status = 'running')                       AS RunningJobs,
+                    (SELECT COUNT(*) FROM ScrapeJob WHERE Status = 'completed')                     AS CompletedJobs,
+                    (SELECT COUNT(*) FROM ScrapeJob WHERE Status = 'failed')                        AS FailedJobs;";
 
         private const string SqlSearchMoviesFormat = @"
                 SELECT TOP {0} MovieId, Title, PosterUrl, PrimaryGenre, ReleaseYear, Description
@@ -119,14 +126,23 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
 
         private readonly ISqlConnectionFactory connectionFactory;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ScrapeJobRepository"/> class.
+        /// </summary>
+        /// <param name="connectionFactory">The SQL connection factory used for database operations.</param>
         public ScrapeJobRepository(ISqlConnectionFactory connectionFactory)
         {
             this.connectionFactory = connectionFactory;
         }
 
+        /// <summary>
+        /// Creates a new scrape job in the database.
+        /// </summary>
+        /// <param name="job">The job model to insert.</param>
+        /// <returns>A task containing the newly generated job ID.</returns>
         public async Task<int> CreateJobAsync(ScrapeJobModel job)
         {
-            await using SqlConnection sqlConnection = await connectionFactory.CreateConnectionAsync();
+            await using SqlConnection sqlConnection = await this.connectionFactory.CreateConnectionAsync();
             await using SqlCommand sqlCommand = new SqlCommand(SqlInsertJob, sqlConnection);
             sqlCommand.Parameters.AddWithValue(ParamSearchQuery, job.SearchQuery);
             sqlCommand.Parameters.AddWithValue(ParamMaxResults, job.MaxResults);
@@ -139,9 +155,14 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
             return Convert.ToInt32(result);
         }
 
+        /// <summary>
+        /// Updates an existing scrape job in the database.
+        /// </summary>
+        /// <param name="job">The job model to update.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         public async Task UpdateJobAsync(ScrapeJobModel job)
         {
-            await using SqlConnection sqlConnection = await connectionFactory.CreateConnectionAsync();
+            await using SqlConnection sqlConnection = await this.connectionFactory.CreateConnectionAsync();
             await using SqlCommand sqlCommand = new SqlCommand(SqlUpdateJob, sqlConnection);
             sqlCommand.Parameters.AddWithValue(ParamStatus, job.Status);
             sqlCommand.Parameters.AddWithValue(ParamMoviesFound, job.MoviesFound);
@@ -153,9 +174,14 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
             await sqlCommand.ExecuteNonQueryAsync();
         }
 
+        /// <summary>
+        /// Adds a log entry to the database for a specific scrape job.
+        /// </summary>
+        /// <param name="log">The log entry to insert.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         public async Task AddLogEntryAsync(ScrapeJobLogModel log)
         {
-            await using SqlConnection sqlConnection = await connectionFactory.CreateConnectionAsync();
+            await using SqlConnection sqlConnection = await this.connectionFactory.CreateConnectionAsync();
             await using SqlCommand sqlCommand = new SqlCommand(SqlInsertLog, sqlConnection);
             sqlCommand.Parameters.AddWithValue(ParamScrapeJobId, log.ScrapeJobId);
             sqlCommand.Parameters.AddWithValue(ParamLevel, log.Level);
@@ -165,9 +191,13 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
             await sqlCommand.ExecuteNonQueryAsync();
         }
 
+        /// <summary>
+        /// Retrieves all scrape jobs from the database.
+        /// </summary>
+        /// <returns>A task containing the list of scrape jobs.</returns>
         public async Task<IList<ScrapeJobModel>> GetAllJobsAsync()
         {
-            await using SqlConnection sqlConnection = await connectionFactory.CreateConnectionAsync();
+            await using SqlConnection sqlConnection = await this.connectionFactory.CreateConnectionAsync();
             await using SqlCommand sqlCommand = new SqlCommand(SqlSelectAllJobs, sqlConnection);
             await using SqlDataReader sqlDataReader = await sqlCommand.ExecuteReaderAsync();
 
@@ -176,12 +206,18 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
             {
                 jobs.Add(MapJob(sqlDataReader));
             }
+
             return jobs;
         }
 
+        /// <summary>
+        /// Retrieves all log entries associated with a specific scrape job.
+        /// </summary>
+        /// <param name="jobId">The unique identifier of the scrape job.</param>
+        /// <returns>A task containing the list of log entries.</returns>
         public async Task<IList<ScrapeJobLogModel>> GetLogsForJobAsync(int jobId)
         {
-            await using SqlConnection sqlConnection = await connectionFactory.CreateConnectionAsync();
+            await using SqlConnection sqlConnection = await this.connectionFactory.CreateConnectionAsync();
             await using SqlCommand sqlCommand = new SqlCommand(SqlSelectLogsForJob, sqlConnection);
             sqlCommand.Parameters.AddWithValue(ParamScrapeJobId, jobId);
             await using SqlDataReader sqlDataReader = await sqlCommand.ExecuteReaderAsync();
@@ -191,13 +227,18 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
             {
                 logs.Add(MapLog(sqlDataReader));
             }
+
             return logs;
         }
 
+        /// <summary>
+        /// Retrieves the most recent log entries across all scrape jobs.
+        /// </summary>
+        /// <returns>A task containing the list of recent log entries.</returns>
         public async Task<IList<ScrapeJobLogModel>> GetAllLogsAsync()
         {
             string sqlQuery = string.Format(SqlSelectAllLogsFormat, MaxLogsToRetrieve);
-            await using SqlConnection sqlConnection = await connectionFactory.CreateConnectionAsync();
+            await using SqlConnection sqlConnection = await this.connectionFactory.CreateConnectionAsync();
             await using SqlCommand sqlCommand = new SqlCommand(sqlQuery, sqlConnection);
             await using SqlDataReader sqlDataReader = await sqlCommand.ExecuteReaderAsync();
 
@@ -206,12 +247,17 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
             {
                 logs.Add(MapLog(sqlDataReader));
             }
+
             return logs;
         }
 
+        /// <summary>
+        /// Retrieves dashboard statistics summarizing database records.
+        /// </summary>
+        /// <returns>A task containing the dashboard statistics model.</returns>
         public async Task<DashboardStatsModel> GetDashboardStatsAsync()
         {
-            await using SqlConnection sqlConnection = await connectionFactory.CreateConnectionAsync();
+            await using SqlConnection sqlConnection = await this.connectionFactory.CreateConnectionAsync();
             await using SqlCommand sqlCommand = new SqlCommand(SqlSelectDashboardStats, sqlConnection);
             await using SqlDataReader sqlDataReader = await sqlCommand.ExecuteReaderAsync();
 
@@ -225,13 +271,19 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
                 stats.CompletedJobs = sqlDataReader.GetInt32(sqlDataReader.GetOrdinal(ColCompletedJobs));
                 stats.FailedJobs = sqlDataReader.GetInt32(sqlDataReader.GetOrdinal(ColFailedJobs));
             }
+
             return stats;
         }
 
+        /// <summary>
+        /// Searches for movies matching a partial name.
+        /// </summary>
+        /// <param name="partialName">The partial movie title to search for.</param>
+        /// <returns>A task containing a list of matching movies.</returns>
         public async Task<IList<MovieCardModel>> SearchMoviesByNameAsync(string partialName)
         {
             string sqlQuery = string.Format(SqlSearchMoviesFormat, MaxMoviesToSearch);
-            await using SqlConnection sqlConnection = await connectionFactory.CreateConnectionAsync();
+            await using SqlConnection sqlConnection = await this.connectionFactory.CreateConnectionAsync();
             await using SqlCommand sqlCommand = new SqlCommand(sqlQuery, sqlConnection);
             sqlCommand.Parameters.AddWithValue(ParamName, partialName);
             await using SqlDataReader sqlDataReader = await sqlCommand.ExecuteReaderAsync();
@@ -249,12 +301,18 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
                     Synopsis = sqlDataReader.IsDBNull(sqlDataReader.GetOrdinal(ColDescription)) ? string.Empty : sqlDataReader.GetString(sqlDataReader.GetOrdinal(ColDescription)),
                 });
             }
+
             return movies;
         }
 
+        /// <summary>
+        /// Finds a movie ID by its exact title.
+        /// </summary>
+        /// <param name="title">The exact movie title.</param>
+        /// <returns>A task containing the movie ID if found; otherwise, null.</returns>
         public async Task<int?> FindMovieByTitleAsync(string title)
         {
-            await using SqlConnection sqlConnection = await connectionFactory.CreateConnectionAsync();
+            await using SqlConnection sqlConnection = await this.connectionFactory.CreateConnectionAsync();
             await using SqlCommand sqlCommand = new SqlCommand(SqlFindMovieByTitle, sqlConnection);
             sqlCommand.Parameters.AddWithValue(ParamTitle, title);
 
@@ -262,9 +320,14 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
             return result is null or DBNull ? null : Convert.ToInt32(result);
         }
 
+        /// <summary>
+        /// Checks if a reel exists for the specified video URL.
+        /// </summary>
+        /// <param name="videoUrl">The video URL to check.</param>
+        /// <returns>A task returning true if the reel exists; otherwise, false.</returns>
         public async Task<bool> ReelExistsByVideoUrlAsync(string videoUrl)
         {
-            await using SqlConnection sqlConnection = await connectionFactory.CreateConnectionAsync();
+            await using SqlConnection sqlConnection = await this.connectionFactory.CreateConnectionAsync();
             await using SqlCommand sqlCommand = new SqlCommand(SqlCountReelByUrl, sqlConnection);
             sqlCommand.Parameters.AddWithValue(ParamVideoUrl, videoUrl);
 
@@ -272,9 +335,14 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
             return Convert.ToInt32(result) > EmptyCount;
         }
 
+        /// <summary>
+        /// Inserts a new scraped reel into the database.
+        /// </summary>
+        /// <param name="reel">The reel model to insert.</param>
+        /// <returns>A task containing the new reel ID.</returns>
         public async Task<int> InsertScrapedReelAsync(ReelModel reel)
         {
-            await using SqlConnection sqlConnection = await connectionFactory.CreateConnectionAsync();
+            await using SqlConnection sqlConnection = await this.connectionFactory.CreateConnectionAsync();
             await using SqlCommand sqlCommand = new SqlCommand(SqlInsertReel, sqlConnection);
             sqlCommand.Parameters.AddWithValue(ParamMovieId, reel.MovieId);
             sqlCommand.Parameters.AddWithValue(ParamCreatorUserId, reel.CreatorUserId);
@@ -289,9 +357,13 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
             return Convert.ToInt32(result);
         }
 
+        /// <summary>
+        /// Retrieves all movies from the database.
+        /// </summary>
+        /// <returns>A task containing the list of all movies.</returns>
         public async Task<IList<MovieCardModel>> GetAllMoviesAsync()
         {
-            await using SqlConnection sqlConnection = await connectionFactory.CreateConnectionAsync();
+            await using SqlConnection sqlConnection = await this.connectionFactory.CreateConnectionAsync();
             await using SqlCommand sqlCommand = new SqlCommand(SqlSelectAllMovies, sqlConnection);
             await using SqlDataReader sqlDataReader = await sqlCommand.ExecuteReaderAsync();
 
@@ -308,12 +380,17 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
                     Synopsis = sqlDataReader.IsDBNull(sqlDataReader.GetOrdinal(ColDescription)) ? string.Empty : sqlDataReader.GetString(sqlDataReader.GetOrdinal(ColDescription)),
                 });
             }
+
             return movies;
         }
 
+        /// <summary>
+        /// Retrieves all reels from the database.
+        /// </summary>
+        /// <returns>A task containing the list of all reels.</returns>
         public async Task<IList<ReelModel>> GetAllReelsAsync()
         {
-            await using SqlConnection sqlConnection = await connectionFactory.CreateConnectionAsync();
+            await using SqlConnection sqlConnection = await this.connectionFactory.CreateConnectionAsync();
             await using SqlCommand sqlCommand = new SqlCommand(SqlSelectAllReels, sqlConnection);
             await using SqlDataReader sqlDataReader = await sqlCommand.ExecuteReaderAsync();
 
@@ -333,10 +410,15 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
                     CreatedAt = sqlDataReader.GetDateTime(sqlDataReader.GetOrdinal(ColCreatedAt)),
                 });
             }
+
             return reels;
         }
 
-        // ── Private helpers ──────────────────────────────────────────────
+        /// <summary>
+        /// Maps a <see cref="SqlDataReader"/> row to a <see cref="ScrapeJobModel"/>.
+        /// </summary>
+        /// <param name="sqlDataReader">The SQL data reader.</param>
+        /// <returns>A mapped job model.</returns>
         private static ScrapeJobModel MapJob(SqlDataReader sqlDataReader)
         {
             return new ScrapeJobModel
@@ -355,6 +437,11 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.Services
             };
         }
 
+        /// <summary>
+        /// Maps a <see cref="SqlDataReader"/> row to a <see cref="ScrapeJobLogModel"/>.
+        /// </summary>
+        /// <param name="sqlDataReader">The SQL data reader.</param>
+        /// <returns>A mapped log model.</returns>
         private static ScrapeJobLogModel MapLog(SqlDataReader sqlDataReader)
         {
             return new ScrapeJobLogModel

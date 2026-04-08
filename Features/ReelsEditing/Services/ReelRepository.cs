@@ -1,12 +1,19 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.Data.SqlClient;
-using Ubb_se_2026_meio_ai.Core.Database;
-using Ubb_se_2026_meio_ai.Core.Models;
+// <copyright file="ReelRepository.cs" company="PlaceholderCompany">
+// Copyright (c) PlaceholderCompany. All rights reserved.
+// </copyright>
 
 namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
+    using Microsoft.Data.SqlClient;
+    using Ubb_se_2026_meio_ai.Core.Database;
+    using Ubb_se_2026_meio_ai.Core.Models;
+
+    /// <summary>
+    /// Repository class for managing database operations related to Reels.
+    /// </summary>
     public class ReelRepository : IReelRepository
     {
         private const string SqlSelectUserReels = @"
@@ -58,17 +65,25 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
 
         private readonly ISqlConnectionFactory sqlConnectionFactory;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ReelRepository"/> class.
+        /// </summary>
+        /// <param name="sqlConnectionFactory">The SQL connection factory.</param>
         public ReelRepository(ISqlConnectionFactory sqlConnectionFactory)
         {
             this.sqlConnectionFactory = sqlConnectionFactory;
         }
 
-        // Returns all reels where CreatorUserId = userId
-        public async virtual Task<IList<ReelModel>> GetUserReelsAsync(int userId)
+        /// <summary>
+        /// Returns all reels where CreatorUserId matches the provided user ID.
+        /// </summary>
+        /// <param name="userId">The ID of the user.</param>
+        /// <returns>A list of user reels.</returns>
+        public async Task<IList<ReelModel>> GetUserReelsAsync(int userId)
         {
             var resultList = new List<ReelModel>();
 
-            await using var sqlConnection = await sqlConnectionFactory.CreateConnectionAsync();
+            await using var sqlConnection = await this.sqlConnectionFactory.CreateConnectionAsync();
             await using var sqlCommand = new SqlCommand(SqlSelectUserReels, sqlConnection);
             sqlCommand.Parameters.AddWithValue(ParameterUserId, userId);
 
@@ -93,14 +108,21 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
                     LastEditedAt = dataReader.IsDBNull(ColumnIndexLastEditedAt) ? null : dataReader.GetDateTime(ColumnIndexLastEditedAt),
                 });
             }
+
             return resultList;
         }
 
-        // Updates CropDataJson, BackgroundMusicId, LastEditedAt and optionally VideoUrl for a reel.
-        // Returns the number of rows affected (should be 1).
-        public async virtual Task<int> UpdateReelEditsAsync(int reelId, string cropDataJson, int? musicId, string? videoUrl = null)
+        /// <summary>
+        /// Updates CropDataJson, BackgroundMusicId, LastEditedAt, and optionally VideoUrl for a reel.
+        /// </summary>
+        /// <param name="reelId">The ID of the reel to update.</param>
+        /// <param name="cropDataJson">The JSON containing crop metadata.</param>
+        /// <param name="musicId">The ID of the background music track.</param>
+        /// <param name="videoUrl">The optional updated video URL.</param>
+        /// <returns>The number of rows affected.</returns>
+        public async Task<int> UpdateReelEditsAsync(int reelId, string cropDataJson, int? musicId, string? videoUrl = null)
         {
-            await using var sqlConnection = await sqlConnectionFactory.CreateConnectionAsync();
+            await using var sqlConnection = await this.sqlConnectionFactory.CreateConnectionAsync();
             await using var sqlCommand = new SqlCommand(SqlUpdateReelEdits, sqlConnection);
 
             sqlCommand.Parameters.AddWithValue(ParameterCropData, cropDataJson);
@@ -111,9 +133,14 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
             return await sqlCommand.ExecuteNonQueryAsync();
         }
 
-        public async virtual Task<ReelModel?> GetReelByIdAsync(int reelId)
+        /// <summary>
+        /// Retrieves a specific reel by its ID.
+        /// </summary>
+        /// <param name="reelId">The ID of the reel.</param>
+        /// <returns>The requested reel model or null if not found.</returns>
+        public async Task<ReelModel?> GetReelByIdAsync(int reelId)
         {
-            await using var sqlConnection = await sqlConnectionFactory.CreateConnectionAsync();
+            await using var sqlConnection = await this.sqlConnectionFactory.CreateConnectionAsync();
             await using var sqlCommand = new SqlCommand(SqlSelectReelById, sqlConnection);
             sqlCommand.Parameters.AddWithValue(ParameterReelId, reelId);
 
@@ -142,10 +169,14 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
             };
         }
 
-        // Deletes a reel from the database
-        public async virtual Task DeleteReelAsync(int reelId)
+        /// <summary>
+        /// Deletes a reel from the database.
+        /// </summary>
+        /// <param name="reelId">The ID of the reel to delete.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        public async Task DeleteReelAsync(int reelId)
         {
-            await using var sqlConnection = await sqlConnectionFactory.CreateConnectionAsync();
+            await using var sqlConnection = await this.sqlConnectionFactory.CreateConnectionAsync();
             await using var sqlCommand = new SqlCommand(SqlDeleteReel, sqlConnection);
             sqlCommand.Parameters.AddWithValue(ParameterReelId, reelId);
             await sqlCommand.ExecuteNonQueryAsync();

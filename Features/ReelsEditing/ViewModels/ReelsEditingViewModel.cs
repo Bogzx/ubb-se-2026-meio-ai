@@ -1,15 +1,22 @@
-using System;
-using System.Collections.ObjectModel;
-using System.Text.Json;
-using System.Threading.Tasks;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using Ubb_se_2026_meio_ai.Core.Models;
-using Ubb_se_2026_meio_ai.Features.ReelsEditing.Models;
-using Ubb_se_2026_meio_ai.Features.ReelsEditing.Services;
+// <copyright file="ReelsEditingViewModel.cs" company="PlaceholderCompany">
+// Copyright (c) PlaceholderCompany. All rights reserved.
+// </copyright>
 
 namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
 {
+    using System;
+    using System.Collections.ObjectModel;
+    using System.Text.Json;
+    using System.Threading.Tasks;
+    using CommunityToolkit.Mvvm.ComponentModel;
+    using CommunityToolkit.Mvvm.Input;
+    using Ubb_se_2026_meio_ai.Core.Models;
+    using Ubb_se_2026_meio_ai.Features.ReelsEditing.Models;
+    using Ubb_se_2026_meio_ai.Features.ReelsEditing.Services;
+
+    /// <summary>
+    /// ViewModel for the reels editing interface.
+    /// </summary>
     public partial class ReelsEditingViewModel : ObservableObject
     {
         private const int BaseVideoWidth = 1920;
@@ -106,13 +113,12 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
         [ObservableProperty]
         private double musicVolume = DefaultMusicVolume;
 
-        public bool HasStatusMessage => !string.IsNullOrWhiteSpace(StatusMessage);
-
-        public event Action? CropModeEntered;
-        public event Action? CropModeExited;
-        public event Action? CropSaveStarted;
-        public event Action<string>? CropVideoUpdated;
-
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ReelsEditingViewModel"/> class.
+        /// </summary>
+        /// <param name="reelRepository">The repository used to access reel data.</param>
+        /// <param name="videoProcessing">The service used to process video editing operations.</param>
+        /// <param name="audioLibrary">The library service used to fetch audio tracks.</param>
         public ReelsEditingViewModel(
             IReelRepository reelRepository,
             IVideoProcessingService videoProcessing,
@@ -123,39 +129,39 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
             this.audioLibrary = audioLibrary;
         }
 
-        [RelayCommand]
-        private void SelectEditOption(string option)
-        {
-            if (SelectedEditOption == option)
-            {
-                if (SelectedEditOption == OptionCrop)
-                {
-                    CropModeExited?.Invoke();
-                }
-                SelectedEditOption = string.Empty;
-                return;
-            }
+        /// <summary>
+        /// Event triggered when the crop editing mode is entered.
+        /// </summary>
+        public event Action? CropModeEntered;
 
-            if (SelectedEditOption == OptionCrop)
-            {
-                CropModeExited?.Invoke();
-            }
-            SelectedEditOption = option;
+        /// <summary>
+        /// Event triggered when the crop editing mode is exited.
+        /// </summary>
+        public event Action? CropModeExited;
 
-            if (option == OptionCrop)
-            {
-                CropModeEntered?.Invoke();
-            }
+        /// <summary>
+        /// Event triggered when a crop save operation begins.
+        /// </summary>
+        public event Action? CropSaveStarted;
 
-            if (option == OptionMusic)
-            {
-                _ = LoadMusicTracksAsync();
-            }
-        }
+        /// <summary>
+        /// Event triggered when the cropped video has been successfully updated, providing the new video URL.
+        /// </summary>
+        public event Action<string>? CropVideoUpdated;
 
+        /// <summary>
+        /// Gets a value indicating whether there is a current status message to display.
+        /// </summary>
+        public bool HasStatusMessage => !string.IsNullOrWhiteSpace(this.StatusMessage);
+
+        /// <summary>
+        /// Loads the specified reel into the editing context.
+        /// </summary>
+        /// <param name="reel">The reel to load.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         public async Task LoadReelAsync(ReelModel reel)
         {
-            var freshReelData = await reelRepository.GetReelByIdAsync(reel.ReelId);
+            var freshReelData = await this.reelRepository.GetReelByIdAsync(reel.ReelId);
             if (freshReelData != null)
             {
                 reel.VideoUrl = freshReelData.VideoUrl;
@@ -164,33 +170,33 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
                 reel.LastEditedAt = freshReelData.LastEditedAt;
             }
 
-            SelectedReel = reel;
-            CurrentEdits = new VideoEditMetadata();
-            SelectedMusicTrack = null;
-            IsMusicChosen = false;
-            IsEditing = true;
-            SelectedEditOption = string.Empty;
-            CropMarginLeft = EmptyValue;
-            CropMarginTop = EmptyValue;
-            CropMarginRight = EmptyValue;
-            CropMarginBottom = EmptyValue;
-            MusicStartTime = EmptyValue;
-            MusicDuration = DefaultMusicDurationSeconds;
-            MusicVolume = DefaultMusicVolume;
-            StatusMessage = string.Empty;
-            IsStatusSuccess = true;
+            this.SelectedReel = reel;
+            this.CurrentEdits = new VideoEditMetadata();
+            this.SelectedMusicTrack = null;
+            this.IsMusicChosen = false;
+            this.IsEditing = true;
+            this.SelectedEditOption = string.Empty;
+            this.CropMarginLeft = EmptyValue;
+            this.CropMarginTop = EmptyValue;
+            this.CropMarginRight = EmptyValue;
+            this.CropMarginBottom = EmptyValue;
+            this.MusicStartTime = EmptyValue;
+            this.MusicDuration = DefaultMusicDurationSeconds;
+            this.MusicVolume = DefaultMusicVolume;
+            this.StatusMessage = string.Empty;
+            this.IsStatusSuccess = true;
 
-            LoadPersistedEditData(reel.CropDataJson, reel.BackgroundMusicId);
+            this.LoadPersistedEditData(reel.CropDataJson, reel.BackgroundMusicId);
 
             if (reel.BackgroundMusicId.HasValue)
             {
                 try
                 {
-                    var track = await audioLibrary.GetTrackByIdAsync(reel.BackgroundMusicId.Value);
+                    var track = await this.audioLibrary.GetTrackByIdAsync(reel.BackgroundMusicId.Value);
                     if (track != null)
                     {
-                        SelectedMusicTrack = track;
-                        NormalizeMusicTimingForSelectedTrack();
+                        this.SelectedMusicTrack = track;
+                        this.NormalizeMusicTimingForSelectedTrack();
                     }
                 }
                 catch
@@ -200,250 +206,23 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
             }
         }
 
-        [RelayCommand]
-        private void GoBack()
-        {
-            if (SelectedEditOption == OptionCrop)
-            {
-                CropModeExited?.Invoke();
-            }
-            SelectedReel = null;
-            IsEditing = false;
-            SelectedEditOption = string.Empty;
-            StatusMessage = string.Empty;
-            IsStatusSuccess = true;
-        }
-
+        /// <summary>
+        /// Applies the selected music track to the current reel edits.
+        /// </summary>
+        /// <param name="track">The music track to apply.</param>
         public void ApplyMusicSelection(MusicTrackModel track)
         {
-            SelectedMusicTrack = track;
-            CurrentEdits.SelectedMusicTrackId = track.MusicTrackId;
-            IsMusicChosen = true;
-            MusicStartTime = EmptyValue;
+            this.SelectedMusicTrack = track;
+            this.CurrentEdits.SelectedMusicTrackId = track.MusicTrackId;
+            this.IsMusicChosen = true;
+            this.MusicStartTime = EmptyValue;
 
-            double reelDuration = SelectedReel?.FeatureDurationSeconds ?? DefaultMusicDurationSeconds;
-            MusicDuration = Math.Clamp(reelDuration, MinMusicDurationSeconds, MaxMusicDurationSeconds);
+            double reelDuration = this.SelectedReel?.FeatureDurationSeconds ?? DefaultMusicDurationSeconds;
+            this.MusicDuration = Math.Clamp(reelDuration, MinMusicDurationSeconds, MaxMusicDurationSeconds);
 
-            NormalizeMusicTimingForSelectedTrack();
-            IsStatusSuccess = true;
-            StatusMessage = string.Format(StatusMusicSelectedFormat, track.TrackName);
-        }
-
-        private async Task LoadMusicTracksAsync()
-        {
-            try
-            {
-                var tracks = await audioLibrary.GetAllTracksAsync();
-                MusicTracks.Clear();
-                foreach (var musicTrack in tracks)
-                {
-                    MusicTracks.Add(musicTrack);
-                }
-            }
-            catch (Exception exception)
-            {
-                IsStatusSuccess = false;
-                StatusMessage = string.Format(StatusLoadMusicFailedFormat, exception.Message);
-            }
-        }
-
-        [RelayCommand]
-        private async Task SaveCropAsync()
-        {
-            if (SelectedReel == null)
-            {
-                return;
-            }
-            IsSaving = true;
-            StatusMessage = StatusSavingCrop;
-            IsStatusSuccess = true;
-            try
-            {
-                CropSaveStarted?.Invoke();
-
-                CurrentEdits.CropXCoordinate = (int)((CropMarginLeft / PercentageDivisor) * BaseVideoWidth);
-                CurrentEdits.CropYCoordinate = (int)((CropMarginTop / PercentageDivisor) * BaseVideoHeight);
-                CurrentEdits.CropWidth = (int)((FullPercentage - ((CropMarginLeft + CropMarginRight) / PercentageDivisor)) * BaseVideoWidth);
-                CurrentEdits.CropHeight = (int)((FullPercentage - ((CropMarginTop + CropMarginBottom) / PercentageDivisor)) * BaseVideoHeight);
-
-                string cropJson = CurrentEdits.ToCropDataJson();
-                string processedVideoPath = await videoProcessing.ApplyCropAsync(SelectedReel.VideoUrl, cropJson);
-
-                int rowsAffected = await reelRepository.UpdateReelEditsAsync(
-                    SelectedReel.ReelId,
-                    cropJson,
-                    CurrentEdits.SelectedMusicTrackId,
-                    processedVideoPath);
-
-                if (rowsAffected == EmptyRowsAffected)
-                {
-                    throw new InvalidOperationException(string.Format(ErrorReelNotFoundFormat, SelectedReel.ReelId));
-                }
-
-                var persistedReel = await reelRepository.GetReelByIdAsync(SelectedReel.ReelId);
-                if (persistedReel == null || persistedReel.CropDataJson != cropJson)
-                {
-                    throw new InvalidOperationException(ErrorCropPersistFailed);
-                }
-
-                SelectedReel.VideoUrl = persistedReel.VideoUrl;
-                SelectedReel.CropDataJson = persistedReel.CropDataJson;
-                SelectedReel.LastEditedAt = persistedReel.LastEditedAt;
-                CropVideoUpdated?.Invoke(SelectedReel.VideoUrl);
-
-                StatusMessage = string.Format(
-                    StatusCropUpdatedFormat,
-                    CurrentEdits.CropXCoordinate,
-                    CurrentEdits.CropYCoordinate,
-                    CurrentEdits.CropWidth,
-                    CurrentEdits.CropHeight);
-            }
-            catch (Exception exception)
-            {
-                IsStatusSuccess = false;
-                StatusMessage = string.Format(StatusSaveFailedFormat, exception.Message);
-                CropVideoUpdated?.Invoke(SelectedReel.VideoUrl);
-            }
-            finally
-            {
-                IsSaving = false;
-            }
-        }
-
-        [RelayCommand]
-        private async Task SaveMusicAsync()
-        {
-            if (SelectedReel == null || SelectedMusicTrack == null)
-            {
-                return;
-            }
-            IsSaving = true;
-            StatusMessage = StatusSavingMusic;
-            IsStatusSuccess = true;
-            try
-            {
-                CropSaveStarted?.Invoke();
-
-                CurrentEdits.SelectedMusicTrackId = SelectedMusicTrack.MusicTrackId;
-                NormalizeMusicTimingForSelectedTrack();
-                CurrentEdits.MusicStartTime = MusicStartTime;
-                CurrentEdits.MusicDuration = MusicDuration;
-                CurrentEdits.MusicVolume = MusicVolume;
-
-                string processedVideoPath = await videoProcessing.MergeAudioAsync(
-                    SelectedReel.VideoUrl,
-                    SelectedMusicTrack.MusicTrackId,
-                    MusicStartTime,
-                    MusicDuration,
-                    MusicVolume);
-
-                int rowsAffected = await reelRepository.UpdateReelEditsAsync(
-                    SelectedReel.ReelId,
-                    CurrentEdits.ToCropDataJson(),
-                    SelectedMusicTrack.MusicTrackId,
-                    processedVideoPath);
-
-                if (rowsAffected == EmptyRowsAffected)
-                {
-                    throw new InvalidOperationException(string.Format(ErrorReelNotFoundFormat, SelectedReel.ReelId));
-                }
-
-                var persistedReel = await reelRepository.GetReelByIdAsync(SelectedReel.ReelId);
-                if (persistedReel == null || persistedReel.BackgroundMusicId != SelectedMusicTrack.MusicTrackId)
-                {
-                    throw new InvalidOperationException(ErrorMusicPersistFailed);
-                }
-
-                SelectedReel.VideoUrl = persistedReel.VideoUrl;
-                SelectedReel.CropDataJson = persistedReel.CropDataJson;
-                SelectedReel.BackgroundMusicId = persistedReel.BackgroundMusicId;
-                SelectedReel.LastEditedAt = persistedReel.LastEditedAt;
-                CropVideoUpdated?.Invoke(SelectedReel.VideoUrl);
-
-                StatusMessage = string.Format(StatusMusicSelectedFormat, SelectedMusicTrack.TrackName);
-            }
-            catch (Exception exception)
-            {
-                IsStatusSuccess = false;
-                StatusMessage = string.Format(StatusSaveFailedFormat, exception.Message);
-                CropVideoUpdated?.Invoke(SelectedReel.VideoUrl);
-            }
-            finally
-            {
-                IsSaving = false;
-            }
-        }
-
-        [RelayCommand]
-        private async Task DeleteReelAsync()
-        {
-            if (SelectedReel == null)
-            {
-                return;
-            }
-            try
-            {
-                StatusMessage = StatusDeletingReel;
-                await reelRepository.DeleteReelAsync(SelectedReel.ReelId);
-                StatusMessage = StatusReelDeleted;
-                GoBack();
-            }
-            catch (Exception exception)
-            {
-                IsStatusSuccess = false;
-                StatusMessage = string.Format(StatusDeleteFailedFormat, exception.Message);
-            }
-        }
-
-        partial void OnStatusMessageChanged(string value)
-        {
-            OnPropertyChanged(nameof(HasStatusMessage));
-        }
-
-        private void LoadPersistedEditData(string? cropDataJson, int? backgroundMusicId)
-        {
-            CurrentEdits.SelectedMusicTrackId = backgroundMusicId;
-            if (backgroundMusicId.HasValue)
-            {
-                IsMusicChosen = true;
-            }
-            if (string.IsNullOrWhiteSpace(cropDataJson))
-            {
-                return;
-            }
-            try
-            {
-                using var jsonDocument = JsonDocument.Parse(cropDataJson);
-                var rootElement = jsonDocument.RootElement;
-
-                CurrentEdits.CropXCoordinate = ReadInt(rootElement, JsonKeyX, (int)EmptyValue);
-                CurrentEdits.CropYCoordinate = ReadInt(rootElement, JsonKeyY, (int)EmptyValue);
-                CurrentEdits.CropWidth = ReadInt(rootElement, JsonKeyWidth, BaseVideoWidth);
-                CurrentEdits.CropHeight = ReadInt(rootElement, JsonKeyHeight, BaseVideoHeight);
-                CurrentEdits.MusicStartTime = Math.Max(EmptyValue, ReadDouble(rootElement, JsonKeyMusicStartTime, EmptyValue));
-                CurrentEdits.MusicDuration = Math.Clamp(ReadDouble(rootElement, JsonKeyMusicDuration, DefaultMusicDurationSeconds), MinMusicDurationSeconds, MaxMusicDurationSeconds);
-                CurrentEdits.MusicVolume = Math.Clamp(ReadDouble(rootElement, JsonKeyMusicVolume, DefaultMusicVolume), MinMusicVolume, MaxMusicVolume);
-
-                CropMarginLeft = Math.Clamp((CurrentEdits.CropXCoordinate / (double)BaseVideoWidth) * PercentageDivisor, MinCropMargin, MaxCropMargin);
-                CropMarginTop = Math.Clamp((CurrentEdits.CropYCoordinate / (double)BaseVideoHeight) * PercentageDivisor, MinCropMargin, MaxCropMargin);
-                CropMarginRight = Math.Clamp(((BaseVideoWidth - (CurrentEdits.CropXCoordinate + CurrentEdits.CropWidth)) / (double)BaseVideoWidth) * PercentageDivisor, MinCropMargin, MaxCropMargin);
-                CropMarginBottom = Math.Clamp(((BaseVideoHeight - (CurrentEdits.CropYCoordinate + CurrentEdits.CropHeight)) / (double)BaseVideoHeight) * PercentageDivisor, MinCropMargin, MaxCropMargin);
-
-                MusicStartTime = CurrentEdits.MusicStartTime;
-                MusicDuration = CurrentEdits.MusicDuration;
-                MusicVolume = CurrentEdits.MusicVolume;
-            }
-            catch
-            {
-                // Keep defaults if previously stored JSON is malformed.
-            }
-        }
-
-        private void NormalizeMusicTimingForSelectedTrack()
-        {
-            MusicStartTime = Math.Clamp(MusicStartTime, EmptyValue, MaxMusicStartTime);
-            MusicDuration = Math.Clamp(MusicDuration, MinMusicDurationSeconds, MaxMusicDurationSeconds);
-            MusicVolume = Math.Clamp(MusicVolume, MinMusicVolume, MaxMusicVolume);
+            this.NormalizeMusicTimingForSelectedTrack();
+            this.IsStatusSuccess = true;
+            this.StatusMessage = string.Format(StatusMusicSelectedFormat, track.TrackName);
         }
 
         private static int ReadInt(JsonElement rootElement, string propertyName, int fallbackValue)
@@ -454,6 +233,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
                 {
                     return parsedInteger;
                 }
+
                 if (jsonValue.ValueKind == JsonValueKind.String && int.TryParse(jsonValue.GetString(), out var parsedFromString))
                 {
                     return parsedFromString;
@@ -471,6 +251,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
                 {
                     return parsedDouble;
                 }
+
                 if (jsonValue.ValueKind == JsonValueKind.String && double.TryParse(jsonValue.GetString(), out var parsedFromString))
                 {
                     return parsedFromString;
@@ -478,6 +259,281 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
             }
 
             return fallbackValue;
+        }
+
+        /// <summary>
+        /// Partial method invoked when the status message property changes.
+        /// </summary>
+        /// <param name="value">The new status message value.</param>
+        partial void OnStatusMessageChanged(string value)
+        {
+            this.OnPropertyChanged(nameof(this.HasStatusMessage));
+        }
+
+        [RelayCommand]
+        private void SelectEditOption(string option)
+        {
+            if (this.SelectedEditOption == option)
+            {
+                if (this.SelectedEditOption == OptionCrop)
+                {
+                    this.CropModeExited?.Invoke();
+                }
+
+                this.SelectedEditOption = string.Empty;
+                return;
+            }
+
+            if (this.SelectedEditOption == OptionCrop)
+            {
+                this.CropModeExited?.Invoke();
+            }
+
+            this.SelectedEditOption = option;
+
+            if (option == OptionCrop)
+            {
+                this.CropModeEntered?.Invoke();
+            }
+
+            if (option == OptionMusic)
+            {
+                _ = this.LoadMusicTracksAsync();
+            }
+        }
+
+        [RelayCommand]
+        private void GoBack()
+        {
+            if (this.SelectedEditOption == OptionCrop)
+            {
+                this.CropModeExited?.Invoke();
+            }
+
+            this.SelectedReel = null;
+            this.IsEditing = false;
+            this.SelectedEditOption = string.Empty;
+            this.StatusMessage = string.Empty;
+            this.IsStatusSuccess = true;
+        }
+
+        private async Task LoadMusicTracksAsync()
+        {
+            try
+            {
+                var tracks = await this.audioLibrary.GetAllTracksAsync();
+                this.MusicTracks.Clear();
+                foreach (var musicTrack in tracks)
+                {
+                    this.MusicTracks.Add(musicTrack);
+                }
+            }
+            catch (Exception exception)
+            {
+                this.IsStatusSuccess = false;
+                this.StatusMessage = string.Format(StatusLoadMusicFailedFormat, exception.Message);
+            }
+        }
+
+        [RelayCommand]
+        private async Task SaveCropAsync()
+        {
+            if (this.SelectedReel == null)
+            {
+                return;
+            }
+
+            this.IsSaving = true;
+            this.StatusMessage = StatusSavingCrop;
+            this.IsStatusSuccess = true;
+
+            try
+            {
+                this.CropSaveStarted?.Invoke();
+
+                this.CurrentEdits.CropXCoordinate = (int)((this.CropMarginLeft / PercentageDivisor) * BaseVideoWidth);
+                this.CurrentEdits.CropYCoordinate = (int)((this.CropMarginTop / PercentageDivisor) * BaseVideoHeight);
+                this.CurrentEdits.CropWidth = (int)((FullPercentage - ((this.CropMarginLeft + this.CropMarginRight) / PercentageDivisor)) * BaseVideoWidth);
+                this.CurrentEdits.CropHeight = (int)((FullPercentage - ((this.CropMarginTop + this.CropMarginBottom) / PercentageDivisor)) * BaseVideoHeight);
+
+                string cropJson = this.CurrentEdits.ToCropDataJson();
+                string processedVideoPath = await this.videoProcessing.ApplyCropAsync(this.SelectedReel.VideoUrl, cropJson);
+
+                int rowsAffected = await this.reelRepository.UpdateReelEditsAsync(
+                    this.SelectedReel.ReelId,
+                    cropJson,
+                    this.CurrentEdits.SelectedMusicTrackId,
+                    processedVideoPath);
+
+                if (rowsAffected == EmptyRowsAffected)
+                {
+                    throw new InvalidOperationException(string.Format(ErrorReelNotFoundFormat, this.SelectedReel.ReelId));
+                }
+
+                var persistedReel = await this.reelRepository.GetReelByIdAsync(this.SelectedReel.ReelId);
+                if (persistedReel == null || persistedReel.CropDataJson != cropJson)
+                {
+                    throw new InvalidOperationException(ErrorCropPersistFailed);
+                }
+
+                this.SelectedReel.VideoUrl = persistedReel.VideoUrl;
+                this.SelectedReel.CropDataJson = persistedReel.CropDataJson;
+                this.SelectedReel.LastEditedAt = persistedReel.LastEditedAt;
+                this.CropVideoUpdated?.Invoke(this.SelectedReel.VideoUrl);
+
+                this.StatusMessage = string.Format(
+                    StatusCropUpdatedFormat,
+                    this.CurrentEdits.CropXCoordinate,
+                    this.CurrentEdits.CropYCoordinate,
+                    this.CurrentEdits.CropWidth,
+                    this.CurrentEdits.CropHeight);
+            }
+            catch (Exception exception)
+            {
+                this.IsStatusSuccess = false;
+                this.StatusMessage = string.Format(StatusSaveFailedFormat, exception.Message);
+                this.CropVideoUpdated?.Invoke(this.SelectedReel.VideoUrl);
+            }
+            finally
+            {
+                this.IsSaving = false;
+            }
+        }
+
+        [RelayCommand]
+        private async Task SaveMusicAsync()
+        {
+            if (this.SelectedReel == null || this.SelectedMusicTrack == null)
+            {
+                return;
+            }
+
+            this.IsSaving = true;
+            this.StatusMessage = StatusSavingMusic;
+            this.IsStatusSuccess = true;
+
+            try
+            {
+                this.CropSaveStarted?.Invoke();
+
+                this.CurrentEdits.SelectedMusicTrackId = this.SelectedMusicTrack.MusicTrackId;
+                this.NormalizeMusicTimingForSelectedTrack();
+                this.CurrentEdits.MusicStartTime = this.MusicStartTime;
+                this.CurrentEdits.MusicDuration = this.MusicDuration;
+                this.CurrentEdits.MusicVolume = this.MusicVolume;
+
+                string processedVideoPath = await this.videoProcessing.MergeAudioAsync(
+                    this.SelectedReel.VideoUrl,
+                    this.SelectedMusicTrack.MusicTrackId,
+                    this.MusicStartTime,
+                    this.MusicDuration,
+                    this.MusicVolume);
+
+                int rowsAffected = await this.reelRepository.UpdateReelEditsAsync(
+                    this.SelectedReel.ReelId,
+                    this.CurrentEdits.ToCropDataJson(),
+                    this.SelectedMusicTrack.MusicTrackId,
+                    processedVideoPath);
+
+                if (rowsAffected == EmptyRowsAffected)
+                {
+                    throw new InvalidOperationException(string.Format(ErrorReelNotFoundFormat, this.SelectedReel.ReelId));
+                }
+
+                var persistedReel = await this.reelRepository.GetReelByIdAsync(this.SelectedReel.ReelId);
+                if (persistedReel == null || persistedReel.BackgroundMusicId != this.SelectedMusicTrack.MusicTrackId)
+                {
+                    throw new InvalidOperationException(ErrorMusicPersistFailed);
+                }
+
+                this.SelectedReel.VideoUrl = persistedReel.VideoUrl;
+                this.SelectedReel.CropDataJson = persistedReel.CropDataJson;
+                this.SelectedReel.BackgroundMusicId = persistedReel.BackgroundMusicId;
+                this.SelectedReel.LastEditedAt = persistedReel.LastEditedAt;
+                this.CropVideoUpdated?.Invoke(this.SelectedReel.VideoUrl);
+
+                this.StatusMessage = string.Format(StatusMusicSelectedFormat, this.SelectedMusicTrack.TrackName);
+            }
+            catch (Exception exception)
+            {
+                this.IsStatusSuccess = false;
+                this.StatusMessage = string.Format(StatusSaveFailedFormat, exception.Message);
+                this.CropVideoUpdated?.Invoke(this.SelectedReel.VideoUrl);
+            }
+            finally
+            {
+                this.IsSaving = false;
+            }
+        }
+
+        [RelayCommand]
+        private async Task DeleteReelAsync()
+        {
+            if (this.SelectedReel == null)
+            {
+                return;
+            }
+
+            try
+            {
+                this.StatusMessage = StatusDeletingReel;
+                await this.reelRepository.DeleteReelAsync(this.SelectedReel.ReelId);
+                this.StatusMessage = StatusReelDeleted;
+                this.GoBack();
+            }
+            catch (Exception exception)
+            {
+                this.IsStatusSuccess = false;
+                this.StatusMessage = string.Format(StatusDeleteFailedFormat, exception.Message);
+            }
+        }
+
+        private void LoadPersistedEditData(string? cropDataJson, int? backgroundMusicId)
+        {
+            this.CurrentEdits.SelectedMusicTrackId = backgroundMusicId;
+            if (backgroundMusicId.HasValue)
+            {
+                this.IsMusicChosen = true;
+            }
+
+            if (string.IsNullOrWhiteSpace(cropDataJson))
+            {
+                return;
+            }
+
+            try
+            {
+                using var jsonDocument = JsonDocument.Parse(cropDataJson);
+                var rootElement = jsonDocument.RootElement;
+
+                this.CurrentEdits.CropXCoordinate = ReadInt(rootElement, JsonKeyX, (int)EmptyValue);
+                this.CurrentEdits.CropYCoordinate = ReadInt(rootElement, JsonKeyY, (int)EmptyValue);
+                this.CurrentEdits.CropWidth = ReadInt(rootElement, JsonKeyWidth, BaseVideoWidth);
+                this.CurrentEdits.CropHeight = ReadInt(rootElement, JsonKeyHeight, BaseVideoHeight);
+                this.CurrentEdits.MusicStartTime = Math.Max(EmptyValue, ReadDouble(rootElement, JsonKeyMusicStartTime, EmptyValue));
+                this.CurrentEdits.MusicDuration = Math.Clamp(ReadDouble(rootElement, JsonKeyMusicDuration, DefaultMusicDurationSeconds), MinMusicDurationSeconds, MaxMusicDurationSeconds);
+                this.CurrentEdits.MusicVolume = Math.Clamp(ReadDouble(rootElement, JsonKeyMusicVolume, DefaultMusicVolume), MinMusicVolume, MaxMusicVolume);
+
+                this.CropMarginLeft = Math.Clamp((this.CurrentEdits.CropXCoordinate / (double)BaseVideoWidth) * PercentageDivisor, MinCropMargin, MaxCropMargin);
+                this.CropMarginTop = Math.Clamp((this.CurrentEdits.CropYCoordinate / (double)BaseVideoHeight) * PercentageDivisor, MinCropMargin, MaxCropMargin);
+                this.CropMarginRight = Math.Clamp(((BaseVideoWidth - (this.CurrentEdits.CropXCoordinate + this.CurrentEdits.CropWidth)) / (double)BaseVideoWidth) * PercentageDivisor, MinCropMargin, MaxCropMargin);
+                this.CropMarginBottom = Math.Clamp(((BaseVideoHeight - (this.CurrentEdits.CropYCoordinate + this.CurrentEdits.CropHeight)) / (double)BaseVideoHeight) * PercentageDivisor, MinCropMargin, MaxCropMargin);
+
+                this.MusicStartTime = this.CurrentEdits.MusicStartTime;
+                this.MusicDuration = this.CurrentEdits.MusicDuration;
+                this.MusicVolume = this.CurrentEdits.MusicVolume;
+            }
+            catch
+            {
+                // Keep defaults if previously stored JSON is malformed.
+            }
+        }
+
+        private void NormalizeMusicTimingForSelectedTrack()
+        {
+            this.MusicStartTime = Math.Clamp(this.MusicStartTime, EmptyValue, MaxMusicStartTime);
+            this.MusicDuration = Math.Clamp(this.MusicDuration, MinMusicDurationSeconds, MaxMusicDurationSeconds);
+            this.MusicVolume = Math.Clamp(this.MusicVolume, MinMusicVolume, MaxMusicVolume);
         }
     }
 }

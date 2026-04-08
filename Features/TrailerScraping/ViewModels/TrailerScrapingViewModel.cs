@@ -1,15 +1,21 @@
-using System.Collections.ObjectModel;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using Ubb_se_2026_meio_ai.Core.Models;
-using Ubb_se_2026_meio_ai.Features.TrailerScraping.Services;
+// <copyright file="TrailerScrapingViewModel.cs" company="PlaceholderCompany">
+// Copyright (c) PlaceholderCompany. All rights reserved.
+// </copyright>
 
 namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels
 {
+    using System.Collections.Generic;
+    using System.Collections.ObjectModel;
+    using System.Threading.Tasks;
+    using CommunityToolkit.Mvvm.ComponentModel;
+    using CommunityToolkit.Mvvm.Input;
+    using Ubb_se_2026_meio_ai.Core.Models;
+    using Ubb_se_2026_meio_ai.Features.TrailerScraping.Services;
+
     /// <summary>
     /// ViewModel for the Trailer Scraping admin dashboard.
     /// Handles movie autocomplete, scrape execution, and log display.
-    /// Owner: Andrei
+    /// Owner: Andrei.
     /// </summary>
     public partial class TrailerScrapingViewModel : ObservableObject
     {
@@ -24,15 +30,6 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels
         private readonly IVideoIngestionService ingestionService;
         private readonly IScrapeJobRepository repository;
 
-        public TrailerScrapingViewModel(
-            IVideoIngestionService ingestionService,
-            IScrapeJobRepository repository)
-        {
-            this.ingestionService = ingestionService;
-            this.repository = repository;
-        }
-
-        // ── Stats bar ────────────────────────────────────────────────────
         [ObservableProperty]
         private int totalMovies;
 
@@ -51,7 +48,6 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels
         [ObservableProperty]
         private int failedJobs;
 
-        // ── Movie Autocomplete ──────────────────────────────────────────
         [ObservableProperty]
         private string searchText = string.Empty;
 
@@ -70,88 +66,129 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels
         [ObservableProperty]
         private string statusText = StatusIdle;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TrailerScrapingViewModel"/> class.
+        /// </summary>
+        /// <param name="ingestionService">The video ingestion service.</param>
+        /// <param name="repository">The scrape job repository.</param>
+        public TrailerScrapingViewModel(
+            IVideoIngestionService ingestionService,
+            IScrapeJobRepository repository)
+        {
+            this.ingestionService = ingestionService;
+            this.repository = repository;
+        }
+
+        /// <summary>
+        /// Gets the collection of movies suggested by the search query.
+        /// </summary>
         public ObservableCollection<MovieCardModel> SuggestedMovies { get; } = new ();
 
+        /// <summary>
+        /// Gets the available options for the maximum number of search results.
+        /// </summary>
         public List<int> MaxResultsOptions { get; } = new () { 5, 10, 15, 25, 50 };
 
-        // ── Logs ────────────────────────────────────────────────────────
+        /// <summary>
+        /// Gets the collection of scrape job logs.
+        /// </summary>
         public ObservableCollection<ScrapeJobLogModel> LogEntries { get; } = new ();
 
-        // ── Commands ────────────────────────────────────────────────────
+        /// <summary>
+        /// Gets the collection of all movies for the data table.
+        /// </summary>
+        public ObservableCollection<MovieCardModel> MovieTableItems { get; } = new ();
+
+        /// <summary>
+        /// Gets the collection of all reels for the data table.
+        /// </summary>
+        public ObservableCollection<ReelModel> ReelTableItems { get; } = new ();
+
+        /// <summary>
+        /// Called when the user picks a movie from the dropdown.
+        /// </summary>
+        /// <param name="movie">The movie selected by the user.</param>
+        public void SelectMovie(MovieCardModel movie)
+        {
+            this.SelectedMovie = movie;
+            this.SearchText = movie.Title;
+            this.NoMovieFound = false;
+            this.StartScrapeCommand.NotifyCanExecuteChanged();
+        }
+
+        /// <summary>
+        /// Called by the Page when it loads to populate initial data.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        public async Task InitializeAsync()
+        {
+            await this.RefreshAsync();
+        }
 
         /// <summary>
         /// Called when the user types in the AutoSuggestBox.
         /// Queries the Movie table for case-insensitive matches.
         /// </summary>
+        /// <param name="query">The search query text.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [RelayCommand]
         private async Task SearchMoviesAsync(string query)
         {
-            SearchText = query;
-            SelectedMovie = null;
-            NoMovieFound = false;
+            this.SearchText = query;
+            this.SelectedMovie = null;
+            this.NoMovieFound = false;
 
             if (string.IsNullOrWhiteSpace(query) || query.Length < MinimumSearchQueryLength)
             {
-                SuggestedMovies.Clear();
+                this.SuggestedMovies.Clear();
                 return;
             }
 
             try
             {
-                IList<MovieCardModel> matches = await repository.SearchMoviesByNameAsync(query);
-                SuggestedMovies.Clear();
+                IList<MovieCardModel> matches = await this.repository.SearchMoviesByNameAsync(query);
+                this.SuggestedMovies.Clear();
 
                 foreach (var movieMatch in matches)
                 {
-                    SuggestedMovies.Add(movieMatch);
+                    this.SuggestedMovies.Add(movieMatch);
                 }
 
-                NoMovieFound = SuggestedMovies.Count == EmptyCollectionCount;
+                this.NoMovieFound = this.SuggestedMovies.Count == EmptyCollectionCount;
             }
             catch
             {
-                SuggestedMovies.Clear();
+                this.SuggestedMovies.Clear();
             }
-        }
-
-        /// <summary>
-        /// Called when the user picks a movie from the dropdown.
-        /// </summary>
-        public void SelectMovie(MovieCardModel movie)
-        {
-            SelectedMovie = movie;
-            SearchText = movie.Title;
-            NoMovieFound = false;
-            StartScrapeCommand.NotifyCanExecuteChanged();
         }
 
         [RelayCommand(CanExecute = nameof(CanStartScrape))]
         private async Task StartScrapeAsync()
         {
-            if (SelectedMovie is null)
+            if (this.SelectedMovie is null)
             {
                 return;
             }
 
-            IsScraping = true;
-            StatusText = StatusScraping;
-            StartScrapeCommand.NotifyCanExecuteChanged();
+            this.IsScraping = true;
+            this.StatusText = StatusScraping;
+            this.StartScrapeCommand.NotifyCanExecuteChanged();
 
             try
             {
-                await ingestionService.RunScrapeJobAsync(
-                    SelectedMovie,
-                    MaxResults,
+                await this.ingestionService.RunScrapeJobAsync(
+                    this.SelectedMovie,
+                    this.MaxResults,
                     onLogEntry: async logEntry =>
                     {
                         // Dispatch to UI thread
 #if !IS_TEST_PROJECT
                         Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread()?.TryEnqueue(() =>
                         {
-                            LogEntries.Insert(TopLogEntryIndex, logEntry);
+                            this.LogEntries.Insert(TopLogEntryIndex, logEntry);
                         });
 #else
-                        LogEntries.Insert(TopLogEntryIndex, logEntry);
+                        this.LogEntries.Insert(TopLogEntryIndex, logEntry);
 #endif
                         await Task.CompletedTask;
                     });
@@ -162,68 +199,56 @@ namespace Ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels
             }
             finally
             {
-                IsScraping = false;
-                StatusText = StatusIdle;
-                StartScrapeCommand.NotifyCanExecuteChanged();
-                await RefreshAsync();
+                this.IsScraping = false;
+                this.StatusText = StatusIdle;
+                this.StartScrapeCommand.NotifyCanExecuteChanged();
+                await this.RefreshAsync();
             }
         }
 
-        // ── Table viewers ────────────────────────────────────────────
-        public ObservableCollection<MovieCardModel> MovieTableItems { get; } = new ();
-        public ObservableCollection<ReelModel> ReelTableItems { get; } = new ();
-
-        private bool CanStartScrape() => !IsScraping && SelectedMovie is not null;
+        private bool CanStartScrape() => !this.IsScraping && this.SelectedMovie is not null;
 
         [RelayCommand]
         private async Task RefreshAsync()
         {
             try
             {
-                DashboardStatsModel stats = await repository.GetDashboardStatsAsync();
-                TotalMovies = stats.TotalMovies;
-                TotalReels = stats.TotalReels;
-                TotalJobs = stats.TotalJobs;
-                RunningJobs = stats.RunningJobs;
-                CompletedJobs = stats.CompletedJobs;
-                FailedJobs = stats.FailedJobs;
+                DashboardStatsModel stats = await this.repository.GetDashboardStatsAsync();
+                this.TotalMovies = stats.TotalMovies;
+                this.TotalReels = stats.TotalReels;
+                this.TotalJobs = stats.TotalJobs;
+                this.RunningJobs = stats.RunningJobs;
+                this.CompletedJobs = stats.CompletedJobs;
+                this.FailedJobs = stats.FailedJobs;
 
-                IList<ScrapeJobLogModel> logs = await repository.GetAllLogsAsync();
-                LogEntries.Clear();
+                IList<ScrapeJobLogModel> logs = await this.repository.GetAllLogsAsync();
+                this.LogEntries.Clear();
                 foreach (var log in logs)
                 {
-                    LogEntries.Add(log);
+                    this.LogEntries.Add(log);
                 }
 
                 // Table viewers
-                IList<MovieCardModel> movies = await repository.GetAllMoviesAsync();
-                MovieTableItems.Clear();
+                IList<MovieCardModel> movies = await this.repository.GetAllMoviesAsync();
+                this.MovieTableItems.Clear();
 
                 foreach (var movie in movies)
                 {
-                    MovieTableItems.Add(movie);
+                    this.MovieTableItems.Add(movie);
                 }
 
-                IList<ReelModel> reels = await repository.GetAllReelsAsync();
-                ReelTableItems.Clear();
+                IList<ReelModel> reels = await this.repository.GetAllReelsAsync();
+                this.ReelTableItems.Clear();
 
                 foreach (var reel in reels)
                 {
-                    ReelTableItems.Add(reel);
+                    this.ReelTableItems.Add(reel);
                 }
             }
             catch
             {
                 // Database may not be available during development
             }
-        }
-
-        /// <summary>
-        /// Called by the Page when it loads to populate initial data.
-        /// </summary>
-        public async Task InitializeAsync()
-        {
-            await RefreshAsync();
         }
     }
 }

@@ -1,11 +1,20 @@
-using System.Collections.ObjectModel;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using Ubb_se_2026_meio_ai.Core.Models;
-using Ubb_se_2026_meio_ai.Features.ReelsEditing.Services;
+// <copyright file="ReelGalleryViewModel.cs" company="PlaceholderCompany">
+// Copyright (c) PlaceholderCompany. All rights reserved.
+// </copyright>
 
 namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
 {
+    using System;
+    using System.Collections.ObjectModel;
+    using System.Threading.Tasks;
+    using CommunityToolkit.Mvvm.ComponentModel;
+    using CommunityToolkit.Mvvm.Input;
+    using Ubb_se_2026_meio_ai.Core.Models;
+    using Ubb_se_2026_meio_ai.Features.ReelsEditing.Services;
+
+    /// <summary>
+    /// ViewModel for the reel gallery view.
+    /// </summary>
     public partial class ReelGalleryViewModel : ObservableObject
     {
         private const int CurrentUserId = 1;
@@ -31,40 +40,53 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
         [ObservableProperty]
         private bool isLoaded;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ReelGalleryViewModel"/> class.
+        /// </summary>
+        /// <param name="reelRepository">The repository used to fetch user reels.</param>
         public ReelGalleryViewModel(IReelRepository reelRepository)
         {
             this.reelRepository = reelRepository;
         }
 
+        /// <summary>
+        /// Ensures that the reels are loaded if they haven't been loaded yet.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         public async Task EnsureLoadedAsync()
         {
-            if (!IsLoaded)
+            if (!this.IsLoaded)
             {
-                await LoadReelsAsync();
+                await this.LoadReelsAsync();
             }
         }
 
+        /// <summary>
+        /// Loads the reels from the repository.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [RelayCommand]
         private async Task LoadReelsAsync()
         {
-            StatusMessage = LoadingMessage;
+            this.StatusMessage = LoadingMessage;
             try
             {
-                var reels = await reelRepository.GetUserReelsAsync(CurrentUserId);
-                UserReels.Clear();
+                var reels = await this.reelRepository.GetUserReelsAsync(CurrentUserId);
+                this.UserReels.Clear();
                 foreach (var reel in reels)
                 {
-                    UserReels.Add(reel);
+                    this.UserReels.Add(reel);
                 }
-                IsLoaded = true;
 
-                StatusMessage = UserReels.Count > EmptyReelCount
-                    ? string.Format(ReelsFoundMessageFormat, UserReels.Count)
+                this.IsLoaded = true;
+
+                this.StatusMessage = this.UserReels.Count > EmptyReelCount
+                    ? string.Format(ReelsFoundMessageFormat, this.UserReels.Count)
                     : NoReelsMessage;
             }
             catch (Exception exception)
             {
-                StatusMessage = string.Format(ErrorLoadingMessageFormat, exception.Message);
+                this.StatusMessage = string.Format(ErrorLoadingMessageFormat, exception.Message);
             }
         }
     }

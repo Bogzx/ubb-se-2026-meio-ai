@@ -1,13 +1,22 @@
-using System.Diagnostics;
-using System.Globalization;
-using System.Text.Json;
+// <copyright file="VideoProcessingService.cs" company="PlaceholderCompany">
+// Copyright (c) PlaceholderCompany. All rights reserved.
+// </copyright>
 
 namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
 {
+    using System;
+    using System.Diagnostics;
+    using System.Globalization;
+    using System.IO;
+    using System.Text.Json;
+    using System.Threading;
+    using System.Threading.Tasks;
+
+    /// <summary>
+    /// Service responsible for processing video and audio files using FFmpeg.
+    /// </summary>
     public class VideoProcessingService : IVideoProcessingService
     {
-        private readonly IAudioLibraryService audioLibrary;
-
         private const int BaseWidth = 1920;
         private const int BaseHeight = 1080;
         private const int MinimumCropDimension = 1;
@@ -56,11 +65,23 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
         private static readonly string LocalFfmpegPath = Path.Combine(AppContext.BaseDirectory, FfmpegExecutableName);
         private static readonly string LocalFfprobePath = Path.Combine(AppContext.BaseDirectory, FfprobeExecutableName);
 
+        private readonly IAudioLibraryService audioLibrary;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VideoProcessingService"/> class.
+        /// </summary>
+        /// <param name="audioLibrary">The audio library service used to fetch background music.</param>
         public VideoProcessingService(IAudioLibraryService audioLibrary)
         {
             this.audioLibrary = audioLibrary;
         }
 
+        /// <summary>
+        /// Applies a crop to the specified video based on the provided JSON metadata.
+        /// </summary>
+        /// <param name="videoPath">The path or URL to the source video file.</param>
+        /// <param name="cropDataJson">The JSON string containing the crop dimensions and coordinates.</param>
+        /// <returns>A task containing the path to the cropped video file.</returns>
         public async Task<string> ApplyCropAsync(string videoPath, string cropDataJson)
         {
             string sourcePath = ResolveMediaInput(videoPath);
@@ -84,7 +105,10 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
             string cropFilter = string.Format(
                 CultureInfo.InvariantCulture,
                 CropFilterFormat,
-                widthRatio, heightRatio, xRatio, yRatio);
+                widthRatio,
+                heightRatio,
+                xRatio,
+                yRatio);
 
             string directory = Path.GetDirectoryName(sourcePath) !;
             string fileNameWithoutExt = Path.GetFileNameWithoutExtension(sourcePath);
@@ -99,9 +123,19 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
             {
                 throw new InvalidOperationException(ErrorCropOutputMissing);
             }
+
             return FinalizeProcessedFile(sourcePath, tempPath, FinalCroppedSuffix);
         }
 
+        /// <summary>
+        /// Merges an audio track into the specified video file.
+        /// </summary>
+        /// <param name="videoPath">The path or URL to the source video file.</param>
+        /// <param name="musicTrackId">The unique identifier of the background music track.</param>
+        /// <param name="startOffsetSec">The start time offset for the audio track, in seconds.</param>
+        /// <param name="musicDurationSec">The duration of the audio to play, in seconds.</param>
+        /// <param name="musicVolumePercent">The volume level of the music as a percentage.</param>
+        /// <returns>A task containing the path to the video file with merged audio.</returns>
         public async Task<string> MergeAudioAsync(
             string videoPath,
             int musicTrackId,
@@ -114,11 +148,13 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
             {
                 return videoPath;
             }
-            var track = await audioLibrary.GetTrackByIdAsync(musicTrackId);
+
+            var track = await this.audioLibrary.GetTrackByIdAsync(musicTrackId);
             if (track == null || string.IsNullOrWhiteSpace(track.AudioUrl))
             {
                 return videoPath;
             }
+
             string audioInput = ResolveMediaInput(track.AudioUrl);
             if (!IsHttpUrl(audioInput) && !File.Exists(audioInput))
             {
@@ -140,6 +176,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
             {
                 probedAudioDuration = track.DurationSeconds;
             }
+
             if (probedAudioDuration.HasValue && probedAudioDuration.Value > 0)
             {
                 double audioDuration = probedAudioDuration.Value;
@@ -147,6 +184,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
                 {
                     safeStart = EmptyCoordinate;
                 }
+
                 double availableAfterStart = audioDuration - safeStart;
                 if (availableAfterStart < MinimumAudioDurationSeconds)
                 {
@@ -177,9 +215,16 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
             {
                 throw new InvalidOperationException(ErrorMusicOutputMissing);
             }
+
             return FinalizeProcessedFile(sourcePath, tempPath, FinalWithMusicSuffix);
         }
 
+        /// <summary>
+        /// Attempts to get the media duration in seconds using ffprobe.
+        /// </summary>
+        /// <param name="mediaInput">The path or URL to the media file.</param>
+        /// <param name="directory">The working directory for the process.</param>
+        /// <returns>The duration in seconds, or null if it fails.</returns>
         private static async Task<double?> TryGetMediaDurationSecondsAsync(string mediaInput, string directory)
         {
             var processStartInfo = new ProcessStartInfo
@@ -198,6 +243,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
             {
                 return null;
             }
+
             var standardOutputTask = process.StandardOutput.ReadToEndAsync();
             var standardErrorTask = process.StandardError.ReadToEndAsync();
 
@@ -214,7 +260,9 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
                 }
                 catch
                 {
+                    // Ignore errors during kill
                 }
+
                 return null;
             }
 
@@ -225,6 +273,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
             {
                 return null;
             }
+
             if (double.TryParse(standardOutput, NumberStyles.Float, CultureInfo.InvariantCulture, out var duration) &&
                 duration > 0)
             {
@@ -234,6 +283,13 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
             return null;
         }
 
+        /// <summary>
+        /// Replaces the source file with the processed temporary file and cleans up.
+        /// </summary>
+        /// <param name="sourcePath">The original source path.</param>
+        /// <param name="tempPath">The temporary processed file path.</param>
+        /// <param name="fallbackSuffix">The suffix to use if file replacement fails.</param>
+        /// <returns>The final file path.</returns>
         private static string FinalizeProcessedFile(string sourcePath, string tempPath, string fallbackSuffix)
         {
             string directory = Path.GetDirectoryName(sourcePath) !;
@@ -268,11 +324,18 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
                     }
                     catch
                     {
+                        // Ignore cleanup errors
                     }
                 }
             }
         }
 
+        /// <summary>
+        /// Runs an FFmpeg process with the specified arguments.
+        /// </summary>
+        /// <param name="arguments">The arguments to pass to FFmpeg.</param>
+        /// <param name="workingDirectory">The working directory for the process.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         private static async Task RunFfmpegAsync(string arguments, string workingDirectory)
         {
             var processStartInfo = new ProcessStartInfo
@@ -305,7 +368,9 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
                 }
                 catch
                 {
+                    // Ignore errors during kill
                 }
+
                 throw new InvalidOperationException(ErrorFfmpegTimeout);
             }
 
@@ -323,46 +388,78 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
             }
         }
 
+        /// <summary>
+        /// Resolves the path to the FFmpeg executable.
+        /// </summary>
+        /// <returns>The path or command for FFmpeg.</returns>
         private static string ResolveFfmpegPath()
         {
             if (File.Exists(LocalFfmpegPath))
             {
                 return LocalFfmpegPath;
             }
+
             return FfmpegFallbackName;
         }
 
+        /// <summary>
+        /// Resolves the path to the ffprobe executable.
+        /// </summary>
+        /// <returns>The path or command for ffprobe.</returns>
         private static string ResolveFfprobePath()
         {
             if (File.Exists(LocalFfprobePath))
             {
                 return LocalFfprobePath;
             }
+
             return FfprobeFallbackName;
         }
 
+        /// <summary>
+        /// Resolves a media input string, converting local URIs to file paths.
+        /// </summary>
+        /// <param name="value">The media input string.</param>
+        /// <returns>The resolved path or URL.</returns>
         private static string ResolveMediaInput(string value)
         {
             if (Uri.TryCreate(value, UriKind.Absolute, out var uri) && uri.IsFile)
             {
                 return uri.LocalPath;
             }
+
             return value;
         }
 
+        /// <summary>
+        /// Checks if a string is an HTTP or HTTPS URL.
+        /// </summary>
+        /// <param name="value">The string to check.</param>
+        /// <returns>True if it is an HTTP/HTTPS URL, otherwise false.</returns>
         private static bool IsHttpUrl(string value)
         {
             if (!Uri.TryCreate(value, UriKind.Absolute, out var uri))
             {
                 return false;
             }
+
             return string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase);
         }
 
+        /// <summary>
+        /// Converts a double value to an invariant culture string representation.
+        /// </summary>
+        /// <param name="value">The value to convert.</param>
+        /// <returns>The formatted string.</returns>
         private static string ToInvariantNumber(double value)
             => value.ToString(InvariantNumberFormat, CultureInfo.InvariantCulture);
 
+        /// <summary>
+        /// Parses JSON crop data into its constituent coordinates and dimensions.
+        /// </summary>
+        /// <param name="cropDataJson">The JSON string to parse.</param>
+        /// <returns>A tuple containing the X, Y, Width, and Height values.</returns>
         private static (int CropX, int CropY, int CropWidth, int CropHeight) ReadCropData(string cropDataJson)
         {
             if (string.IsNullOrWhiteSpace(cropDataJson))
@@ -386,6 +483,13 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
             return (cropX, cropY, cropWidth, cropHeight);
         }
 
+        /// <summary>
+        /// Reads an integer from a JSON element with a fallback value.
+        /// </summary>
+        /// <param name="rootElement">The root JSON element.</param>
+        /// <param name="propertyName">The property name to read.</param>
+        /// <param name="fallbackValue">The fallback value if parsing fails.</param>
+        /// <returns>The parsed integer or the fallback value.</returns>
         private static int ReadInt(JsonElement rootElement, string propertyName, int fallbackValue)
         {
             if (rootElement.TryGetProperty(propertyName, out var jsonValue))
@@ -394,6 +498,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsEditing.Services
                 {
                     return parsedInteger;
                 }
+
                 if (jsonValue.ValueKind == JsonValueKind.String &&
                     int.TryParse(jsonValue.GetString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedFromString))
                 {

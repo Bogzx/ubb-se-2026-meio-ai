@@ -1,54 +1,70 @@
-﻿using System;
-using System.Data.Common;
-using System.Threading.Tasks;
-using Microsoft.Data.SqlClient;
-using Moq;
-using NUnit.Framework;
-using Ubb_se_2026_meio_ai.Core.Database;
-using Ubb_se_2026_meio_ai.Features.ReelsEditing.Services;
+﻿// <copyright file="AudioLibraryServiceTests.cs" company="PlaceholderCompany">
+// Copyright (c) PlaceholderCompany. All rights reserved.
+// </copyright>
 
 namespace UnitTests.ReelsEditing
 {
+    using System;
+    using System.Data.Common;
+    using System.Threading.Tasks;
+    using Microsoft.Data.SqlClient;
+    using Moq;
+    using NUnit.Framework;
+    using Ubb_se_2026_meio_ai.Core.Database;
+    using Ubb_se_2026_meio_ai.Features.ReelsEditing.Services;
+
+    /// <summary>
+    /// Unit tests for the <see cref="AudioLibraryService"/> class.
+    /// </summary>
     [TestFixture]
     public class AudioLibraryServiceTests
     {
-        private Mock<ISqlConnectionFactory> _mockConnectionFactory;
-        private AudioLibraryService _service;
+        private Mock<ISqlConnectionFactory> mockConnectionFactory;
+        private AudioLibraryService service;
 
+        /// <summary>
+        /// Sets up the test environment before each test runs.
+        /// </summary>
         [SetUp]
         public void SetUp()
         {
-            _mockConnectionFactory = new Mock<ISqlConnectionFactory>();
-            _service = new AudioLibraryService(_mockConnectionFactory.Object);
+            this.mockConnectionFactory = new Mock<ISqlConnectionFactory>();
+            this.service = new AudioLibraryService(this.mockConnectionFactory.Object);
         }
 
+        /// <summary>
+        /// Tests that an exception is thrown when the database connection fails during GetAllTracksAsync.
+        /// </summary>
         [Test]
         public void GetAllTracksAsync_ConnectionFails_ThrowsException()
         {
             // If the factory fails to create a connection, the service should let that exception bubble up.
-            _mockConnectionFactory
+            this.mockConnectionFactory
                 .Setup(f => f.CreateConnectionAsync())
                 .ThrowsAsync(new InvalidOperationException("Database server is down"));
 
-            var ex = Assert.ThrowsAsync<InvalidOperationException>(async () =>
-                await _service.GetAllTracksAsync());
+            var exception = Assert.ThrowsAsync<InvalidOperationException>(async () =>
+                await this.service.GetAllTracksAsync());
 
-            Assert.That(ex.Message, Is.EqualTo("Database server is down"));
-            _mockConnectionFactory.Verify(f => f.CreateConnectionAsync(), Times.Once);
+            Assert.That(exception.Message, Is.EqualTo("Database server is down"));
+            this.mockConnectionFactory.Verify(f => f.CreateConnectionAsync(), Times.Once);
         }
 
+        /// <summary>
+        /// Tests that an exception is thrown when the database connection fails during GetTrackByIdAsync.
+        /// </summary>
         [Test]
         public void GetTrackByIdAsync_ConnectionFails_ThrowsException()
         {
-            _mockConnectionFactory
+            this.mockConnectionFactory
                 .Setup(f => f.CreateConnectionAsync())
                 .ThrowsAsync(new InvalidOperationException("Network timeout"));
 
-            var ex = Assert.ThrowsAsync<InvalidOperationException>(async () =>
-                await _service.GetTrackByIdAsync(99));
+            var exception = Assert.ThrowsAsync<InvalidOperationException>(async () =>
+                await this.service.GetTrackByIdAsync(99));
 
-            Assert.That(ex.Message, Is.EqualTo("Network timeout"));
-            _mockConnectionFactory.Verify(f => f.CreateConnectionAsync(), Times.Once);
+            Assert.That(exception.Message, Is.EqualTo("Network timeout"));
+            this.mockConnectionFactory.Verify(f => f.CreateConnectionAsync(), Times.Once);
         }
     }
 }

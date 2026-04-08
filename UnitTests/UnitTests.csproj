@@ -29,10 +29,6 @@
 		<Compile Include="..\Features\ReelsEditing\ViewModels\ReelGalleryViewModel.cs" Link="ViewModels\ReelGalleryViewModel.cs" />
 		<Compile Include="..\Features\ReelsEditing\ViewModels\ReelsEditingViewModel.cs" Link="ViewModels\ReelsEditingViewModel.cs" />
 		<Compile Include="..\Features\TrailerScraping\ViewModels\TrailerScrapingViewModel.cs" Link="ViewModels\TrailerScrapingViewModel.cs" />
-		<Compile Include="..\Features\ReelsEditing\Services\AudioLibraryService.cs" Link="Services\AudioLibraryService.cs" />
-		<Compile Include="..\Features\ReelsEditing\Services\VideoProcessingService.cs" Link="Services\VideoProcessingService.cs" />
-		<Compile Include="..\Features\TrailerScraping\Services\VideoDownloadService.cs" Link="Services\VideoDownloadService.cs" />
-		<Compile Include="..\Features\TrailerScraping\Services\VideoIngestionService.cs" Link="Services\VideoIngestionService.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -40,3 +36,4 @@
 	</ItemGroup>
 
 </Project>
+
