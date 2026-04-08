@@ -1,12 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
+		<OutputType>Library</OutputType>
+		<TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+
 		<IsPackable>false</IsPackable>
 		<IsTestProject>true</IsTestProject>
-		<DefineConstants>IS_TEST_PROJECT</DefineConstants>
+
+		<RuntimeIdentifiers Condition="$([MSBuild]::GetTargetFrameworkVersion('$(TargetFramework)')) &gt;= 8">win-x86;win-x64;win-arm64</RuntimeIdentifiers>
+		<RuntimeIdentifiers Condition="$([MSBuild]::GetTargetFrameworkVersion('$(TargetFramework)')) &lt; 8">win10-x86;win10-x64;win10-arm64</RuntimeIdentifiers>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -16,19 +20,10 @@
 		<PackageReference Include="NUnit" Version="3.14.0" />
 		<PackageReference Include="NUnit.Analyzers" Version="3.9.0" />
 		<PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
-
-		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />	
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\MeioAi.Logic\MeioAi.Logic.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<Compile Include="..\Features\ReelsEditing\ViewModels\MusicSelectionDialogViewModel.cs" Link="ViewModels\MusicSelectionDialogViewModel.cs" />
-		<Compile Include="..\Features\ReelsEditing\ViewModels\ReelGalleryViewModel.cs" Link="ViewModels\ReelGalleryViewModel.cs" />
-		<Compile Include="..\Features\ReelsEditing\ViewModels\ReelsEditingViewModel.cs" Link="ViewModels\ReelsEditingViewModel.cs" />
-		<Compile Include="..\Features\TrailerScraping\ViewModels\TrailerScrapingViewModel.cs" Link="ViewModels\TrailerScrapingViewModel.cs" />
 	</ItemGroup>
 
 	<ItemGroup>

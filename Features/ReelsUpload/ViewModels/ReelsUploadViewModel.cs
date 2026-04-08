@@ -3,8 +3,9 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Data.SqlClient;
-using Ubb_se_2026_meio_ai.Core.Database;
-using Ubb_se_2026_meio_ai.Core.Models;
+using ubb_se_2026_meio_ai.Core.Database;
+using ubb_se_2026_meio_ai.Core.Models;
+using ubb_se_2026_meio_ai.Core.Platform;
 
 namespace Ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
 {
@@ -15,13 +16,16 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
     public partial class ReelsUploadViewModel : ObservableObject
     {
         private readonly ISqlConnectionFactory _connectionFactory;
-        private readonly Ubb_se_2026_meio_ai.Features.ReelsUpload.Services.IVideoStorageService _videoStorageService;
+        private readonly IAppWindowContext _appWindowContext;
+        private readonly ubb_se_2026_meio_ai.Features.ReelsUpload.Services.IVideoStorageService _videoStorageService;
 
         public ReelsUploadViewModel(
-            ISqlConnectionFactory connectionFactory, 
-            Ubb_se_2026_meio_ai.Features.ReelsUpload.Services.IVideoStorageService videoStorageService)
+            ISqlConnectionFactory connectionFactory,
+            IAppWindowContext appWindowContext,
+            ubb_se_2026_meio_ai.Features.ReelsUpload.Services.IVideoStorageService videoStorageService)
         {
             _connectionFactory = connectionFactory;
+            _appWindowContext = appWindowContext;
             _videoStorageService = videoStorageService;
             SuggestedMovies = new ObservableCollection<MovieCardModel>();
         }
@@ -57,7 +61,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
             filePicker.FileTypeFilter.Add(".mp4");
 
             // In WinUI 3 Desktop apps, the file picker needs to know WHICH window it belongs to!
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+            var hwnd = _appWindowContext.GetMainWindowHandle();
             WinRT.Interop.InitializeWithWindow.Initialize(filePicker, hwnd);
 
             var file = await filePicker.PickSingleFileAsync();
@@ -89,20 +93,18 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
                 return;
             }
 
-            var dispatcherQueue = App.MainWindow.DispatcherQueue;
-
-            dispatcherQueue.TryEnqueue(() => StatusMessage = "Validating video format...");
+            _appWindowContext.TryEnqueueOnUiThread(() => StatusMessage = "Validating video format...");
 
             try
             {
                 bool isValid = await _videoStorageService.ValidateVideoAsync(LocalVideoFilePath);
                 if (!isValid)
                 {
-                    dispatcherQueue.TryEnqueue(() => StatusMessage = "Invalid file! Must be a non-empty MP4 file\nno longer than 60 seconds.");
+                    _appWindowContext.TryEnqueueOnUiThread(() => StatusMessage = "Invalid file! Must be a non-empty MP4 file\nno longer than 60 seconds.");
                     return;
                 }
 
-                dispatcherQueue.TryEnqueue(() => StatusMessage = "Uploading to Blob Storage & saving metadata...");
+                _appWindowContext.TryEnqueueOnUiThread(() => StatusMessage = "Uploading to Blob Storage & saving metadata...");
 
                 var request = new Ubb_se_2026_meio_ai.Features.ReelsUpload.Models.ReelUploadRequest
                 {
@@ -115,7 +117,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
 
                 var savedReel = await _videoStorageService.UploadVideoAsync(request);
 
-                dispatcherQueue.TryEnqueue(() => 
+                _appWindowContext.TryEnqueueOnUiThread(() =>
                 {
                     StatusMessage = $"Success! Reel uploaded with ID {savedReel.ReelId}.";
                     LocalVideoFilePath = string.Empty;
@@ -127,7 +129,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
             catch (Exception ex)
             {
                 string errorMessage = $"Upload Failed: {ex.Message}";
-                dispatcherQueue.TryEnqueue(() =>
+                _appWindowContext.TryEnqueueOnUiThread(() =>
                 {
                     StatusMessage = errorMessage;
                 });
@@ -148,7 +150,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
             if (string.IsNullOrWhiteSpace(partialMovieName))
             {
                 // Safely clear UI on the main thread
-                App.MainWindow.DispatcherQueue.TryEnqueue(() => 
+                _appWindowContext.TryEnqueueOnUiThread(() =>
                 {
                     SuggestedMovies.Clear();
                 });
@@ -180,7 +182,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
                 }
 
                 // 2. Only modify the UI collection once we have all the data safely!
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                _appWindowContext.TryEnqueueOnUiThread(() =>
                 {
                     SuggestedMovies.Clear();
                     foreach (var movie in newResults)
@@ -195,7 +197,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
                 // setting an [ObservableProperty] from the wrong thread causes an instant FailFast crash (0xffffffff).
                 // We must marshal the error message update to the UI Thread!
                 string errorMessage = $"DB Note: {ex.Message}";
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                _appWindowContext.TryEnqueueOnUiThread(() =>
                 {
                     StatusMessage = errorMessage;
                 });
