@@ -210,8 +210,8 @@ namespace ubb_se_2026_meio_ai
             services.AddTransient<Features.ReelsEditing.Services.ReelRepository>();
             services.AddTransient<Features.ReelsEditing.Services.IVideoProcessingService,
                                   Features.ReelsEditing.Services.VideoProcessingService>();
-            services.AddTransient<Features.ReelsEditing.Services.IAudioLibraryService,
-                                  Features.ReelsEditing.Services.AudioLibraryService>();
+            services.AddTransient<Features.ReelsEditing.Services.IAudioLibraryRepository,
+                                  Features.ReelsEditing.Services.AudioLibraryRepository>();
             // TODO (Bogdan):    services.AddTransient<ISwipeService, SwipeService>();
             //                   services.AddTransient<IPreferenceRepository, PreferenceRepository>();
             // TODO (Gabi):

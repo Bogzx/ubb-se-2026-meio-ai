@@ -1,44 +1,86 @@
-using ubb_se_2026_meio_ai.Core.Models;
-
 namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
+    using ubb_se_2026_meio_ai.Core.Models;
+
     /// <summary>
     /// Orchestrates the full scrape flow:
     /// 1. Create a ScrapeJob
     /// 2. Search YouTube for trailers of a selected movie
     /// 3. For each result: download MP4, create Reel (skip duplicates)
     /// 4. Update job status to completed/failed
-    /// 
-    /// Implements <see cref="IVideoIngestionService"/>.
-    /// Owner: Andrei
+    /// Owner: Andrei.
     /// </summary>
     public class VideoIngestionService : IVideoIngestionService
     {
-        private readonly YouTubeScraperService _scraper;
-        private readonly IScrapeJobRepository _repository;
-        private readonly VideoDownloadService _downloader;
+        private const int MaxTrailerDurationSeconds = 60;
+        private const int DefaultCreatorUserId = 1;
+        private const int SingleMovieScrapeCount = 1;
 
+        private const string DefaultTrailerTitle = "Scraped Trailer";
+        private const string SourceScraped = "scraped";
+        private const string JobStatusRunning = "running";
+        private const string JobStatusCompleted = "completed";
+        private const string JobStatusFailed = "failed";
+        private const string LogLevelInfo = "Info";
+        private const string LogLevelWarn = "Warn";
+        private const string LogLevelError = "Error";
+        private const string UnknownErrorMessage = "unknown error";
+        private const string TrailerSearchQuerySuffix = " official trailer";
+        private const string FormatMp4 = "MP4";
+        private const string FormatYouTubeUrl = "YouTube URL";
+
+        private const string CaptionFormat = "Trailer for \"{0}\" — {1} | {2}";
+        private const string LogFormatScrapingMovie = "Scraping trailers for movie: \"{0}\" (ID {1})";
+        private const string LogFormatYouTubeQuery = "YouTube query: \"{0}\" (max {1} results)";
+        private const string LogFormatYouTubeReturned = "YouTube returned {0} result(s)";
+        private const string LogFormatReelExists = "Reel already exists for: {0}";
+        private const string LogFormatDownloadingMp4 = "Downloading MP4: \"{0}\"...";
+        private const string LogFormatMp4Failed = "MP4 download failed: {0}";
+        private const string LogFormatSkippingNoMp4 = "Skipping \"{0}\" — no playable MP4 available.";
+        private const string LogFormatCreatedReel = "Created reel (ID {0}) for \"{1}\" [{2}]";
+        private const string LogFormatFailedToProcess = "Failed to process \"{0}\": {1}";
+        private const string LogFormatJobCompleted = "Job completed — {0} reel(s) created for \"{1}\"";
+        private const string LogFormatJobFailed = "Job failed: {0}";
+
+        private readonly IYouTubeScraperService scraper;
+        private readonly IScrapeJobRepository repository;
+        private readonly IVideoDownloadService downloader;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VideoIngestionService"/> class.
+        /// </summary>
+        /// <param name="scraper">The YouTube scraper service.</param>
+        /// <param name="repository">The scrape job repository.</param>
+        /// <param name="downloader">The video download service.</param>
         public VideoIngestionService(
-            YouTubeScraperService scraper,
+            IYouTubeScraperService scraper,
             IScrapeJobRepository repository,
-            VideoDownloadService downloader)
+            IVideoDownloadService downloader)
         {
-            _scraper = scraper;
-            _repository = repository;
-            _downloader = downloader;
+            this.scraper = scraper;
+            this.repository = repository;
+            this.downloader = downloader;
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Ingests a single video from a URL and associates it with a movie.
+        /// </summary>
+        /// <param name="trailerUrl">The URL of the trailer.</param>
+        /// <param name="movieId">The ID of the movie.</param>
+        /// <returns>The ID of the newly created reel, or an empty string if it fails or duplicates.</returns>
         public async Task<string> IngestVideoFromUrlAsync(string trailerUrl, int movieId)
         {
-            bool exists = await _repository.ReelExistsByVideoUrlAsync(trailerUrl);
+            bool exists = await this.repository.ReelExistsByVideoUrlAsync(trailerUrl);
             if (exists)
             {
                 return string.Empty; // duplicate
             }
 
             // Download as MP4 — YouTube URLs are not directly playable
-            string? localPath = await _downloader.DownloadVideoAsMp4Async(trailerUrl, maxDurationSeconds: 60);
+            string? localPath = await this.downloader.DownloadVideoAsMp4Async(trailerUrl, MaxTrailerDurationSeconds);
 
             if (string.IsNullOrEmpty(localPath))
             {
@@ -48,23 +90,22 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
             var reel = new ReelModel
             {
                 MovieId = movieId,
-                CreatorUserId = 1, // UserId 1 (so it appears in Reels Editing)
+                CreatorUserId = DefaultCreatorUserId, // UserId 1 (so it appears in Reels Editing)
                 VideoUrl = localPath,
-                Title = "Scraped Trailer",
+                Title = DefaultTrailerTitle,
                 Caption = string.Empty,
                 ThumbnailUrl = string.Empty,
-                Source = "scraped",
+                Source = SourceScraped,
                 CreatedAt = DateTime.UtcNow,
             };
 
-            int reelId = await _repository.InsertScrapedReelAsync(reel);
+            int reelId = await this.repository.InsertScrapedReelAsync(reel);
             return reelId.ToString();
         }
 
         /// <summary>
         /// Runs a full scrape job for a specific movie from the Movie table.
-        /// Searches YouTube for trailers, downloads them as MP4, and inserts Reels
-        /// linked to the given MovieId.
+        /// Searches YouTube for trailers, downloads them as MP4, and inserts Reels linked to the given MovieId.
         /// </summary>
         /// <param name="movie">The movie selected from the Movie table.</param>
         /// <param name="maxResults">Maximum number of YouTube results to fetch.</param>
@@ -76,17 +117,17 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
             Func<ScrapeJobLogModel, Task>? onLogEntry = null)
         {
             // Build search query from the movie title
-            string searchQuery = $"{movie.Title} official trailer";
+            string searchQuery = string.Concat(movie.Title, TrailerSearchQuerySuffix);
 
             // 1. Create job record
             var job = new ScrapeJobModel
             {
                 SearchQuery = searchQuery,
                 MaxResults = maxResults,
-                Status = "running",
+                Status = JobStatusRunning,
                 StartedAt = DateTime.UtcNow,
             };
-            job.ScrapeJobId = await _repository.CreateJobAsync(job);
+            job.ScrapeJobId = await this.repository.CreateJobAsync(job);
 
             async Task LogAsync(string level, string message)
             {
@@ -97,7 +138,7 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
                     Message = message,
                     Timestamp = DateTime.UtcNow,
                 };
-                await _repository.AddLogEntryAsync(logEntry);
+                await this.repository.AddLogEntryAsync(logEntry);
                 if (onLogEntry is not null)
                 {
                     await onLogEntry(logEntry);
@@ -106,12 +147,12 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
 
             try
             {
-                await LogAsync("Info", $"Scraping trailers for movie: \"{movie.Title}\" (ID {movie.MovieId})");
-                await LogAsync("Info", $"YouTube query: \"{searchQuery}\" (max {maxResults} results)");
+                await LogAsync(LogLevelInfo, string.Format(LogFormatScrapingMovie, movie.Title, movie.MovieId));
+                await LogAsync(LogLevelInfo, string.Format(LogFormatYouTubeQuery, searchQuery, maxResults));
 
                 // 2. Search YouTube
-                IList<ScrapedVideoResult> results = await _scraper.SearchVideosAsync(searchQuery, maxResults);
-                await LogAsync("Info", $"YouTube returned {results.Count} result(s)");
+                IList<ScrapedVideoResult> results = await this.scraper.SearchVideosAsync(searchQuery, maxResults);
+                await LogAsync(LogLevelInfo, string.Format(LogFormatYouTubeReturned, results.Count));
 
                 int reelsCreated = 0;
 
@@ -121,23 +162,23 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
                     try
                     {
                         // Check for duplicate reel
-                        bool reelExists = await _repository.ReelExistsByVideoUrlAsync(video.VideoUrl);
+                        bool reelExists = await this.repository.ReelExistsByVideoUrlAsync(video.VideoUrl);
                         if (reelExists)
                         {
-                            await LogAsync("Warn", $"Reel already exists for: {video.VideoUrl}");
+                            await LogAsync(LogLevelWarn, string.Format(LogFormatReelExists, video.VideoUrl));
                             continue;
                         }
 
                         // Download video as MP4 (max 60 seconds)
-                        await LogAsync("Info", $"Downloading MP4: \"{video.Title}\"...");
-                        string? localMp4Path = await _downloader.DownloadVideoAsMp4Async(video.VideoUrl, maxDurationSeconds: 60);
+                        await LogAsync(LogLevelInfo, string.Format(LogFormatDownloadingMp4, video.Title));
+                        string? localMp4Path = await this.downloader.DownloadVideoAsMp4Async(video.VideoUrl, MaxTrailerDurationSeconds);
 
                         // Skip this video if download failed
                         if (string.IsNullOrEmpty(localMp4Path))
                         {
-                            string reason = _downloader.LastError ?? "unknown error";
-                            await LogAsync("Error", $"MP4 download failed: {reason}");
-                            await LogAsync("Warn", $"Skipping \"{video.Title}\" — no playable MP4 available.");
+                            string reason = this.downloader.LastError ?? UnknownErrorMessage;
+                            await LogAsync(LogLevelError, string.Format(LogFormatMp4Failed, reason));
+                            await LogAsync(LogLevelWarn, string.Format(LogFormatSkippingNoMp4, video.Title));
                             continue;
                         }
 
@@ -147,45 +188,51 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
                         var reel = new ReelModel
                         {
                             MovieId = movie.MovieId,          // FK to the selected movie
-                            CreatorUserId = 1,                 // UserId 1 (so it appears in Reels Editing)
+                            CreatorUserId = DefaultCreatorUserId,                 // UserId 1 (so it appears in Reels Editing)
                             VideoUrl = videoUrl,
                             ThumbnailUrl = video.ThumbnailUrl,
                             Title = video.Title,
-                            Caption = $"Trailer for \"{movie.Title}\" — {video.ChannelTitle} | {video.VideoUrl}",
-                            Source = "scraped",
+                            Caption = string.Format(CaptionFormat, movie.Title, video.ChannelTitle, video.VideoUrl),
+                            Source = SourceScraped,
                             CreatedAt = DateTime.UtcNow,
                         };
 
-                        int reelId = await _repository.InsertScrapedReelAsync(reel);
+                        int reelId = await this.repository.InsertScrapedReelAsync(reel);
                         reelsCreated++;
 
-                        string format = !string.IsNullOrEmpty(localMp4Path) ? "MP4" : "YouTube URL";
-                        await LogAsync("Info", $"Created reel (ID {reelId}) for \"{movie.Title}\" [{format}]");
+                        string format = !string.IsNullOrEmpty(localMp4Path) ? FormatMp4 : FormatYouTubeUrl;
+                        await LogAsync(LogLevelInfo, string.Format(LogFormatCreatedReel, reelId, movie.Title, format));
                     }
-                    catch (Exception ex)
+                    catch (Exception exception)
                     {
-                        await LogAsync("Error", $"Failed to process \"{video.Title}\": {ex.Message}");
+                        await LogAsync(LogLevelError, string.Format(LogFormatFailedToProcess, video.Title, exception.Message));
                     }
                 }
 
                 // 4. Complete job
-                job.MoviesFound = 1; // We scraped for a single movie
+                job.MoviesFound = SingleMovieScrapeCount; // We scraped for a single movie
                 job.ReelsCreated = reelsCreated;
-                job.Status = "completed";
+                job.Status = JobStatusCompleted;
                 job.CompletedAt = DateTime.UtcNow;
-                await _repository.UpdateJobAsync(job);
+                await this.repository.UpdateJobAsync(job);
 
-                await LogAsync("Info", $"Job completed — {reelsCreated} reel(s) created for \"{movie.Title}\"");
+                await LogAsync(LogLevelInfo, string.Format(LogFormatJobCompleted, reelsCreated, movie.Title));
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                job.Status = "failed";
+                job.Status = JobStatusFailed;
                 job.CompletedAt = DateTime.UtcNow;
-                job.ErrorMessage = ex.Message;
-                await _repository.UpdateJobAsync(job);
+                job.ErrorMessage = exception.Message;
+                await this.repository.UpdateJobAsync(job);
 
-                try { await LogAsync("Error", $"Job failed: {ex.Message}"); }
-                catch { /* best effort logging */ }
+                try
+                {
+                    await LogAsync(LogLevelError, string.Format(LogFormatJobFailed, exception.Message));
+                }
+                catch
+                {
+                    /* best effort logging */
+                }
             }
 
             return job;

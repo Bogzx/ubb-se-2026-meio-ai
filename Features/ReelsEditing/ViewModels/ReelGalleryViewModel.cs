@@ -1,59 +1,88 @@
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using System.Collections.ObjectModel;
-using ubb_se_2026_meio_ai.Core.Models;
-using ubb_se_2026_meio_ai.Features.ReelsEditing.Services;
-
 namespace ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels
 {
+    using System;
+    using System.Collections.ObjectModel;
+    using System.Threading.Tasks;
+    using CommunityToolkit.Mvvm.ComponentModel;
+    using CommunityToolkit.Mvvm.Input;
+    using ubb_se_2026_meio_ai.Core.Models;
+    using ubb_se_2026_meio_ai.Features.ReelsEditing.Services;
+
+    /// <summary>
+    /// ViewModel for the reel gallery view.
+    /// </summary>
     public partial class ReelGalleryViewModel : ObservableObject
     {
-        private readonly ReelRepository _reelRepository;
-
-        // Hard-coded to UserId=1 (same as the rest of the app)
         private const int CurrentUserId = 1;
+        private const int EmptyReelCount = 0;
+
+        private const string DefaultStatusMessage = "Select a reel to edit.";
+        private const string LoadingMessage = "Loading reels...";
+        private const string ReelsFoundMessageFormat = "{0} reel(s) found.";
+        private const string NoReelsMessage = "No reels uploaded yet. Upload a reel first.";
+        private const string ErrorLoadingMessageFormat = "Error loading reels: {0}";
+
+        private readonly IReelRepository reelRepository;
 
         [ObservableProperty]
-        private ObservableCollection<ReelModel> _userReels = new();
+        private ObservableCollection<ReelModel> userReels = new ();
 
         [ObservableProperty]
-        private ReelModel? _selectedReel;
+        private ReelModel? selectedReel;
 
         [ObservableProperty]
-        private string _statusMessage = "Select a reel to edit.";
+        private string statusMessage = DefaultStatusMessage;
 
         [ObservableProperty]
-        private bool _isLoaded;
+        private bool isLoaded;
 
-        public ReelGalleryViewModel(ReelRepository reelRepository)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ReelGalleryViewModel"/> class.
+        /// </summary>
+        /// <param name="reelRepository">The repository used to fetch user reels.</param>
+        public ReelGalleryViewModel(IReelRepository reelRepository)
         {
-            _reelRepository = reelRepository;
+            this.reelRepository = reelRepository;
         }
 
+        /// <summary>
+        /// Ensures that the reels are loaded if they haven't been loaded yet.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         public async Task EnsureLoadedAsync()
         {
-            if (!IsLoaded)
-                await LoadReelsAsync();
+            if (!this.IsLoaded)
+            {
+                await this.LoadReelsAsync();
+            }
         }
 
+        /// <summary>
+        /// Loads the reels from the repository.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [RelayCommand]
         private async Task LoadReelsAsync()
         {
-            StatusMessage = "Loading reels...";
+            this.StatusMessage = LoadingMessage;
             try
             {
-                var reels = await _reelRepository.GetUserReelsAsync(CurrentUserId);
-                UserReels.Clear();
+                var reels = await this.reelRepository.GetUserReelsAsync(CurrentUserId);
+                this.UserReels.Clear();
                 foreach (var reel in reels)
-                    UserReels.Add(reel);
-                IsLoaded = true;
-                StatusMessage = UserReels.Count > 0
-                    ? $"{UserReels.Count} reel(s) found."
-                    : "No reels uploaded yet. Upload a reel first.";
+                {
+                    this.UserReels.Add(reel);
+                }
+
+                this.IsLoaded = true;
+
+                this.StatusMessage = this.UserReels.Count > EmptyReelCount
+                    ? string.Format(ReelsFoundMessageFormat, this.UserReels.Count)
+                    : NoReelsMessage;
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                StatusMessage = $"Error loading reels: {ex.Message}";
+                this.StatusMessage = string.Format(ErrorLoadingMessageFormat, exception.Message);
             }
         }
     }

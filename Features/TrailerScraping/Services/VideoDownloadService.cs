@@ -1,36 +1,84 @@
-using System.Diagnostics;
-
 namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
 {
+    using System;
+    using System.Diagnostics;
+    using System.IO;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
+
     /// <summary>
     /// Downloads YouTube videos as MP4 files using yt-dlp.
     /// Stores them in a local folder and returns the file path.
     /// Calls yt-dlp directly via Process to avoid YoutubeDLSharp native crashes.
-    /// Owner: Andrei
+    /// Owner: Andrei.
     /// </summary>
-    public class VideoDownloadService
+    public class VideoDownloadService : IVideoDownloadService
     {
-        private readonly string _downloadFolder;
-        private string _ytdlPath = "yt-dlp.exe";
-        private string _ffmpegPath = "ffmpeg.exe";
-        private bool _isInitialized;
+        private const int ProcessTimeoutMinutes = 5;
+        private const int DefaultMaxDurationSeconds = 60;
+        private const int SuccessExitCode = 0;
 
+        private const string YtDlpExecutableName = "yt-dlp.exe";
+        private const string FfmpegExecutableName = "ffmpeg.exe";
+        private const string AppDataFolderName = "MeioAI";
+        private const string VideosFolderName = "Videos";
+        private const string MicrosoftFolderName = "Microsoft";
+        private const string WinGetFolderName = "WinGet";
+        private const string LinksFolderName = "Links";
+        private const string Mp4SearchPattern = "*.mp4";
+        private const string Mp4FileFormat = "{0}.mp4";
+
+        private const string OutputTemplateFormat = "%(id)s.%(ext)s";
+        private const string YtDlpBaseArgumentsFormat = "--no-playlist --ffmpeg-location \"{0}\" -f \"bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best\" --merge-output-format mp4 -o \"{1}\" ";
+        private const string YtDlpDurationArgumentFormat = "--postprocessor-args \"ffmpeg:-t {0}\" ";
+
+        private const string ErrorProcessStartFailed = "Failed to start yt-dlp process";
+        private const string ErrorProcessTimeout = "yt-dlp process timed out after 5 minutes";
+        private const string ErrorExitCodeFormat = "yt-dlp exit code {0}: {1}";
+        private const string ErrorNoMp4FoundFormat = "yt-dlp succeeded but no MP4 file found. standardOutput: {0}";
+        private const string ErrorProcessExceptionFormat = "yt-dlp process error: {0}";
+
+        private const string MergerLogPrefix = "[Merger]";
+        private const string DownloadLogPrefix = "[download]";
+        private const string DestinationLogPrefix = "Destination:";
+        private const string AlreadyDownloadedLogSuffix = "has already been downloaded";
+        private const string AlreadyDownloadedReplacement = " has already been downloaded";
+        private const char LineBreakCharacter = '\n';
+        private const char QuoteCharacter = '"';
+
+        private readonly string downloadFolder;
+        private string ytDlpPath = YtDlpExecutableName;
+        private string ffmpegPath = FfmpegExecutableName;
+        private bool isInitialized;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VideoDownloadService"/> class.
+        /// </summary>
+        /// <param name="downloadFolder">The optional explicitly defined download folder path.</param>
         public VideoDownloadService(string? downloadFolder = null)
         {
-            _downloadFolder = downloadFolder
+            this.downloadFolder = downloadFolder
                 ?? Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "MeioAI", "Videos");
+                    AppDataFolderName,
+                    VideosFolderName);
 
-            Directory.CreateDirectory(_downloadFolder);
+            Directory.CreateDirectory(this.downloadFolder);
         }
+
+        /// <summary>
+        /// Gets the error message from the last failed download, if any.
+        /// </summary>
+        public string? LastError { get; private set; }
 
         /// <summary>
         /// Ensures yt-dlp and ffmpeg binaries are available.
         /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         public Task EnsureDependenciesAsync()
         {
-            if (_isInitialized)
+            if (this.isInitialized)
             {
                 return Task.CompletedTask;
             }
@@ -38,32 +86,34 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
             // 1. Check WinGet links folder first (winget install yt-dlp / ffmpeg)
             string wingetLinks = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Microsoft", "WinGet", "Links");
-            string wingetYtDlp = Path.Combine(wingetLinks, "yt-dlp.exe");
-            string wingetFfmpeg = Path.Combine(wingetLinks, "ffmpeg.exe");
+                MicrosoftFolderName,
+                WinGetFolderName,
+                LinksFolderName);
+            string wingetYtDlp = Path.Combine(wingetLinks, YtDlpExecutableName);
+            string wingetFfmpeg = Path.Combine(wingetLinks, FfmpegExecutableName);
 
             if (File.Exists(wingetYtDlp) && File.Exists(wingetFfmpeg))
             {
-                _ytdlPath = wingetYtDlp;
-                _ffmpegPath = wingetFfmpeg;
-                _isInitialized = true;
+                this.ytDlpPath = wingetYtDlp;
+                this.ffmpegPath = wingetFfmpeg;
+                this.isInitialized = true;
                 return Task.CompletedTask;
             }
 
             // 2. Check if binaries exist in the download folder
-            string localYtDlp = Path.Combine(_downloadFolder, "yt-dlp.exe");
-            string localFfmpeg = Path.Combine(_downloadFolder, "ffmpeg.exe");
+            string localYtDlp = Path.Combine(this.downloadFolder, YtDlpExecutableName);
+            string localFfmpeg = Path.Combine(this.downloadFolder, FfmpegExecutableName);
 
             if (File.Exists(localYtDlp) && File.Exists(localFfmpeg))
             {
-                _ytdlPath = localYtDlp;
-                _ffmpegPath = localFfmpeg;
-                _isInitialized = true;
+                this.ytDlpPath = localYtDlp;
+                this.ffmpegPath = localFfmpeg;
+                this.isInitialized = true;
                 return Task.CompletedTask;
             }
 
             // 3. Fall back to PATH (set during constructor default)
-            _isInitialized = true;
+            this.isInitialized = true;
             return Task.CompletedTask;
         }
 
@@ -71,116 +121,120 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
         /// Downloads a YouTube video as MP4 and returns the local file path.
         /// Returns null if the download fails.
         /// </summary>
-        /// <param name="youtubeUrl">Full YouTube URL (e.g. https://www.youtube.com/watch?v=...)</param>
-        /// <param name="maxDurationSeconds">Maximum duration to download (0 = full video).</param>
-        public async Task<string?> DownloadVideoAsMp4Async(string youtubeUrl, int maxDurationSeconds = 60)
+        /// <param name="youtubeUrl">The URL of the YouTube video to download.</param>
+        /// <param name="maxDurationSeconds">The maximum allowed duration for the download.</param>
+        /// <returns>A task containing the file path, or null if it fails.</returns>
+        public async Task<string?> DownloadVideoAsMp4Async(string youtubeUrl, int maxDurationSeconds = DefaultMaxDurationSeconds)
         {
-            await EnsureDependenciesAsync();
+            await this.EnsureDependenciesAsync();
 
-            // Build yt-dlp arguments
-            string outputTemplate = Path.Combine(_downloadFolder, "%(id)s.%(ext)s");
-            string args = $"--no-playlist " +
-                          $"--ffmpeg-location \"{_ffmpegPath}\" " +
-                          $"-f \"bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best\" " +
-                          $"--merge-output-format mp4 " +
-                          $"-o \"{outputTemplate}\" ";
+            string outputTemplate = Path.Combine(this.downloadFolder, OutputTemplateFormat);
+            string processArguments = string.Format(YtDlpBaseArgumentsFormat, this.ffmpegPath, outputTemplate);
 
             if (maxDurationSeconds > 0)
             {
-                args += $"--postprocessor-args \"ffmpeg:-t {maxDurationSeconds}\" ";
+                processArguments += string.Format(YtDlpDurationArgumentFormat, maxDurationSeconds);
             }
 
-            args += $"\"{youtubeUrl}\"";
+            processArguments += $"\"{youtubeUrl}\"";
 
             try
             {
-                var psi = new ProcessStartInfo
+                var processStartInfo = new ProcessStartInfo
                 {
-                    FileName = _ytdlPath,
-                    Arguments = args,
+                    FileName = this.ytDlpPath,
+                    Arguments = processArguments,
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     CreateNoWindow = true,
                 };
 
-                using var process = Process.Start(psi);
-                if (process == null)
+                using var downloadProcess = Process.Start(processStartInfo);
+                if (downloadProcess == null)
                 {
-                    LastError = "Failed to start yt-dlp process";
+                    this.LastError = ErrorProcessStartFailed;
                     return null;
                 }
 
-                // Read stdout and stderr CONCURRENTLY to avoid deadlock.
-                // Sequential reads can deadlock when the child process fills one
-                // stream's buffer while we are blocked reading the other.
-                var stdoutTask = process.StandardOutput.ReadToEndAsync();
-                var stderrTask = process.StandardError.ReadToEndAsync();
+                var standardOutputTask = downloadProcess.StandardOutput.ReadToEndAsync();
+                var standardErrorTask = downloadProcess.StandardError.ReadToEndAsync();
 
-                // Apply a timeout so a hung yt-dlp/ffmpeg process doesn't block forever
-                using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+                using var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMinutes(ProcessTimeoutMinutes));
                 try
                 {
-                    await process.WaitForExitAsync(cts.Token);
+                    await downloadProcess.WaitForExitAsync(cancellationTokenSource.Token);
                 }
                 catch (OperationCanceledException)
                 {
-                    try { process.Kill(entireProcessTree: true); } catch { }
-                    LastError = "yt-dlp process timed out after 5 minutes";
+                    try
+                    {
+                        downloadProcess.Kill(entireProcessTree: true);
+                    }
+                    catch
+                    {
+                        // Ignore process kill errors
+                    }
+
+                    this.LastError = ErrorProcessTimeout;
                     return null;
                 }
 
-                string stdout = await stdoutTask;
-                string stderr = await stderrTask;
+                string standardOutput = await standardOutputTask;
+                string standardError = await standardErrorTask;
 
-                if (process.ExitCode != 0)
+                if (downloadProcess.ExitCode != SuccessExitCode)
                 {
-                    LastError = $"yt-dlp exit code {process.ExitCode}: {stderr}";
+                    this.LastError = string.Format(ErrorExitCodeFormat, downloadProcess.ExitCode, standardError);
                     return null;
                 }
 
-                // Find the downloaded .mp4 file — yt-dlp prints the destination path
-                // Look for "[Merger] Merging formats into" or "[download] Destination:"
-                // or just find the newest .mp4 in the folder
-                string? filePath = FindDownloadedFile(stdout);
+                string? filePath = this.FindDownloadedFile(standardOutput);
                 if (filePath != null && File.Exists(filePath))
                 {
-                    LastError = null;
+                    this.LastError = null;
                     return filePath;
                 }
 
-                LastError = $"yt-dlp succeeded but no MP4 file found. stdout: {stdout}";
+                this.LastError = string.Format(ErrorNoMp4FoundFormat, standardOutput);
                 return null;
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                LastError = $"yt-dlp process error: {ex.Message}";
+                this.LastError = string.Format(ErrorProcessExceptionFormat, exception.Message);
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Gets the path where a video for a given YouTube video ID would be stored.
+        /// </summary>
+        /// <param name="videoId">The YouTube video identifier.</param>
+        /// <returns>The expected local file path.</returns>
+        public string GetExpectedFilePath(string videoId)
+        {
+            return Path.Combine(this.downloadFolder, string.Format(Mp4FileFormat, videoId));
         }
 
         /// <summary>
         /// Parses yt-dlp stdout to find the downloaded file path.
         /// Falls back to the newest .mp4 in the download folder.
         /// </summary>
-        private string? FindDownloadedFile(string stdout)
+        /// <param name="standardOutput">The standard output string from yt-dlp.</param>
+        /// <returns>The path to the downloaded file, or null if not found.</returns>
+        private string? FindDownloadedFile(string standardOutput)
         {
-            // yt-dlp outputs lines like:
-            //   [Merger] Merging formats into "C:\...\VIDEO_ID.mp4"
-            //   [download] C:\...\VIDEO_ID.mp4 has already been downloaded
-            //   [download] Destination: C:\...\VIDEO_ID.mp4
-            foreach (string line in stdout.Split('\n'))
+            foreach (string line in standardOutput.Split(LineBreakCharacter))
             {
-                string trimmed = line.Trim();
+                string trimmedLine = line.Trim();
 
-                // [Merger] Merging formats into "path"
-                if (trimmed.StartsWith("[Merger]") && trimmed.Contains('"'))
+                if (trimmedLine.StartsWith(MergerLogPrefix) && trimmedLine.Contains(QuoteCharacter))
                 {
-                    int first = trimmed.IndexOf('"') + 1;
-                    int last = trimmed.LastIndexOf('"');
-                    if (last > first)
+                    int firstQuoteIndex = trimmedLine.IndexOf(QuoteCharacter) + 1;
+                    int lastQuoteIndex = trimmedLine.LastIndexOf(QuoteCharacter);
+                    if (lastQuoteIndex > firstQuoteIndex)
                     {
-                        string path = trimmed[first..last];
+                        string path = trimmedLine[firstQuoteIndex..lastQuoteIndex];
                         if (File.Exists(path))
                         {
                             return path;
@@ -188,23 +242,22 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
                     }
                 }
 
-                // [download] Destination: path  OR  [download] path has already been downloaded
-                if (trimmed.StartsWith("[download]"))
+                if (trimmedLine.StartsWith(DownloadLogPrefix))
                 {
-                    string rest = trimmed["[download]".Length..].Trim();
+                    string remainingLine = trimmedLine[DownloadLogPrefix.Length..].Trim();
 
-                    if (rest.StartsWith("Destination:"))
+                    if (remainingLine.StartsWith(DestinationLogPrefix))
                     {
-                        string path = rest["Destination:".Length..].Trim();
+                        string path = remainingLine[DestinationLogPrefix.Length..].Trim();
                         if (File.Exists(path))
                         {
                             return path;
                         }
                     }
 
-                    if (rest.EndsWith("has already been downloaded"))
+                    if (remainingLine.EndsWith(AlreadyDownloadedLogSuffix))
                     {
-                        string path = rest.Replace(" has already been downloaded", "").Trim();
+                        string path = remainingLine.Replace(AlreadyDownloadedReplacement, string.Empty).Trim();
                         if (File.Exists(path))
                         {
                             return path;
@@ -213,32 +266,18 @@ namespace ubb_se_2026_meio_ai.Features.TrailerScraping.Services
                 }
             }
 
-            // Fallback: newest .mp4 in the download folder
             try
             {
-                var newest = new DirectoryInfo(_downloadFolder)
-                    .GetFiles("*.mp4")
-                    .OrderByDescending(f => f.LastWriteTimeUtc)
+                var newestFile = new DirectoryInfo(this.downloadFolder)
+                    .GetFiles(Mp4SearchPattern)
+                    .OrderByDescending(file => file.LastWriteTimeUtc)
                     .FirstOrDefault();
-                return newest?.FullName;
+                return newestFile?.FullName;
             }
             catch
             {
                 return null;
             }
-        }
-
-        /// <summary>
-        /// Contains the error message from the last failed download, if any.
-        /// </summary>
-        public string? LastError { get; private set; }
-
-        /// <summary>
-        /// Gets the path where a video for a given YouTube video ID would be stored.
-        /// </summary>
-        public string GetExpectedFilePath(string videoId)
-        {
-            return Path.Combine(_downloadFolder, $"{videoId}.mp4");
         }
     }
 }
