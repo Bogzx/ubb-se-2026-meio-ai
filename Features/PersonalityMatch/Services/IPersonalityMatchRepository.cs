@@ -1,7 +1,7 @@
-using Ubb_se_2026_meio_ai.Core.Models;
-using Ubb_se_2026_meio_ai.Features.PersonalityMatch.Models;
+using ubb_se_2026_meio_ai.Core.Models;
+using ubb_se_2026_meio_ai.Features.PersonalityMatch.Models;
 
-namespace Ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
+namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
 {
 
     public interface IPersonalityMatchRepository

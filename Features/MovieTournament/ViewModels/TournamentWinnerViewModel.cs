@@ -6,7 +6,7 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using ubb_se_2026_meio_ai.Core.Models;
 using ubb_se_2026_meio_ai.Features.MovieTournament.Services;
 
-namespace Ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
+namespace ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels
 {
     /// <summary>
     /// View model for the tournament winner page, exposing the winning movie

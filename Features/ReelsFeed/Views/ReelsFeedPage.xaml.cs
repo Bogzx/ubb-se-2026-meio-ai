@@ -6,7 +6,7 @@ using Microsoft.UI.Xaml.Media;
 using ubb_se_2026_meio_ai.Core.Models;
 using ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels;
 
-namespace Ubb_se_2026_meio_ai.Features.ReelsFeed.Views
+namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
 {
     /// <summary>
     /// Hosts the reels feed page and coordinates page-level lifecycle and playback handoff.

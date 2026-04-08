@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using ubb_se_2026_meio_ai.Core.Models;
 
-namespace Ubb_se_2026_meio_ai.Features.MovieTournament.Models
+namespace ubb_se_2026_meio_ai.Features.MovieTournament.Models
 {
     /// <summary>
     /// Represents the current state of a movie tournament,

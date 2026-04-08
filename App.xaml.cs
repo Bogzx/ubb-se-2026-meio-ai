@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
-using Ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
-using Ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories;
+using ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
+using ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories;
 using Microsoft.UI.Xaml;
 using ubb_se_2026_meio_ai.Core.Database;
 using ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels;
@@ -18,7 +18,7 @@ using ubb_se_2026_meio_ai.Core.Platform;
 using System.Diagnostics;
 using System.IO;
 
-namespace Ubb_se_2026_meio_ai
+namespace ubb_se_2026_meio_ai
 {
     /// <summary>
     /// Application entry point. Configures the DI container and initialises the database.

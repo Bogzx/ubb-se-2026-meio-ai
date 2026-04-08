@@ -1,7 +1,7 @@
 using Microsoft.Data.SqlClient;
-using Ubb_se_2026_meio_ai.Core.Database;
+using ubb_se_2026_meio_ai.Core.Database;
 
-namespace Ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
+namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
 {
     /// <summary>
     /// Raw SQL data access for the UserMoviePreference table.

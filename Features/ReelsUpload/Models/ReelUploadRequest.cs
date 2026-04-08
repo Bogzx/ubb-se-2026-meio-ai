@@ -1,4 +1,4 @@
-namespace Ubb_se_2026_meio_ai.Features.ReelsUpload.Models
+namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Models
 {
     public class ReelUploadRequest
     {

@@ -10,7 +10,7 @@ using ubb_se_2026_meio_ai.Core.Models;
 using ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
 using Windows.Media.Playback;
 
-namespace Ubb_se_2026_meio_ai.Features.ReelsFeed.Views
+namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Views
 {
     /// <summary>
     /// Single reel card with video player, like button, genre badge, progress bar,

@@ -1,10 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Ubb_se_2026_meio_ai.Features.PersonalityMatch.Models;
-using Ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels;
+using ubb_se_2026_meio_ai.Features.PersonalityMatch.Models;
+using ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels;
 
-namespace Ubb_se_2026_meio_ai.Features.PersonalityMatch.Views
+namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Views
 {
     public sealed partial class PersonalityMatchPage : Page
     {

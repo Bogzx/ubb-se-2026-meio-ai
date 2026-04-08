@@ -1,4 +1,4 @@
-namespace Ubb_se_2026_meio_ai.Features.ReelsFeed.Services
+namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
 {
     /// <summary>
     /// Provides clip source prefetching for the auto-playing feed.

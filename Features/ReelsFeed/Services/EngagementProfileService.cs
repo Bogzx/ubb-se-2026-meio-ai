@@ -1,8 +1,7 @@
-using System.Threading.Tasks;
-using Ubb_se_2026_meio_ai.Core.Models;
-using Ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories;
+using ubb_se_2026_meio_ai.Core.Models;
+using ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories;
 
-namespace Ubb_se_2026_meio_ai.Features.ReelsFeed.Services
+namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
 {
     /// <summary>
     /// Computes the user's engagement profile by aggregating raw interaction data,
@@ -11,11 +10,11 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsFeed.Services
     /// </summary>
     public class EngagementProfileService : IEngagementProfileService
     {
-        private readonly IProfileRepository profileRepository;
+        private readonly IProfileRepository _profileRepository;
 
         public EngagementProfileService(IProfileRepository profileRepository)
         {
-            this.profileRepository = profileRepository;
+            _profileRepository = profileRepository;
         }
 
         /// <inheritdoc />

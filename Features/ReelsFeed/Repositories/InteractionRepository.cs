@@ -4,7 +4,7 @@ using ubb_se_2026_meio_ai.Core;
 using ubb_se_2026_meio_ai.Core.Database;
 using ubb_se_2026_meio_ai.Core.Models;
 
-namespace Ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
+namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
 {
     /// <summary>
     /// Raw SQL data access for the UserReelInteraction table.

@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
-using Ubb_se_2026_meio_ai.Core.Database;
-using Ubb_se_2026_meio_ai.Core.Models;
+using ubb_se_2026_meio_ai.Core.Database;
+using ubb_se_2026_meio_ai.Core.Models;
 
 namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
 {

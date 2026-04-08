@@ -1,8 +1,8 @@
 using System.Threading.Tasks;
-using Ubb_se_2026_meio_ai.Core.Models;
-using Ubb_se_2026_meio_ai.Features.ReelsUpload.Models;
+using ubb_se_2026_meio_ai.Core.Models;
+using ubb_se_2026_meio_ai.Features.ReelsUpload.Models;
 
-namespace Ubb_se_2026_meio_ai.Features.ReelsUpload.Services
+namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Services
 {
     /// <summary>
     /// Handles uploading and validating video files for Reels.

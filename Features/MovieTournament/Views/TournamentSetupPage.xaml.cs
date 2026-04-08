@@ -1,8 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
-using Ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels;
+using ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels;
 
-namespace Ubb_se_2026_meio_ai.Features.MovieTournament.Views
+namespace ubb_se_2026_meio_ai.Features.MovieTournament.Views
 {
     /// <summary>
     /// Code-behind for the tournament setup page.

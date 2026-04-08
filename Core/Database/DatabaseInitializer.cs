@@ -1,6 +1,6 @@
 using Microsoft.Data.SqlClient;
 
-namespace Ubb_se_2026_meio_ai.Core.Database
+namespace ubb_se_2026_meio_ai.Core.Database
 {
 
     public class DatabaseInitializer

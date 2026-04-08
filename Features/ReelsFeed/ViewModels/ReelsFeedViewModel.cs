@@ -10,7 +10,7 @@ using ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
 using Windows.Media.Core;
 using Windows.Media.Playback;
 
-namespace Ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
+namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
 {
     /// <summary>
     /// ViewModel for the Reels Feed page.

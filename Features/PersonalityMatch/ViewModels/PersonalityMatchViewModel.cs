@@ -1,10 +1,10 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Ubb_se_2026_meio_ai.Features.PersonalityMatch.Models;
-using Ubb_se_2026_meio_ai.Features.PersonalityMatch.Services;
+using ubb_se_2026_meio_ai.Features.PersonalityMatch.Models;
+using ubb_se_2026_meio_ai.Features.PersonalityMatch.Services;
 
-namespace Ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels
+namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels
 {
     /// <summary>
     /// ViewModel for the Personality Match list page.

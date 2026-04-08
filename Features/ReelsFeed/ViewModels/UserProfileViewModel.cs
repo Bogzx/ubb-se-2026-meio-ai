@@ -3,7 +3,7 @@ using ubb_se_2026_meio_ai;
 using ubb_se_2026_meio_ai.Core.Models;
 using ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
 
-namespace Ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
+namespace ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels
 {
     /// <summary>
     /// Exposes the user's engagement metrics from <see cref="IEngagementProfileService"/>.

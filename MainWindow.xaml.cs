@@ -3,16 +3,16 @@ using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
-using Ubb_se_2026_meio_ai.Features.ReelsFeed.Views;
-using Ubb_se_2026_meio_ai.Features.ReelsUpload.Views;
-using Ubb_se_2026_meio_ai.Features.TrailerScraping.Views;
-using Ubb_se_2026_meio_ai.Features.ReelsEditing.Views;
-using Ubb_se_2026_meio_ai.Features.MovieSwipe.Views;
-using Ubb_se_2026_meio_ai.Features.MovieTournament.Views;
-using Ubb_se_2026_meio_ai.Features.PersonalityMatch.Views;
+using ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
+using ubb_se_2026_meio_ai.Features.ReelsFeed.Views;
+using ubb_se_2026_meio_ai.Features.ReelsUpload.Views;
+using ubb_se_2026_meio_ai.Features.TrailerScraping.Views;
+using ubb_se_2026_meio_ai.Features.ReelsEditing.Views;
+using ubb_se_2026_meio_ai.Features.MovieSwipe.Views;
+using ubb_se_2026_meio_ai.Features.MovieTournament.Views;
+using ubb_se_2026_meio_ai.Features.PersonalityMatch.Views;
 
-namespace Ubb_se_2026_meio_ai
+namespace ubb_se_2026_meio_ai
 {
     /// <summary>
     /// Shell window with a left NavigationView routing to each feature page.

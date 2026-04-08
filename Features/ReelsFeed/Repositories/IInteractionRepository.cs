@@ -1,6 +1,6 @@
-using Ubb_se_2026_meio_ai.Core.Models;
+using ubb_se_2026_meio_ai.Core.Models;
 
-namespace Ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
+namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
 {
     /// <summary>
     /// Repository for managing user interactions with reels, including views, likes, and metadata.

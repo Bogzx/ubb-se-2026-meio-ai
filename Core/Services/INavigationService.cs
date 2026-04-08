@@ -1,4 +1,4 @@
-namespace Ubb_se_2026_meio_ai.Core.Services
+namespace ubb_se_2026_meio_ai.Core.Services
 {
     /// <summary>
     /// Abstraction for page navigation so ViewModels can navigate 

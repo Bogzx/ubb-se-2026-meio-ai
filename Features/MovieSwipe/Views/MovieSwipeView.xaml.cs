@@ -6,10 +6,10 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
-using Ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels;
+using ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels;
 using Windows.Foundation;
 
-namespace Ubb_se_2026_meio_ai.Features.MovieSwipe.Views
+namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Views
 {
 
     public sealed partial class MovieSwipeView : Page

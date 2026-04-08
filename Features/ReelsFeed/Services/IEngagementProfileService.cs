@@ -1,6 +1,6 @@
-using Ubb_se_2026_meio_ai.Core.Models;
+using ubb_se_2026_meio_ai.Core.Models;
 
-namespace Ubb_se_2026_meio_ai.Features.ReelsFeed.Services
+namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Services
 {
     /// <summary>
     /// Manages the user's engagement profile based on aggregated interaction metrics.

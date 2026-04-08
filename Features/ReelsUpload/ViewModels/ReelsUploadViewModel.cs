@@ -7,7 +7,7 @@ using ubb_se_2026_meio_ai.Core.Database;
 using ubb_se_2026_meio_ai.Core.Models;
 using ubb_se_2026_meio_ai.Core.Platform;
 
-namespace Ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
+namespace ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
 {
     /// <summary>
     /// ViewModel for the Reels Upload page.
@@ -106,7 +106,7 @@ namespace Ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels
 
                 _appWindowContext.TryEnqueueOnUiThread(() => StatusMessage = "Uploading to Blob Storage & saving metadata...");
 
-                var request = new Ubb_se_2026_meio_ai.Features.ReelsUpload.Models.ReelUploadRequest
+                var request = new ubb_se_2026_meio_ai.Features.ReelsUpload.Models.ReelUploadRequest
                 {
                     LocalFilePath = LocalVideoFilePath,
                     Title = string.IsNullOrWhiteSpace(ReelTitle) ? "Untitled Reel" : ReelTitle,

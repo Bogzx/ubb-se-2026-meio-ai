@@ -1,6 +1,6 @@
-using Ubb_se_2026_meio_ai.Core.Models;
+using ubb_se_2026_meio_ai.Core.Models;
 
-namespace Ubb_se_2026_meio_ai.Features.MovieSwipe.Services
+namespace ubb_se_2026_meio_ai.Features.MovieSwipe.Services
 {
 
     public class SwipeService : ISwipeService

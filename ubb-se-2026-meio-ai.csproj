@@ -13,8 +13,6 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<NoWarn>$(NoWarn);MVVMTK0045</NoWarn>
-		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-		<IsTestProject>false</IsTestProject>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(DisableWindowsAppSdkAutoInit)'=='true'">
@@ -22,6 +20,7 @@
 		<WindowsAppSdkDeploymentManagerInitialize>false</WindowsAppSdkDeploymentManagerInitialize>
 		<WindowsAppSdkUndockedRegFreeWinRTInitialize>false</WindowsAppSdkUndockedRegFreeWinRTInitialize>
 	</PropertyGroup>
+
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<CodeAnalysisRuleSet>SE.ruleset</CodeAnalysisRuleSet>
@@ -51,15 +50,19 @@
 		<Manifest Include="$(ApplicationManifest)" />
 	</ItemGroup>
 
+	<!--
+    Defining the "Msix" ProjectCapability here allows the Single-project MSIX Packaging
+    Tools extension to be activated for this project even if the Windows App SDK Nuget
+    package has not yet been restored.
+  -->
 	<ItemGroup Condition="'$(DisableMsixProjectCapabilityAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
 		<ProjectCapability Include="Msix" />
 	</ItemGroup>
-
 	<ItemGroup>
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
 		<PackageReference Include="coverlet.msbuild" Version="8.0.1">
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-			<PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		  <PrivateAssets>all</PrivateAssets>
 		</PackageReference>
 		<PackageReference Include="coverlet.MTP" Version="8.0.1" />
 		<PackageReference Include="Google.Apis.YouTube.v3" Version="1.73.0.4093" />
@@ -73,7 +76,6 @@
 		</PackageReference>
 		<PackageReference Include="YoutubeDLSharp" Version="1.2.0" />
 	</ItemGroup>
-
 	<ItemGroup>
 		<Folder Include="Tools\" />
 	</ItemGroup>
@@ -101,10 +103,16 @@
 		<ProjectReference Include="MeioAi.Logic\MeioAi.Logic.csproj" />
 	</ItemGroup>
 
+	<!--
+    Defining the "HasPackageAndPublishMenuAddedByProject" property here allows the Solution
+    Explorer "Package and Publish" context menu entry to be enabled for this project even if
+    the Windows App SDK Nuget package has not yet been restored.
+  -->
 	<PropertyGroup Condition="'$(DisableHasPackageAndPublishMenuAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
 		<HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
 	</PropertyGroup>
 
+	<!-- Publish Properties -->
 	<PropertyGroup>
 		<PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
 		<PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>

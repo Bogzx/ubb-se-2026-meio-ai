@@ -1,4 +1,4 @@
-namespace Ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
+namespace ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories
 {
     /// <summary>
     /// Repository for managing user movie preferences in the reels feed context.

@@ -3,7 +3,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using ubb_se_2026_meio_ai.Features.MovieTournament.Services;
 
-namespace Ubb_se_2026_meio_ai.Features.MovieTournament.Views
+namespace ubb_se_2026_meio_ai.Features.MovieTournament.Views
 {
     /// <summary>
     /// Host page for the movie tournament feature.

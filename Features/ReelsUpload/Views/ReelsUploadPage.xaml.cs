@@ -1,9 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
-using Ubb_se_2026_meio_ai.Core.Models;
-using Ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels;
+using ubb_se_2026_meio_ai.Core.Models;
+using ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels;
 
-namespace Ubb_se_2026_meio_ai.Features.ReelsUpload.Views
+namespace ubb_se_2026_meio_ai.Features.ReelsUpload.Views
 {
     /// <summary>
     /// Code-behind for the Reels Upload page.

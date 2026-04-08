@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using ubb_se_2026_meio_ai.Core.Models;
 using ubb_se_2026_meio_ai.Features.MovieTournament.Models;
 
-namespace Ubb_se_2026_meio_ai.Features.MovieTournament.Services
+namespace ubb_se_2026_meio_ai.Features.MovieTournament.Services
 {
     /// <summary>
     /// Implements the tournament bracket logic, including pool shuffling,
