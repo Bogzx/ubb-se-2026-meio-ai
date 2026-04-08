@@ -6,10 +6,30 @@ using ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels;
 
 namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Views
 {
+    /// <summary>
+    /// A page that displays the personality match list for the currently active user,
+    /// including top compatibility matches, fallback random users, and an account switcher panel.
+    /// </summary>
     public sealed partial class PersonalityMatchPage : Page
     {
+        private const double AccountPickerListViewHeight = 200;
+        private const string AccountPickerItemTemplateKey = "AccountPickerItemTemplate";
+        private const string AddAccountDialogTitle = "Add account";
+        private const string AddAccountDialogPrimaryButtonText = "Add";
+        private const string AddAccountDialogCancelButtonText = "Cancel";
+        private const string NoAccountsAvailableMessage = "All available accounts have already been added.";
+        private const string NoAccountsAvailableCloseButtonText = "OK";
+
+        /// <summary>
+        /// Gets the ViewModel that drives this page's data and logic.
+        /// </summary>
         public PersonalityMatchViewModel ViewModel { get; }
 
+        /// <summary>
+        /// Initializes a new instance of <see cref="PersonalityMatchPage"/>, resolves its ViewModel
+        /// from the dependency injection container, and subscribes to navigation events.
+        /// Subscriptions are cleaned up when the page is unloaded.
+        /// </summary>
         public PersonalityMatchPage()
         {
             ViewModel = App.Services.GetRequiredService<PersonalityMatchViewModel>();
@@ -17,98 +37,187 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Views
 
             ViewModel.NavigateToDetail += OnNavigateToDetail;
             ViewModel.NavigateToCurrentUserDetail += OnNavigateToCurrentUserDetail;
-            this.Unloaded += (_, _) =>
-            {
-                ViewModel.NavigateToDetail -= OnNavigateToDetail;
-                ViewModel.NavigateToCurrentUserDetail -= OnNavigateToCurrentUserDetail;
-            };
+            this.Unloaded += OnPageUnloaded;
         }
 
-        private async void Page_Loaded(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Handles the page loaded event. Triggers an initial match load if no results are currently present and the no-match state has not already been set.
+        /// </summary>
+        /// <param name="sender">The source of the loaded event.</param>
+        /// <param name="routedEventArguments">The event data.</param>
+        private async void Page_Loaded(object sender, RoutedEventArgs routedEventArguments)
         {
-            if (ViewModel.MatchResults.Count == 0 && !ViewModel.ShowNoMatch)
+            bool hasNoResultsYet = ViewModel.MatchResults.Count == 0 && !ViewModel.ShowNoMatch;
+            if (hasNoResultsYet)
             {
                 await ViewModel.LoadMatchesAsync();
             }
         }
 
-        private void MatchListView_ItemClick(object sender, ItemClickEventArgs e)
+        /// <summary>
+        /// Unsubscribes from ViewModel navigation events when the page is unloaded to prevent memory leaks.
+        /// </summary>
+        /// <param name="sender">The source of the unloaded event.</param>
+        /// <param name="routedEventArguments">The event data.</param>
+        private void OnPageUnloaded(object sender, RoutedEventArgs routedEventArguments)
         {
-            if (e.ClickedItem is MatchResult match)
-                ViewModel.ViewUserDetailCommand.Execute(match);
+            ViewModel.NavigateToDetail -= OnNavigateToDetail;
+            ViewModel.NavigateToCurrentUserDetail -= OnNavigateToCurrentUserDetail;
         }
 
-        private void FallbackListView_ItemClick(object sender, ItemClickEventArgs e)
+        /// <summary>
+        /// Handles item clicks in the match results list view by forwarding the selected <see cref="MatchResult"/> to the ViewModel's view user detail command.
+        /// </summary>
+        /// <param name="sender">The source of the click event.</param>
+        /// <param name="itemClickEventArguments">The event data containing the clicked item.</param>
+        private void MatchListView_ItemClick(object sender, ItemClickEventArgs itemClickEventArguments)
         {
-            if (e.ClickedItem is MatchResult match)
-                ViewModel.ViewUserDetailCommand.Execute(match);
-        }
-
-        private void OtherAccountsList_ItemClick(object sender, ItemClickEventArgs e)
-        {
-            if (e.ClickedItem is UserAccountModel account)
-                ViewModel.SwitchAccountCommand.Execute(account);
-        }
-
-        private async void AddAccount_Click(object sender, RoutedEventArgs e)
-        {
-            var available = ViewModel.GetAvailableAccountsToAdd();
-
-            if (available.Count == 0)
+            bool clickedItemIsMatchResult = itemClickEventArguments.ClickedItem is MatchResult;
+            if (clickedItemIsMatchResult)
             {
-                var noMoreDialog = new ContentDialog
-                {
-                    Title = "Add account",
-                    Content = "All available accounts have already been added.",
-                    CloseButtonText = "OK",
-                    XamlRoot = this.XamlRoot,
-                };
-                await noMoreDialog.ShowAsync();
+                MatchResult matchResult = (MatchResult)itemClickEventArguments.ClickedItem;
+                ViewModel.ViewUserDetailCommand.Execute(matchResult);
+            }
+        }
+
+        /// <summary>
+        /// Handles item clicks in the fallback random users list view by forwarding the selected <see cref="MatchResult"/> to the ViewModel's view user detail command.
+        /// </summary>
+        /// <param name="sender">The source of the click event.</param>
+        /// <param name="itemClickEventArguments">The event data containing the clicked item.</param>
+        private void FallbackListView_ItemClick(object sender, ItemClickEventArgs itemClickEventArguments)
+        {
+            bool clickedItemIsMatchResult = itemClickEventArguments.ClickedItem is MatchResult;
+            if (clickedItemIsMatchResult)
+            {
+                MatchResult matchResult = (MatchResult)itemClickEventArguments.ClickedItem;
+                ViewModel.ViewUserDetailCommand.Execute(matchResult);
+            }
+        }
+
+        /// <summary>
+        /// Handles item clicks in the account switcher list by forwarding the selected
+        /// <see cref="UserAccountModel"/> to the ViewModel's switch account command.
+        /// </summary>
+        /// <param name="sender">The source of the click event.</param>
+        /// <param name="itemClickEventArguments">The event data containing the clicked item.</param>
+        private void OtherAccountsList_ItemClick(object sender, ItemClickEventArgs itemClickEventArguments)
+        {
+            bool clickedItemIsUserAccount = itemClickEventArguments.ClickedItem is UserAccountModel;
+            if (clickedItemIsUserAccount)
+            {
+                UserAccountModel userAccount = (UserAccountModel)itemClickEventArguments.ClickedItem;
+                ViewModel.SwitchAccountCommand.Execute(userAccount);
+            }
+        }
+
+        /// <summary>
+        /// Handles the add account button click. Presents a dialog listing all accounts
+        /// not yet added to the switcher, and adds the selected account via the ViewModel
+        /// if the user confirms. Shows an informational dialog if no accounts are available to add.
+        /// </summary>
+        /// <param name="sender">The source of the click event.</param>
+        /// <param name="routedEventArguments">The event data.</param>
+        private async void AddAccount_Click(object sender, RoutedEventArgs routedEventArguments)
+        {
+            IReadOnlyList<UserAccountModel> availableAccounts = ViewModel.GetAvailableAccountsToAdd();
+
+            bool noAccountsAreAvailable = availableAccounts.Count == 0;
+            if (noAccountsAreAvailable)
+            {
+                await ShowNoAccountsAvailableDialogAsync();
                 return;
             }
 
-            var accountListView = new ListView
-            {
-                ItemsSource = available,
-                SelectionMode = ListViewSelectionMode.Single,
-                Height = 200,
-                ItemTemplate = (DataTemplate)Resources["AccountPickerItemTemplate"],
-            };
+            ListView accountPickerListView = BuildAccountPickerListView(availableAccounts);
+            ContentDialog addAccountDialog = BuildAddAccountDialog(accountPickerListView);
 
-            var dialog = new ContentDialog
-            {
-                Title = "Add account",
-                Content = accountListView,
-                PrimaryButtonText = "Add",
-                CloseButtonText = "Cancel",
-                XamlRoot = this.XamlRoot,
-            };
+            ContentDialogResult dialogResult = await addAccountDialog.ShowAsync();
 
-            var result = await dialog.ShowAsync();
-            if (result == ContentDialogResult.Primary && accountListView.SelectedItem is UserAccountModel selected)
+            bool userConfirmedSelection = dialogResult == ContentDialogResult.Primary;
+            bool anAccountWasSelected = accountPickerListView.SelectedItem is UserAccountModel;
+            if (userConfirmedSelection && anAccountWasSelected)
             {
-                ViewModel.AddAccount(selected);
+                UserAccountModel selectedAccount = (UserAccountModel)accountPickerListView.SelectedItem;
+                ViewModel.AddAccount(selectedAccount);
             }
         }
 
-        private void OnNavigateToDetail(MatchResult match)
+        /// <summary>
+        /// Handles the <see cref="PersonalityMatchViewModel.NavigateToDetail"/> event
+        /// by navigating to <see cref="MatchedUserDetailPage"/> with the selected match as the parameter.
+        /// </summary>
+        /// <param name="matchResult">The match result to display in the detail page.</param>
+        private void OnNavigateToDetail(MatchResult matchResult)
         {
-            Frame.Navigate(typeof(MatchedUserDetailPage), match);
+            Frame.Navigate(typeof(MatchedUserDetailPage), matchResult);
         }
 
+        /// <summary>
+        /// Handles the <see cref="PersonalityMatchViewModel.NavigateToCurrentUserDetail"/> event
+        /// by navigating to <see cref="MatchedUserDetailPage"/> for the current user's own profile.
+        /// Delegates construction of the self-view match result to the ViewModel.
+        /// </summary>
+        /// <param name="account">The current user's account model.</param>
         private void OnNavigateToCurrentUserDetail(UserAccountModel account)
         {
-            // Reuse MatchedUserDetailPage for the current user's own profile view.
-            // IsSelfView=true hides the compatibility bar (meaningless for your own account).
-            var selfMatch = new MatchResult
+            MatchResult selfViewMatchResult = ViewModel.BuildSelfViewMatchResult(account);
+            Frame.Navigate(typeof(MatchedUserDetailPage), selfViewMatchResult);
+        }
+
+        /// <summary>
+        /// Displays an informational <see cref="ContentDialog"/> notifying the user
+        /// that no additional accounts are available to add to the switcher.
+        /// </summary>
+        private async Task ShowNoAccountsAvailableDialogAsync()
+        {
+            ContentDialog noAccountsDialog = new ContentDialog
             {
-                MatchedUserId = account.UserId,
-                MatchedUsername = account.Username,
-                MatchScore = 100,
-                FacebookAccount = account.FacebookAccount,
-                IsSelfView = true,
+                Title = AddAccountDialogTitle,
+                Content = NoAccountsAvailableMessage,
+                CloseButtonText = NoAccountsAvailableCloseButtonText,
+                XamlRoot = this.XamlRoot,
             };
-            Frame.Navigate(typeof(MatchedUserDetailPage), selfMatch);
+            await noAccountsDialog.ShowAsync();
+        }
+
+        /// <summary>
+        /// Constructs a <see cref="ListView"/> populated with the provided accounts
+        /// and configured with the account picker item template and single-selection mode.
+        /// </summary>
+        /// <param name="availableAccounts">The list of accounts to display in the picker.</param>
+        /// <returns>
+        /// A configured <see cref="ListView"/> ready to be embedded in the add account dialog.
+        /// </returns>
+        private ListView BuildAccountPickerListView(IReadOnlyList<UserAccountModel> availableAccounts)
+        {
+            return new ListView
+            {
+                ItemsSource = availableAccounts,
+                SelectionMode = ListViewSelectionMode.Single,
+                Height = AccountPickerListViewHeight,
+                ItemTemplate = (DataTemplate)Resources[AccountPickerItemTemplateKey],
+            };
+        }
+
+        /// <summary>
+        /// Constructs a <see cref="ContentDialog"/> for adding an account,
+        /// embedding the provided account picker list view as its content.
+        /// </summary>
+        /// <param name="accountPickerListView">The list view to embed as the dialog's content.</param>
+        /// <returns>
+        /// A configured <see cref="ContentDialog"/> ready to be shown to the user.
+        /// </returns>
+        private ContentDialog BuildAddAccountDialog(ListView accountPickerListView)
+        {
+            return new ContentDialog
+            {
+                Title = AddAccountDialogTitle,
+                Content = accountPickerListView,
+                PrimaryButtonText = AddAccountDialogPrimaryButtonText,
+                CloseButtonText = AddAccountDialogCancelButtonText,
+                XamlRoot = this.XamlRoot,
+            };
         }
     }
 }
