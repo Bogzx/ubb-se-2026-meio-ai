@@ -1,21 +1,26 @@
 using Microsoft.Extensions.DependencyInjection;
-using ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
-using ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories;
 using Microsoft.UI.Xaml;
-using ubb_se_2026_meio_ai.Core.Database;
-using ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels;
-using ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels;
-using ubb_se_2026_meio_ai.Features.TrailerScraping.Services;
-using ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels;
-using ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels;
-using ubb_se_2026_meio_ai.Features.MovieSwipe.Services;
-using ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels;
-using ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels;
-using ubb_se_2026_meio_ai.Features.PersonalityMatch.Services;
-using ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels;
-using ubb_se_2026_meio_ai.Features.MovieTournament.Services;
 using System.Diagnostics;
 using System.IO;
+using ubb_se_2026_meio_ai.Core.Database;
+using ubb_se_2026_meio_ai.Core.Platform;
+using ubb_se_2026_meio_ai.Core.Repositories;
+using ubb_se_2026_meio_ai.Core.Services;
+using ubb_se_2026_meio_ai.Features.MovieSwipe.Services;
+using ubb_se_2026_meio_ai.Features.MovieSwipe.ViewModels;
+using ubb_se_2026_meio_ai.Features.MovieTournament.Services;
+using ubb_se_2026_meio_ai.Features.MovieTournament.ViewModels;
+using ubb_se_2026_meio_ai.Features.PersonalityMatch.Services;
+using ubb_se_2026_meio_ai.Features.PersonalityMatch.ViewModels;
+using ubb_se_2026_meio_ai.Features.ReelsEditing.ViewModels;
+using ubb_se_2026_meio_ai.Features.ReelsFeed.Repositories;
+using ubb_se_2026_meio_ai.Features.ReelsFeed.Services;
+using ubb_se_2026_meio_ai.Features.ReelsFeed.ViewModels;
+using ubb_se_2026_meio_ai.Features.ReelsUpload.Repository;
+using ubb_se_2026_meio_ai.Features.ReelsUpload.Services;
+using ubb_se_2026_meio_ai.Features.ReelsUpload.ViewModels;
+using ubb_se_2026_meio_ai.Features.TrailerScraping.Services;
+using ubb_se_2026_meio_ai.Features.TrailerScraping.ViewModels;
 
 namespace ubb_se_2026_meio_ai
 {
@@ -108,6 +113,16 @@ namespace ubb_se_2026_meio_ai
 
         protected override async void OnLaunched(LaunchActivatedEventArgs args)
         {
+            // Ensure that the appdata folder is created
+            string appFolder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "MeioAI"
+                );
+
+            if (!Directory.Exists(appFolder)) {
+                Directory.CreateDirectory(appFolder);
+            }
+
             try
             {
                 // Ensure shared tables exist before any feature code runs.
@@ -143,10 +158,10 @@ namespace ubb_se_2026_meio_ai
         /// </summary>
         private static string ResolveYouTubeApiKey()
         {
-            if (!string.IsNullOrWhiteSpace(YouTubeApiKey))
-            {
-                return YouTubeApiKey;
-            }
+            //if (!string.IsNullOrWhiteSpace(YouTubeApiKey))
+            //{
+            //    return YouTubeApiKey;
+            //}
 
             return Environment.GetEnvironmentVariable("YOUTUBE_API_KEY") ?? string.Empty;
         }
@@ -160,6 +175,7 @@ namespace ubb_se_2026_meio_ai
         {
             // ── Core / Database ──────────────────────────────────────────
             services.AddSingleton<ISqlConnectionFactory, SqlConnectionFactory>();
+            services.AddSingleton<IAppWindowContext, AppWindowContext>();
             services.AddTransient<DatabaseInitializer>();
 
             // ── Andrei — Trailer Scraping Services ───────────────────────
@@ -184,8 +200,12 @@ namespace ubb_se_2026_meio_ai
             services.AddTransient<UserProfileViewModel>();
 
             // ── Feature Services ─────────────────────────────────────────
-            services.AddTransient<Features.ReelsUpload.Services.IVideoStorageService,
-                                  Features.ReelsUpload.Services.VideoStorageService>();
+            services.AddTransient<IVideoStorageRepository, VideoStorageRepository>();
+            services.AddTransient<IMovieRepository, MovieRepository>();
+            services.AddTransient<IVideoStorageService, VideoStorageService>();
+            services.AddTransient<IMovieService, MovieService>();
+            // (Depending on your app setup, you might also need to register the ViewModel itself!)
+            services.AddTransient<ReelsUploadViewModel>();
             // ── Beatrice (Reels Editing) ──
             services.AddTransient<Features.ReelsEditing.Services.ReelRepository>();
             services.AddTransient<Features.ReelsEditing.Services.IVideoProcessingService,
@@ -211,6 +231,7 @@ namespace ubb_se_2026_meio_ai
             services.AddTransient<IInteractionRepository, InteractionRepository>();
             services.AddTransient<IProfileRepository, ProfileRepository>();
             services.AddTransient<Features.ReelsFeed.Repositories.IPreferenceRepository, Features.ReelsFeed.Repositories.PreferenceRepository>();
+            services.AddTransient<IRecommendationRepository, RecommendationRepository>();
 
             // Tudor – Services
             services.AddTransient<IReelInteractionService, ReelInteractionService>();
