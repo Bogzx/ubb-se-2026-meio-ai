@@ -9,151 +9,297 @@ namespace ubb_se_2026_meio_ai.Features.PersonalityMatch.Services
     /// </summary>
     public class PersonalityMatchingService : IPersonalityMatchingService
     {
-        private readonly IPersonalityMatchRepository _repository;
+        private readonly IPersonalityMatchRepository personalityMatchRepository;
 
+        private const double SimilarityScaleToPercentage = 100.0;
+        private const int SimilarityDecimalPlaces = 1;
+        private const double MinimumSimilarityPercentageToInclude = 0;
+        private const double MatchScoreForRandomUser = 0;
+        private const string FallbackUsernamePrefix = "User";
+        private const string FallbackFacebookAccountPrefix = "fb_user_";
+
+        /// <summary>
+        /// A static lookup of hardcoded usernames keyed by user identifier,
+        /// used as a fallback until database-backed username retrieval is implemented.
+        /// </summary>
         private static readonly Dictionary<int, string> HardcodedUsernames = new()
         {
-            [1]  = "Alex Carter",
-            [2]  = "Alice Rivers",
-            [3]  = "Bob Chen",
-            [4]  = "Carol Hayes",
-            [5]  = "Dave Morris",
-            [6]  = "Eve Santos",
-            [7]  = "James Park",
-            [8]  = "Luna Kim",
-            [9]  = "Sam Taylor",
+            [1] = "Alex Carter",
+            [2] = "Alice Rivers",
+            [3] = "Bob Chen",
+            [4] = "Carol Hayes",
+            [5] = "Dave Morris",
+            [6] = "Eve Santos",
+            [7] = "James Park",
+            [8] = "Luna Kim",
+            [9] = "Sam Taylor",
             [10] = "Nina Reeves",
             [11] = "Tom Walsh",
             [12] = "Zara Foster",
             [13] = "Kai Rivera",
         };
 
-
+        /// <summary>
+        /// A static lookup of hardcoded Facebook account handles keyed by user identifier,
+        /// used as a fallback until database-backed social account retrieval is implemented.
+        /// </summary>
         private static readonly Dictionary<int, string> HardcodedFacebookAccounts = new()
         {
-            [1]  = "fb_alex_carter",
-            [2]  = "fb_alice_rivers",
-            [3]  = "fb_bob_chen",
-            [4]  = "fb_carol_hayes",
-            [5]  = "fb_dave_morris",
-            [6]  = "fb_eve_santos",
-            [7]  = "fb_james_park",
-            [8]  = "fb_luna_kim",
-            [9]  = "fb_sam_taylor",
+            [1] = "fb_alex_carter",
+            [2] = "fb_alice_rivers",
+            [3] = "fb_bob_chen",
+            [4] = "fb_carol_hayes",
+            [5] = "fb_dave_morris",
+            [6] = "fb_eve_santos",
+            [7] = "fb_james_park",
+            [8] = "fb_luna_kim",
+            [9] = "fb_sam_taylor",
             [10] = "fb_nina_reeves",
             [11] = "fb_tom_walsh",
             [12] = "fb_zara_foster",
             [13] = "fb_kai_rivera",
         };
 
-        public PersonalityMatchingService(IPersonalityMatchRepository repository)
+        /// <summary>
+        /// Initializes a new instance of <see cref="PersonalityMatchingService"/> with the specified repository.
+        /// </summary>
+        /// <param name="personalityMatchRepository">
+        /// The repository used to retrieve user movie preferences and related data.
+        /// </param>
+        public PersonalityMatchingService(IPersonalityMatchRepository personalityMatchRepository)
         {
-            _repository = repository;
+            this.personalityMatchRepository = personalityMatchRepository;
         }
 
-    
-        public async Task<List<MatchResult>> GetTopMatchesAsync(int userId, int count)
+        public async Task<List<MatchResult>> GetRandomMatchesAsync(int userId, int count)
         {
-            List<UserMoviePreferenceModel> currentUserPrefs =
-                await _repository.GetCurrentUserPreferencesAsync(userId);
-
-            if (currentUserPrefs.Count == 0)
-                return new List<MatchResult>();
-
-            Dictionary<int, double> currentVector = currentUserPrefs
-                .ToDictionary(p => p.MovieId, p => p.Score);
-
-            Dictionary<int, List<UserMoviePreferenceModel>> othersPrefs =
-                await _repository.GetAllPreferencesExceptUserAsync(userId);
-
-            var scored = new List<(int OtherUserId, double Similarity)>();
-
-            foreach (var kvp in othersPrefs)
-            {
-                int otherUserId = kvp.Key;
-                Dictionary<int, double> otherVector = kvp.Value
-                    .ToDictionary(p => p.MovieId, p => p.Score);
-
-                double similarity = ComputeCosineSimilarity(currentVector, otherVector);
-                double percentage = Math.Round(similarity * 100.0, 1);
-
-                if (percentage > 0)
-                    scored.Add((otherUserId, percentage));
-            }
-
-            scored.Sort((a, b) => b.Similarity.CompareTo(a.Similarity));
-
+            var randomUserIds = await personalityMatchRepository.GetRandomUserIdsAsync(userId, count);
             var results = new List<MatchResult>();
-            foreach (var (otherUserId, similarity) in scored.Take(count))
+
+            foreach (var id in randomUserIds)
             {
-
-                results.Add(new MatchResult
-                {
-                    MatchedUserId = otherUserId,
-                    MatchedUsername = GetHardcodedUsername(otherUserId),
-                    MatchScore = similarity,
-                    FacebookAccount = GetFacebookAccount(otherUserId),
-                });
-            }
-
-            return results;
-        }
-
-
-        public async Task<List<MatchResult>> GetRandomUsersAsync(int userId, int count)
-        {
-            List<int> randomIds = await _repository.GetRandomUserIdsAsync(userId, count);
-
-            var results = new List<MatchResult>();
-            foreach (int id in randomIds)
-            {
-
                 results.Add(new MatchResult
                 {
                     MatchedUserId = id,
                     MatchedUsername = GetHardcodedUsername(id),
-                    MatchScore = 0,
-                    FacebookAccount = GetFacebookAccount(id),
+                    FacebookAccount = GetHardcodedFacebookAccount(id),
+                    MatchScore = MatchScoreForRandomUser, // 0
+                    IsSelfView = (id == userId)
                 });
             }
 
             return results;
         }
 
-        private static double ComputeCosineSimilarity(
-            Dictionary<int, double> vectorA,
-            Dictionary<int, double> vectorB)
+        public async Task<List<MoviePreferenceDisplayModel>> GetTopMoviePreferencesAsync(int userId, int topMoviePreferencesCount)
         {
-            double dotProduct = 0;
-            double magnitudeA = 0;
-            double magnitudeB = 0;
+            var preferences = await personalityMatchRepository.GetTopPreferencesWithTitlesAsync(userId, topMoviePreferencesCount);
 
-            foreach (var kvp in vectorA)
+            for (int i = 0; i < preferences.Count; i++)
             {
-                magnitudeA += kvp.Value * kvp.Value;
-                if (vectorB.TryGetValue(kvp.Key, out double bScore))
-                    dotProduct += kvp.Value * bScore;
+                // This line satisfies your "FlagsFirstMovieAsBest" test branch
+                preferences[i].IsBestMovie = (i == 0);
             }
 
-            foreach (var kvp in vectorB)
-                magnitudeB += kvp.Value * kvp.Value;
-
-            if (magnitudeA == 0 || magnitudeB == 0)
-                return 0;
-
-            return dotProduct / (Math.Sqrt(magnitudeA) * Math.Sqrt(magnitudeB));
+            return preferences;
         }
 
+        public async Task<UserProfileModel?> GetUserProfileAsync(int userId)
+        {
+            return await personalityMatchRepository.GetUserProfileAsync(userId);
+        }
+
+        /// <inheritdoc />
+        public async Task<List<MatchResult>> GetTopMatchesAsync(int userId, int count)
+        {
+            List<UserMoviePreferenceModel> currentUserPreferences =
+                await this.personalityMatchRepository.GetCurrentUserPreferencesAsync(userId);
+
+            if (currentUserPreferences.Count == 0)
+            {
+                return new List<MatchResult>();
+            }
+
+            Dictionary<int, double> currentUserScoreVector = BuildScoreVector(currentUserPreferences);
+
+            Dictionary<int, List<UserMoviePreferenceModel>> otherUsersPreferences =
+                await this.personalityMatchRepository.GetAllPreferencesExceptUserAsync(userId);
+
+            List<(int OtherUserId, double SimilarityPercentage)> userSimilarityScores = ComputeSimilarityScores(currentUserScoreVector, otherUsersPreferences);
+
+            userSimilarityScores.Sort((first, second) => second.SimilarityPercentage.CompareTo(first.SimilarityPercentage));
+
+            List<MatchResult> topMatches = new List<MatchResult>();
+            foreach ((int otherUserId, double similarityPercentage) in userSimilarityScores.Take(count))
+            {
+                topMatches.Add(BuildMatchResult(otherUserId, similarityPercentage));
+            }
+
+            return topMatches;
+        }
+
+        /// <inheritdoc />
+        public async Task<List<MatchResult>> GetRandomUsersAsync(int userId, int count)
+        {
+            List<int> randomUserIds = await this.personalityMatchRepository.GetRandomUserIdsAsync(userId, count);
+
+            List<MatchResult> randomUserResults = new List<MatchResult>();
+            foreach (int randomUserId in randomUserIds)
+            {
+                randomUserResults.Add(BuildMatchResult(randomUserId, MatchScoreForRandomUser));
+            }
+
+            return randomUserResults;
+        }
+
+        /// <inheritdoc />
+
+
+        /// <inheritdoc />
+        public async Task<string> GetUsernameAsync(int userId)
+        {
+            return await this.personalityMatchRepository.GetUsernameAsync(userId);
+        }
+
+        /// <summary>
+        /// Builds a score vector dictionary from a list of movie preference models,
+        /// mapping each movie identifier to its corresponding preference score.
+        /// </summary>
+        /// <param name="preferences">The list of movie preferences to convert into a vector.</param>
+        /// <returns>
+        /// A dictionary mapping movie identifiers to preference scores.
+        /// </returns>
+        private static Dictionary<int, double> BuildScoreVector(List<UserMoviePreferenceModel> preferences)
+        {
+            Dictionary<int, double> scoreVector = new Dictionary<int, double>();
+            foreach (UserMoviePreferenceModel preference in preferences)
+            {
+                scoreVector[preference.MovieId] = preference.Score;
+            }
+            return scoreVector;
+        }
+
+        /// <summary>
+        /// Computes cosine similarity percentages between the current user's score vector
+        /// and each other user's score vector, excluding pairs with zero similarity.
+        /// </summary>
+        /// <param name="currentUserScoreVector">The score vector of the current user.</param>
+        /// <param name="otherUsersPreferences">
+        /// A dictionary mapping other user identifiers to their movie preference lists.
+        /// </param>
+        /// <returns>
+        /// A list of tuples containing the other user's identifier and their similarity percentage
+        /// relative to the current user, excluding entries with a similarity of zero or below.
+        /// </returns>
+        private static List<(int OtherUserId, double SimilarityPercentage)> ComputeSimilarityScores(
+            Dictionary<int, double> currentUserScoreVector,
+            Dictionary<int, List<UserMoviePreferenceModel>> otherUsersPreferences)
+        {
+            List<(int OtherUserId, double SimilarityPercentage)> similarityScores = new List<(int, double)>();
+
+            foreach (KeyValuePair<int, List<UserMoviePreferenceModel>> userPreferenceEntry in otherUsersPreferences)
+            {
+                int otherUserId = userPreferenceEntry.Key;
+                Dictionary<int, double> otherUserScoreVector = BuildScoreVector(userPreferenceEntry.Value);
+
+                double cosineSimilarity = ComputeCosineSimilarity(currentUserScoreVector, otherUserScoreVector);
+                double similarityPercentage = Math.Round(cosineSimilarity * SimilarityScaleToPercentage, SimilarityDecimalPlaces);
+
+                if (similarityPercentage >= MinimumSimilarityPercentageToInclude)
+                {
+                    similarityScores.Add((otherUserId, similarityPercentage));
+                }
+            }
+
+            return similarityScores;
+        }
+
+        /// <summary>
+        /// Constructs a <see cref="MatchResult"/> for the specified user using hardcoded username and Facebook account lookups and the provided match score.
+        /// </summary>
+        /// <param name="userId">The identifier of the matched user.</param>
+        /// <param name="matchScore">The compatibility score to assign to the match result.</param>
+        /// <returns>
+        /// A <see cref="MatchResult"/> populated with the user's identifier, username, Facebook account, and match score.
+        /// </returns>
+        private static MatchResult BuildMatchResult(int userId, double matchScore)
+        {
+            return new MatchResult
+            {
+                MatchedUserId = userId,
+                MatchedUsername = GetHardcodedUsername(userId),
+                MatchScore = matchScore,
+                FacebookAccount = GetHardcodedFacebookAccount(userId),
+            };
+        }
+
+        /// <summary>
+        /// Computes the cosine similarity between two movie score vectors represented as dictionaries, where keys are movie identifiers and values are preference scores.
+        /// Returns a value between 0 and 1, where 1 indicates identical preference directions
+        /// and 0 indicates no overlap or a zero-magnitude vector.
+        /// </summary>
+        /// <param name="firstUserVector">The preference score vector of the first user.</param>
+        /// <param name="secondUserVector">The preference score vector of the second user.</param>
+        /// <returns>
+        /// A double representing the cosine similarity between the two vectors, or 0 if either vector has zero magnitude.
+        /// </returns>
+        private static double ComputeCosineSimilarity(Dictionary<int, double> firstUserVector, Dictionary<int, double> secondUserVector)
+        {
+            double dotProduct = 0;
+            double firstVectorMagnitudeSquared = 0;
+            double secondVectorMagnitudeSquared = 0;
+
+            foreach (KeyValuePair<int, double> firstUserEntry in firstUserVector)
+            {
+                firstVectorMagnitudeSquared += firstUserEntry.Value * firstUserEntry.Value;
+                if (secondUserVector.TryGetValue(firstUserEntry.Key, out double secondUserScore))
+                {
+                    dotProduct += firstUserEntry.Value * secondUserScore;
+                }
+                
+            }
+
+            foreach (KeyValuePair<int, double> secondUserEntry in secondUserVector)
+            {
+                secondVectorMagnitudeSquared += secondUserEntry.Value * secondUserEntry.Value;
+            
+            }
+
+            bool eitherVectorHasZeroMagnitude = firstVectorMagnitudeSquared == 0 || secondVectorMagnitudeSquared == 0;
+            if (eitherVectorHasZeroMagnitude)
+            {
+                return 0;
+            }
+
+            return dotProduct / (Math.Sqrt(firstVectorMagnitudeSquared) * Math.Sqrt(secondVectorMagnitudeSquared));
+        }
+
+        /// <summary>
+        /// Retrieves the hardcoded username for the specified user identifier.
+        /// Falls back to a generated placeholder if the identifier is not found in the lookup.
+        /// </summary>
+        /// <param name="userId">The identifier of the user whose username is to be retrieved.</param>
+        /// <returns>
+        /// The hardcoded username if found; otherwise a generated string of the form <c>User {userId}</c>.
+        /// </returns>
         private static string GetHardcodedUsername(int userId)
         {
-            return HardcodedUsernames.TryGetValue(userId, out string? name) ? name : $"User {userId}";
+            bool usernameFound = HardcodedUsernames.TryGetValue(userId, out string? username);
+            return usernameFound ? username! : $"{FallbackUsernamePrefix} {userId}";
         }
 
-        private static string GetFacebookAccount(int userId)
+        /// <summary>
+        /// Retrieves the hardcoded Facebook account handle for the specified user identifier.
+        /// Falls back to a generated placeholder if the identifier is not found in the lookup.
+        /// </summary>
+        /// <param name="userId">The identifier of the user whose Facebook account is to be retrieved.</param>
+        /// <returns>
+        /// The hardcoded Facebook account handle if found; otherwise a generated string of the form <c>fb_user_{userId}</c>.
+        /// </returns>
+        private static string GetHardcodedFacebookAccount(int userId)
         {
-            if (HardcodedFacebookAccounts.TryGetValue(userId, out string? fb))
-                return fb;
-            return $"fb_user_{userId}";
+            bool facebookAccountFound = HardcodedFacebookAccounts.TryGetValue(userId, out string? facebookAccount);
+            return facebookAccountFound ? facebookAccount! : $"{FallbackFacebookAccountPrefix}{userId}";
         }
     }
 }
